@@ -1,0 +1,9 @@
+db_config.php
+loan-system.zip
+hostinger-ready.zip
+uploads/payment_proofs/*
+uploads/savings_proofs/*
+uploads/withdrawal_proofs/*
+!uploads/payment_proofs/.gitkeep
+!uploads/savings_proofs/.gitkeep
+!uploads/withdrawal_proofs/.gitkeep

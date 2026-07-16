@@ -15,9 +15,23 @@ $members = $conn->query("
     SELECT 
         borrowers.*,
         COUNT(loans.id) AS total_loans,
-        COALESCE(SUM(loans.amount),0) AS total_borrowed
+        COALESCE(SUM(loans.amount),0) AS total_borrowed,
+        COALESCE(savings_summary.total_savings,0) AS total_savings,
+        COALESCE(capital_summary.total_capital,0) AS total_capital
     FROM borrowers
     LEFT JOIN loans ON loans.borrower_id = borrowers.id
+    LEFT JOIN (
+        SELECT
+            borrower_id,
+            IFNULL(SUM(CASE WHEN type = 'DEPOSIT' THEN amount ELSE -amount END),0) AS total_savings
+        FROM savings_transactions
+        GROUP BY borrower_id
+    ) AS savings_summary ON savings_summary.borrower_id = borrowers.id
+    LEFT JOIN (
+        SELECT borrower_id, IFNULL(SUM(amount),0) AS total_capital
+        FROM capital_contributions
+        GROUP BY borrower_id
+    ) AS capital_summary ON capital_summary.borrower_id = borrowers.id
     GROUP BY borrowers.id
     ORDER BY borrowers.id DESC
 ");
@@ -27,6 +41,7 @@ $members = $conn->query("
 <head>
 <title>Member Management</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 
 <body class="bg-light">
@@ -56,6 +71,8 @@ $members = $conn->query("
                     <th>Date Created</th>
                     <th>Total Loans</th>
                     <th>Total Borrowed</th>
+                    <th>Total Savings</th>
+                    <th>Total Capcon</th>
                     <th>Interest Share</th>
                     <th>Status</th>
                     <th width="180">Action</th>
@@ -68,6 +85,8 @@ $members = $conn->query("
                     <td><?= $row['created_at'] ?></td>
                     <td><span class="badge bg-primary"><?= $row['total_loans'] ?></span></td>
                     <td>₱<?= number_format($row['total_borrowed'],2) ?></td>
+                    <td class="text-info fw-bold">₱<?= number_format($row['total_savings'],2) ?></td>
+                    <td class="text-warning fw-bold">₱<?= number_format($row['total_capital'],2) ?></td>
                     <td><span class="text-success fw-bold">₱<?= number_format($sharePerBorrower,2) ?></span></td>
                     <td class="member-status">
                         <span class="badge bg-<?= $row['status'] === 'Active' ? 'success' : 'secondary' ?>">
@@ -145,8 +164,20 @@ $members = $conn->query("
   </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
+let borrowerDataTable;
+
+$(document).ready(function(){
+    borrowerDataTable = $('#borrowerTable').DataTable({
+        pageLength: 10,
+        order: [[1, 'desc']]
+    });
+});
+
 function saveBorrower(){
     let name = document.getElementById("borrowerName").value.trim();
 
@@ -173,6 +204,8 @@ function saveBorrower(){
                 <td>Just now</td>
                 <td><span class="badge bg-primary">0</span></td>
                 <td>₱0.00</td>
+                <td class="text-info fw-bold">₱0.00</td>
+                <td class="text-warning fw-bold">₱0.00</td>
                 <td><span class="text-success fw-bold">₱0.00</span></td>
                 <td class="member-status"><span class="badge bg-success">Active</span></td>
                 <td>
@@ -186,7 +219,7 @@ function saveBorrower(){
             </tr>
         `;
 
-        document.getElementById("borrowerTable").insertAdjacentHTML('afterbegin', row);
+        borrowerDataTable.row.add($(row)).draw(false);
         document.getElementById("borrowerName").value = '';
 
         let modal = bootstrap.Modal.getInstance(document.getElementById('addBorrowerModal'));
@@ -250,14 +283,21 @@ function setInactive(id){
             return;
         }
 
-        let row = document.querySelector(`tr[data-member-id="${data.id}"]`);
+        let row = getMemberRow(data.id);
+        if(!row){
+            return;
+        }
         let name = row.querySelector('.member-name').innerText.trim();
         updateMemberRow(data.id, name, data.status);
     });
 }
 
 function updateMemberRow(id, name, status){
-    let row = document.querySelector(`tr[data-member-id="${id}"]`);
+    let row = getMemberRow(id);
+    if(!row){
+        return;
+    }
+
     let statusClass = status === 'Active' ? 'success' : 'secondary';
     let actionHtml = `
         <button class="btn btn-warning btn-sm" onclick="openEditMember(${id}, '${escapeJsString(name)}', '${status}')">
@@ -278,6 +318,28 @@ function updateMemberRow(id, name, status){
     row.querySelector('.member-name').innerHTML = `<strong>${escapeHtml(name)}</strong>`;
     row.querySelector('.member-status').innerHTML = `<span class="badge bg-${statusClass}">${status}</span>`;
     row.querySelector('td:last-child').innerHTML = actionHtml;
+
+    if(borrowerDataTable){
+        borrowerDataTable.row(row).invalidate().draw(false);
+    }
+}
+
+function getMemberRow(id){
+    let row = document.querySelector(`tr[data-member-id="${id}"]`);
+
+    if(row || !borrowerDataTable){
+        return row;
+    }
+
+    let foundRow = null;
+    borrowerDataTable.rows().every(function(){
+        let node = this.node();
+        if(node && node.dataset.memberId === String(id)){
+            foundRow = node;
+        }
+    });
+
+    return foundRow;
 }
 
 function escapeHtml(value){

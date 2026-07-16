@@ -19,6 +19,45 @@ $capital = $conn->query("
     FROM capital_contributions
 ")->fetch_assoc()['total'];
 
+function current_cutoff_date()
+{
+    $today = new DateTimeImmutable('today');
+    $day = (int)$today->format('j');
+    $lastDay = (int)$today->format('t');
+
+    if ($day >= $lastDay) {
+        return $today->format('Y-m-t');
+    }
+
+    if ($day >= 15) {
+        return $today->format('Y-m-15');
+    }
+
+    return $today->modify('first day of previous month')->format('Y-m-t');
+}
+
+$currentCutoffDate = current_cutoff_date();
+
+$cutoffCapitalStmt = $conn->prepare("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM capital_contributions
+    WHERE contribution_date = ?
+");
+$cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
+$cutoffCapitalStmt->execute();
+$cutoffCapital = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
+
+$cutoffPaidLoansStmt = $conn->prepare("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM payments
+    WHERE due_date = ?
+    AND paid = 1
+");
+$cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
+$cutoffPaidLoansStmt->execute();
+$cutoffPaidLoans = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
+$availableLoanCutoff = $cutoffCapital + $cutoffPaidLoans;
+
 $outstanding = $conn->query("
     SELECT IFNULL(SUM(amount),0) AS total
     FROM payments
@@ -109,9 +148,13 @@ $memberSavings = $savingsDeposits - $savingsWithdrawals;
     <div class="col-md-3 mb-3">
         <div class="card border-warning shadow-sm">
             <div class="card-body">
-                <h6>Total Capital Contributions</h6>
-                <h3 class="text-warning">₱<?= number_format($capital,2) ?></h3>
-                <small class="text-muted">All member capital contributions</small>
+                <h6>Available Loan for this Cut-off</h6>
+                <h3 class="text-warning">₱<?= number_format($availableLoanCutoff,2) ?></h3>
+                <small class="text-muted">
+                    Cut-off <?= date('M d, Y', strtotime($currentCutoffDate)) ?>:
+                    capcon ₱<?= number_format($cutoffCapital,2) ?> +
+                    paid loans ₱<?= number_format($cutoffPaidLoans,2) ?>
+                </small>
             </div>
             <div class="card-footer">
                 <a href="capital.php" class="btn btn-warning w-100">Capital Contributions</a>
