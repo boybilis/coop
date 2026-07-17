@@ -15,6 +15,75 @@
     background: #fff;
 }
 
+.login-page {
+    background:
+        radial-gradient(circle at top left, rgba(31, 94, 255, .16), transparent 34rem),
+        linear-gradient(180deg, #f5f8ff 0%, #eef3fb 100%);
+}
+
+.login-card {
+    --bs-card-bg: transparent;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 1.25rem;
+    overflow: hidden;
+    color: #fff;
+    background:
+        linear-gradient(135deg, rgba(23, 54, 95, .96), rgba(11, 31, 58, .98)),
+        linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, .04));
+    box-shadow: 0 24px 60px rgba(11, 31, 58, .28);
+}
+
+.login-card .card-body {
+    padding: 2rem;
+}
+
+.login-card h4,
+.login-card label {
+    color: #fff;
+}
+
+.login-subtitle {
+    color: rgba(255, 255, 255, .78);
+    font-size: .95rem;
+}
+
+.login-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 1rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: #0b1f3a;
+    background: linear-gradient(135deg, #ffffff, #dbeafe);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .18);
+}
+
+.login-card .form-control {
+    border: 1px solid rgba(255, 255, 255, .38);
+    background: rgba(255, 255, 255, .94);
+}
+
+.login-card .form-control:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 .25rem rgba(147, 197, 253, .25);
+}
+
+.login-btn {
+    border: 0;
+    color: #0b1f3a;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffffff, #bfdbfe);
+}
+
+.login-btn:hover,
+.login-btn:focus {
+    color: #0b1f3a;
+    background: linear-gradient(135deg, #e0f2fe, #93c5fd);
+}
+
 .card.glass-card {
     --bs-card-bg: transparent;
     --bs-card-border-color: transparent;
