@@ -149,7 +149,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 <title>Member Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
-<link rel="stylesheet" href="assets/css/theme.css?v=20260717">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260717-tabs">
 </head>
 
 <body class="bg-light">
@@ -268,7 +268,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card member-tabs-card shadow-sm mb-4">
     <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs" id="memberDashboardTabs" role="tablist">
             <li class="nav-item" role="presentation">
