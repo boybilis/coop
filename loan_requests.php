@@ -28,29 +28,14 @@ $requests = $conn->query("
     }
 
     .loan-approval-cell {
-        min-width: 360px;
+        min-width: 220px;
     }
 
-    .loan-approval-form {
+    .loan-action-group {
         display: flex;
         gap: .5rem;
         align-items: center;
-        min-width: 340px;
-    }
-
-    .loan-approval-form .amount-input {
-        width: 130px;
-        flex: 0 0 130px;
-    }
-
-    .loan-approval-form .months-input {
-        width: 90px;
-        flex: 0 0 90px;
-    }
-
-    .loan-approval-form .approve-btn {
-        width: 96px;
-        flex: 0 0 96px;
+        min-width: 200px;
     }
 </style>
 </head>
@@ -69,6 +54,10 @@ $requests = $conn->query("
 
 <?php if(isset($_GET['approved'])): ?>
     <div class="alert alert-success">Loan request approved and saved as a loan.</div>
+<?php endif; ?>
+
+<?php if(isset($_GET['rejected'])): ?>
+    <div class="alert alert-success">Loan request rejected.</div>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
@@ -125,17 +114,18 @@ $requests = $conn->query("
                         </td>
                         <td class="loan-approval-cell">
                             <?php if($row['status'] === 'Pending'): ?>
-                                <form method="POST" action="ajax/approve_loan_request.php" class="loan-approval-form">
-                                    <input type="hidden" name="request_id" value="<?= $row['id'] ?>">
-
-                                    <input type="number" step="0.01" min="1" name="amount" class="form-control form-control-sm amount-input" value="<?= $row['requested_amount'] ?>" required>
-
-                                    <input type="number" step="0.1" min="0.1" max="6" name="months" class="form-control form-control-sm months-input" value="<?= $row['requested_months'] ?>" required>
-
-                                    <button class="btn btn-success btn-sm approve-btn" onclick="return confirm('Approve this loan request?')">
+                                <div class="loan-action-group">
+                                    <button type="button" class="btn btn-success btn-sm"
+                                        onclick="openApproveLoanRequestModal(<?= (int)$row['id'] ?>, <?= (float)$row['requested_amount'] ?>, <?= (float)$row['requested_months'] ?>)">
                                         Approve
                                     </button>
-                                </form>
+                                    <form method="POST" action="ajax/reject_loan_request.php" class="m-0">
+                                        <input type="hidden" name="request_id" value="<?= (int)$row['id'] ?>">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="return confirm('Reject this loan request?')">
+                                            Reject
+                                        </button>
+                                    </form>
+                                </div>
                             <?php else: ?>
                                 <?php if($row['approved_loan_id']): ?>
                                     <a href="loan_view.php?id=<?= $row['approved_loan_id'] ?>" class="btn btn-outline-info btn-sm">
@@ -155,6 +145,57 @@ $requests = $conn->query("
 </div>
 
 </div>
+
+<div class="modal fade" id="approveLoanRequestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="ajax/approve_loan_request.php" enctype="multipart/form-data">
+        <div class="modal-header">
+            <h5 class="modal-title">Approve Loan Request</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="request_id" id="approveRequestId">
+
+            <div class="mb-3">
+                <label class="form-label">Approved Amount</label>
+                <input type="number" step="0.01" min="1" name="amount" id="approveAmount" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Approved Months</label>
+                <input type="number" step="0.1" min="0.1" max="6" name="months" id="approveMonths" class="form-control" required>
+                <small class="text-muted">Maximum payment term is 6 months.</small>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">GCash Disbursement Reference Number</label>
+                <input type="text" name="disbursement_reference_number" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">GCash Disbursement Proof Image</label>
+                <input type="file" name="disbursement_proof_image" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-success" onclick="return confirm('Approve and mark this loan as disbursed?')">Approve Loan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function openApproveLoanRequestModal(requestId, amount, months){
+    document.getElementById('approveRequestId').value = requestId;
+    document.getElementById('approveAmount').value = amount;
+    document.getElementById('approveMonths').value = months;
+    new bootstrap.Modal(document.getElementById('approveLoanRequestModal')).show();
+}
+</script>
 <?php render_footer(); ?>
 </body>
 </html>

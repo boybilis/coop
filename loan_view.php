@@ -101,6 +101,22 @@ $res = $stmt->get_result();
 
 <p><strong>Total Payable:</strong> ₱<?= number_format($loanInfo['total_payable'],2) ?></p>
 
+<p>
+    <strong>Disbursement Reference:</strong>
+    <?= $loanInfo['disbursement_reference_number'] ? htmlspecialchars($loanInfo['disbursement_reference_number']) : '<span class="text-muted">—</span>' ?>
+</p>
+
+<p>
+    <strong>Disbursement Proof:</strong>
+    <?php if($loanInfo['disbursement_proof_image']): ?>
+        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+            View Image
+        </a>
+    <?php else: ?>
+        <span class="text-muted">—</span>
+    <?php endif; ?>
+</p>
+
 </div>
 </div>
 

@@ -126,6 +126,20 @@ $payments = $paymentsStmt->get_result();
                     <small class="text-muted">Months</small>
                     <h5><?= number_format($loanInfo['months'], 1) ?></h5>
                 </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Disbursement Reference</small>
+                    <h5><?= $loanInfo['disbursement_reference_number'] ? htmlspecialchars($loanInfo['disbursement_reference_number']) : '—' ?></h5>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Disbursement Proof</small><br>
+                    <?php if($loanInfo['disbursement_proof_image']): ?>
+                        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                            View Image
+                        </a>
+                    <?php else: ?>
+                        <span class="text-muted">—</span>
+                    <?php endif; ?>
+                </div>
                 <div class="col-12">
                     <small class="text-muted">Payment Progress</small>
                     <div class="progress" style="height:24px;">

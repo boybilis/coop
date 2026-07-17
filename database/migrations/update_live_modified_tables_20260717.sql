@@ -41,8 +41,12 @@ CALL add_column_if_missing('borrowers', 'gcash_number', '`gcash_number` VARCHAR(
 
 CALL add_column_if_missing('loan_requests', 'is_guarantor', '`is_guarantor` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approved_loan_id`');
 CALL add_column_if_missing('loan_requests', 'guest_borrower_name', '`guest_borrower_name` VARCHAR(150) DEFAULT NULL AFTER `is_guarantor`');
+CALL add_column_if_missing('loan_requests', 'disbursement_reference_number', '`disbursement_reference_number` VARCHAR(100) DEFAULT NULL AFTER `guest_borrower_name`');
+CALL add_column_if_missing('loan_requests', 'disbursement_proof_image', '`disbursement_proof_image` VARCHAR(255) DEFAULT NULL AFTER `disbursement_reference_number`');
 
 CALL add_column_if_missing('loans', 'is_guarantor', '`is_guarantor` TINYINT(1) NOT NULL DEFAULT 0 AFTER `status`');
 CALL add_column_if_missing('loans', 'guest_borrower_name', '`guest_borrower_name` VARCHAR(150) DEFAULT NULL AFTER `is_guarantor`');
+CALL add_column_if_missing('loans', 'disbursement_reference_number', '`disbursement_reference_number` VARCHAR(100) DEFAULT NULL AFTER `guest_borrower_name`');
+CALL add_column_if_missing('loans', 'disbursement_proof_image', '`disbursement_proof_image` VARCHAR(255) DEFAULT NULL AFTER `disbursement_reference_number`');
 
 DROP PROCEDURE IF EXISTS add_column_if_missing;

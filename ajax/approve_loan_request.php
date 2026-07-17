@@ -6,6 +6,7 @@ require_admin();
 $requestId = (int)($_POST['request_id'] ?? 0);
 $amount = (float)($_POST['amount'] ?? 0);
 $months = (float)($_POST['months'] ?? 0);
+$disbursementReferenceNumber = trim($_POST['disbursement_reference_number'] ?? '');
 
 if (!$requestId || $amount <= 0 || $months <= 0) {
     header("Location: ../loan_requests.php?error=" . urlencode("Amount and months are required"));
@@ -14,6 +15,16 @@ if (!$requestId || $amount <= 0 || $months <= 0) {
 
 if ($months > 6) {
     header("Location: ../loan_requests.php?error=" . urlencode("Maximum payment term is 6 months"));
+    exit;
+}
+
+if ($disbursementReferenceNumber === '') {
+    header("Location: ../loan_requests.php?error=" . urlencode("GCash disbursement reference number is required"));
+    exit;
+}
+
+if (!isset($_FILES['disbursement_proof_image']) || $_FILES['disbursement_proof_image']['error'] !== UPLOAD_ERR_OK) {
+    header("Location: ../loan_requests.php?error=" . urlencode("GCash disbursement proof image is required"));
     exit;
 }
 
@@ -33,6 +44,40 @@ if (!$request) {
     exit;
 }
 
+$fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+$mimeType = finfo_file($fileInfo, $_FILES['disbursement_proof_image']['tmp_name']);
+finfo_close($fileInfo);
+
+$allowedTypes = [
+    'image/jpeg' => 'jpg',
+    'image/png' => 'png',
+    'image/webp' => 'webp'
+];
+
+if (!isset($allowedTypes[$mimeType])) {
+    header("Location: ../loan_requests.php?error=" . urlencode("Only JPG, PNG, or WEBP images are allowed"));
+    exit;
+}
+
+$uploadDirPath = __DIR__ . '/../uploads/loan_disbursements';
+
+if (!is_dir($uploadDirPath) && !mkdir($uploadDirPath, 0775, true)) {
+    header("Location: ../loan_requests.php?error=" . urlencode("Unable to create loan disbursement upload directory"));
+    exit;
+}
+
+$uploadDir = realpath($uploadDirPath);
+
+$fileName = 'loan_disbursement_' . $request['borrower_id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $allowedTypes[$mimeType];
+$targetPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
+
+if (!move_uploaded_file($_FILES['disbursement_proof_image']['tmp_name'], $targetPath)) {
+    header("Location: ../loan_requests.php?error=" . urlencode("Unable to save disbursement proof image"));
+    exit;
+}
+
+$proofPath = 'uploads/loan_disbursements/' . $fileName;
+
 $start = date('Y-m-d');
 $rate = 0.02;
 $interest = (int) ceil($amount * $rate * $months);
@@ -46,11 +91,11 @@ $conn->begin_transaction();
 try {
     $loanStmt = $conn->prepare("
         INSERT INTO loans
-        (borrower_id, amount, interest, months, total_payable, start_date, is_guarantor, guest_borrower_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (borrower_id, amount, interest, months, total_payable, start_date, is_guarantor, guest_borrower_name, disbursement_reference_number, disbursement_proof_image)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $loanStmt->bind_param(
-        "iddddsis",
+        "iddddsisss",
         $request['borrower_id'],
         $amount,
         $interest,
@@ -58,7 +103,9 @@ try {
         $totalPayable,
         $start,
         $request['is_guarantor'],
-        $request['guest_borrower_name']
+        $request['guest_borrower_name'],
+        $disbursementReferenceNumber,
+        $proofPath
     );
     $loanStmt->execute();
     $loanId = $loanStmt->insert_id;
@@ -102,10 +149,12 @@ try {
             approved_amount = ?,
             approved_months = ?,
             approved_loan_id = ?,
+            disbursement_reference_number = ?,
+            disbursement_proof_image = ?,
             processed_at = NOW()
         WHERE id = ?
     ");
-    $updateStmt->bind_param("ddii", $amount, $months, $loanId, $requestId);
+    $updateStmt->bind_param("ddissi", $amount, $months, $loanId, $disbursementReferenceNumber, $proofPath, $requestId);
     $updateStmt->execute();
 
     $conn->commit();
