@@ -39,8 +39,10 @@ $members = $conn->query("
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Member Management</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/mobile.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 
@@ -64,7 +66,8 @@ $members = $conn->query("
     </div>
 
     <div class="card-body">
-        <table class="table table-bordered table-hover align-middle" id="borrowerTable">
+        <div class="table-responsive">
+<table class="table table-bordered table-hover align-middle" id="borrowerTable">
             <thead class="table-dark">
                 <tr>
                     <th>Name</th>
@@ -112,6 +115,7 @@ $members = $conn->query("
                 <?php endwhile; ?>
             </tbody>
         </table>
+</div>
     </div>
 </div>
 

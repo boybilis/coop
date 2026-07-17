@@ -21,8 +21,10 @@ $netSavings = $deposits - $withdrawals;
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Member Savings</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/mobile.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 
@@ -118,6 +120,7 @@ while($member = $members->fetch_assoc()):
 <div class="card">
 <div class="card-body">
 
+<div class="table-responsive">
 <table class="table table-bordered table-hover" id="savingsTable">
 <thead class="table-dark">
 <tr>
@@ -154,6 +157,7 @@ while($row = $transactions->fetch_assoc()):
 <?php endwhile; ?>
 </tbody>
 </table>
+</div>
 
 </div>
 </div>

@@ -53,9 +53,11 @@ $res = $stmt->get_result();
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Member Loan Details</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/mobile.css">
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
@@ -90,6 +92,7 @@ $res = $stmt->get_result();
 <div class="card shadow mb-3">
 <div class="card-body">
 
+<div class="table-responsive">
 <table id="paymentTable" class="table table-bordered table-hover">
 
 <thead class="table-dark">
@@ -177,6 +180,7 @@ $res = $stmt->get_result();
 </tbody>
 
 </table>
+</div>
 
 </div>
 

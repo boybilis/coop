@@ -1,33 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Loan Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/mobile.css">
     <style>
-        body { font-family: Arial; padding: 20px; }
-        input, button { padding: 8px; margin: 5px; }
         table { margin-top: 15px; border-collapse: collapse; }
         td, th { border: 1px solid #ccc; padding: 8px; }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
+<div class="container mt-4">
 <h2>Loan Calculator (2% Monthly Interest)</h2>
 
 <label>Borrower Name:</label><br>
-<input type="text" id="name"><br>
+<input type="text" id="name" class="form-control mb-2"><br>
 
 <label>Amount:</label><br>
-<input type="number" id="amount"><br>
+<input type="number" id="amount" class="form-control mb-2"><br>
 
 <label>No. of Months (can be decimal):</label><br>
-<input type="number" step="0.1" id="months"><br>
+<input type="number" step="0.1" id="months" class="form-control mb-2"><br>
 
 <label>Start Date:</label><br>
-<input type="date" id="startDate"><br>
+<input type="date" id="startDate" class="form-control mb-2"><br>
 
-<button onclick="compute()">Compute</button>
+<button onclick="compute()" class="btn btn-primary">Compute</button>
 
 <div id="result"></div>
+</div>
 
 <script>
 function compute() {
@@ -87,7 +90,8 @@ let totalPayable = amount + totalInterest;
         <b>Total Payable:</b> ₱${totalPayable.toFixed(2)} <br>
         <b>Total Payments:</b> ${totalPayments} <br><br>
 
-        <table>
+        <div class="table-responsive">
+<table>
             <tr>
                 <th>#</th>
                 <th>Amount</th>
@@ -95,6 +99,7 @@ let totalPayable = amount + totalInterest;
             </tr>
             ${schedule}
         </table>
+</div>
 
         <br><b>Total Paid:</b> ₱${totalPaid}
     `;

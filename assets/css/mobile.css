@@ -1,0 +1,140 @@
+body {
+    overflow-x: hidden;
+}
+
+.card {
+    border-radius: .75rem;
+}
+
+.card-body {
+    overflow-x: auto;
+}
+
+.table {
+    vertical-align: middle;
+}
+
+.table th,
+.table td {
+    white-space: nowrap;
+}
+
+.dataTables_wrapper .row {
+    row-gap: .75rem;
+}
+
+.dataTables_filter,
+.dataTables_length,
+.dataTables_info,
+.dataTables_paginate {
+    width: 100%;
+}
+
+.dataTables_filter {
+    text-align: right;
+}
+
+.modal-dialog {
+    max-width: min(100% - 1rem, var(--bs-modal-width));
+}
+
+@media (max-width: 767.98px) {
+    .container {
+        max-width: 100%;
+        padding-left: .75rem;
+        padding-right: .75rem;
+    }
+
+    .container.mt-4,
+    .container.mt-4.mb-5 {
+        margin-top: 1rem !important;
+    }
+
+    h2,
+    h3 {
+        font-size: 1.35rem;
+    }
+
+    h5,
+    h6 {
+        font-size: 1rem;
+    }
+
+    .card-body h3,
+    .card-body h2 {
+        font-size: 1.35rem;
+    }
+
+    .d-flex.justify-content-between.align-items-center {
+        flex-wrap: wrap;
+        gap: .75rem;
+    }
+
+    .d-flex.justify-content-between.align-items-center > div:last-child {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .d-flex.justify-content-between.align-items-center .btn {
+        margin: 0 !important;
+    }
+
+    .btn {
+        white-space: normal;
+    }
+
+    .card-footer .btn,
+    .card-header .btn,
+    td .btn {
+        margin-bottom: .25rem;
+    }
+
+    .btn-sm {
+        padding: .35rem .5rem;
+    }
+
+    .table {
+        min-width: 720px;
+        font-size: .9rem;
+    }
+
+    .dataTables_filter {
+        text-align: left;
+    }
+
+    .dataTables_filter label,
+    .dataTables_filter input,
+    .dataTables_length label,
+    .dataTables_length select {
+        width: 100%;
+    }
+
+    .dataTables_paginate .pagination {
+        justify-content: flex-start !important;
+        flex-wrap: wrap;
+        gap: .25rem;
+    }
+
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+
+    .modal-dialog {
+        margin: .5rem;
+    }
+
+    .modal-footer {
+        flex-wrap: nowrap;
+    }
+
+    .modal-footer .btn {
+        flex: 1 1 auto;
+    }
+}
