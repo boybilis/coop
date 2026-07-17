@@ -15,11 +15,12 @@ $submissions = null;
 
 if ($selectedCutoff !== '') {
     $stmt = $conn->prepare("
-        SELECT payment_submissions.*, borrowers.name
+        SELECT payment_submissions.*, borrowers.name, users.username
         FROM payment_submissions
         JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
         WHERE payment_submissions.cutoff_date = ?
-        ORDER BY borrowers.name ASC, payment_submissions.id DESC
+        ORDER BY users.username ASC, borrowers.name ASC, payment_submissions.id DESC
     ");
     $stmt->bind_param("s", $selectedCutoff);
     $stmt->execute();
@@ -90,7 +91,7 @@ if ($selectedCutoff !== '') {
             <table class="table table-bordered table-hover align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th>Borrower Name</th>
+                        <th>Borrower</th>
                         <th>Cap Con</th>
                         <th>Loan</th>
                         <th>Total Amount</th>
@@ -113,7 +114,7 @@ if ($selectedCutoff !== '') {
                         <?php while($row = $submissions->fetch_assoc()): ?>
                         <?php $totalAmount = $row['capital_contribution'] + $row['loan_payment']; ?>
                         <tr>
-                            <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                            <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                             <td>₱<?= number_format($row['capital_contribution'],2) ?></td>
                             <td>₱<?= number_format($row['loan_payment'],2) ?></td>
                             <td><strong>₱<?= number_format($totalAmount,2) ?></strong></td>

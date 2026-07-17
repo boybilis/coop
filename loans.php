@@ -5,7 +5,7 @@ include 'layout.php';
 require_admin();
 
 $loans = $conn->query("
-    SELECT loans.*, borrowers.name,
+    SELECT loans.*, borrowers.name, users.username,
     (SELECT COUNT(*) FROM payments WHERE loan_id = loans.id) AS total_payments,
     (SELECT COUNT(*) FROM payments WHERE loan_id = loans.id AND paid = 1) AS paid_payments,
     (
@@ -20,6 +20,7 @@ $loans = $conn->query("
     ) AS submission_count
     FROM loans
     JOIN borrowers ON borrowers.id = loans.borrower_id
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     ORDER BY loans.id DESC
 ");
 ?>
@@ -70,7 +71,7 @@ $loans = $conn->query("
                         : 0;
                 ?>
                 <tr>
-                    <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                    <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                     <td>₱<?= number_format($row['amount'],2) ?></td>
                     <td class="text-success">₱<?= number_format($row['interest'],2) ?></td>
                     <td><strong>₱<?= number_format($row['total_payable'],2) ?></strong></td>

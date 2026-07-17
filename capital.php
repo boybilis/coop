@@ -39,10 +39,15 @@ require_admin();
 <select name="borrower_id" class="form-control" required>
 <option value="">Select Member</option>
 <?php
-$res = $conn->query("SELECT * FROM borrowers ORDER BY name ASC");
+$res = $conn->query("
+    SELECT borrowers.*, users.username
+    FROM borrowers
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+    ORDER BY users.username ASC, borrowers.name ASC
+");
 while($b = $res->fetch_assoc()):
 ?>
-<option value="<?= $b['id'] ?>"><?= $b['name'] ?></option>
+<option value="<?= $b['id'] ?>"><?= htmlspecialchars(($b['username'] ?: $b['name']) . ' - ' . $b['name']) ?></option>
 <?php endwhile; ?>
 </select>
 </div>
@@ -111,9 +116,10 @@ $average = $count > 0 ? $total / $count : 0;
 
 <?php
 $res = $conn->query("
-SELECT capital_contributions.*, borrowers.name
+SELECT capital_contributions.*, borrowers.name, users.username
 FROM capital_contributions
 JOIN borrowers ON borrowers.id = capital_contributions.borrower_id
+LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
 ORDER BY contribution_date DESC
 ");
 
@@ -121,7 +127,7 @@ while($row = $res->fetch_assoc()):
 ?>
 
 <tr>
-<td><?= $row['name'] ?></td>
+<td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
 <td>₱<?= number_format($row['amount'],2) ?></td>
 <td>
 <span class="badge bg-<?= $row['type']=='INITIAL'?'primary':'success' ?>">
@@ -200,8 +206,9 @@ $(document).ready(function () {
             }
 
             let badgeClass = response.row.type === 'INITIAL' ? 'primary' : 'success';
+            let memberDisplayName = response.row.username || response.row.name;
             capitalTable.row.add([
-                response.row.name,
+                '<strong>' + escapeHtml(memberDisplayName) + '</strong><small class="d-block text-dark-emphasis">' + escapeHtml(response.row.name) + '</small>',
                 money(response.row.amount),
                 '<span class="badge bg-' + badgeClass + '">' + response.row.type + '</span>',
                 response.row.date
@@ -218,6 +225,18 @@ $(document).ready(function () {
         });
     });
 });
+
+function escapeHtml(value){
+    return String(value).replace(/[&<>"']/g, function(character){
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[character];
+    });
+}
 </script>
 <?php render_footer(); ?>
 </body>

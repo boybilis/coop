@@ -32,11 +32,16 @@ require_admin();
 <select name="borrower_id" class="form-control" required>
     <option value="">-- Select Member --</option>
     <?php
-    $res = $conn->query("SELECT * FROM borrowers ORDER BY name ASC");
+    $res = $conn->query("
+        SELECT borrowers.*, users.username
+        FROM borrowers
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+        ORDER BY users.username ASC, borrowers.name ASC
+    ");
     while($b = $res->fetch_assoc()):
     ?>
         <option value="<?= $b['id'] ?>">
-            <?= $b['name'] ?>
+            <?= htmlspecialchars(($b['username'] ?: $b['name']) . ' - ' . $b['name']) ?>
         </option>
     <?php endwhile; ?>
 </select>

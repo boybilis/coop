@@ -25,3 +25,12 @@ function render_footer()
     </footer>
     <?php
 }
+
+function render_member_identity($username, $fullName)
+{
+    $mainName = trim((string)$username) !== '' ? $username : $fullName;
+    ?>
+    <strong><?= htmlspecialchars($mainName) ?></strong>
+    <small class="d-block text-dark-emphasis"><?= htmlspecialchars($fullName) ?></small>
+    <?php
+}

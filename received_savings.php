@@ -12,16 +12,18 @@ if (!in_array($statusFilter, ['Pending', 'Approved', 'Rejected', 'All'], true)) 
 
 if ($statusFilter === 'All') {
     $submissions = $conn->query("
-        SELECT savings_submissions.*, borrowers.name
+        SELECT savings_submissions.*, borrowers.name, users.username
         FROM savings_submissions
         JOIN borrowers ON borrowers.id = savings_submissions.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
         ORDER BY savings_submissions.created_at DESC
     ");
 } else {
     $stmt = $conn->prepare("
-        SELECT savings_submissions.*, borrowers.name
+        SELECT savings_submissions.*, borrowers.name, users.username
         FROM savings_submissions
         JOIN borrowers ON borrowers.id = savings_submissions.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
         WHERE savings_submissions.status = ?
         ORDER BY savings_submissions.created_at ASC
     ");
@@ -95,7 +97,7 @@ if ($statusFilter === 'All') {
             <table class="table table-bordered table-hover align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th>Borrower Name</th>
+                        <th>Borrower</th>
                         <th>Amount</th>
                         <th>Reference</th>
                         <th>Image File</th>
@@ -113,7 +115,7 @@ if ($statusFilter === 'All') {
 
                     <?php while($row = $submissions->fetch_assoc()): ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                        <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                         <td>₱<?= number_format($row['amount'],2) ?></td>
                         <td><?= htmlspecialchars($row['reference_number']) ?></td>
                         <td>

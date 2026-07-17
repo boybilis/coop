@@ -13,9 +13,10 @@ $loan_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 // GET LOAN + BORROWER INFO
 // =============================
 $loanStmt = $conn->prepare("
-    SELECT loans.*, borrowers.name 
+    SELECT loans.*, borrowers.name, users.username
     FROM loans
     JOIN borrowers ON borrowers.id = loans.borrower_id
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     WHERE loans.id = ?
 ");
 $loanStmt->bind_param("i", $loan_id);
@@ -78,7 +79,10 @@ $res = $stmt->get_result();
 
 <p><strong>Loan ID:</strong> <?= $loan_id ?></p>
 
-<p><strong>Member:</strong> <?= htmlspecialchars($loanInfo['name']) ?></p>
+<div class="mb-3">
+    <strong>Member:</strong>
+    <?php render_member_identity($loanInfo['username'] ?? '', $loanInfo['name']); ?>
+</div>
 
 <p><strong>Amount:</strong> ₱<?= number_format($loanInfo['amount'],2) ?></p>
 

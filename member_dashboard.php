@@ -526,7 +526,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <div class="modal-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label>Payment Date</label>
+                    <label class="fw-bold">Payment Cut-Off Date</label>
                     <input type="date" name="payment_date" id="paymentDate" class="form-control" value="<?= date('Y-m-d') ?>" required onchange="updateDueAmount()">
                     <small class="text-muted" id="dueAmountText">Amount due: ₱0.00</small>
                 </div>
@@ -539,7 +539,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <div class="col-md-6">
                     <label>Loan Payment</label>
                     <input type="number" step="0.01" min="0" name="loan_payment" id="loanPaymentInput" class="form-control" value="0" oninput="updatePaymentTotal()">
-                    <small class="text-muted">The payment date is treated as the cutoff date.</small>
+                    <small class="text-muted">Loan amount due is based on the selected payment cut-off date.</small>
                 </div>
 
                 <div class="col-md-6">

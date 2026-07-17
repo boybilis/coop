@@ -31,7 +31,13 @@ $summary = $conn->query("
     FROM capital_contributions
 ")->fetch_assoc();
 
-$memberStmt = $conn->prepare("SELECT name FROM borrowers WHERE id = ? LIMIT 1");
+$memberStmt = $conn->prepare("
+    SELECT borrowers.name, users.username
+    FROM borrowers
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+    WHERE borrowers.id = ?
+    LIMIT 1
+");
 $memberStmt->bind_param("i", $borrower_id);
 $memberStmt->execute();
 $member = $memberStmt->get_result()->fetch_assoc();
@@ -45,6 +51,7 @@ echo json_encode([
     "message" => "Capital Contribution Recording Successful.",
     "row" => [
         "name" => $member['name'] ?? '',
+        "username" => $member['username'] ?? '',
         "amount" => $amount,
         "type" => $type,
         "date" => $date

@@ -5,9 +5,10 @@ include 'layout.php';
 require_admin();
 
 $requests = $conn->query("
-    SELECT loan_requests.*, borrowers.name
+    SELECT loan_requests.*, borrowers.name, users.username
     FROM loan_requests
     JOIN borrowers ON borrowers.id = loan_requests.borrower_id
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     ORDER BY
         CASE loan_requests.status WHEN 'Pending' THEN 0 WHEN 'Approved' THEN 1 ELSE 2 END,
         loan_requests.created_at ASC
@@ -73,7 +74,7 @@ $requests = $conn->query("
                     <?php while($row = $requests->fetch_assoc()): ?>
                     <tr>
                         <td><?= $row['status'] === 'Pending' ? $queue++ : '—' ?></td>
-                        <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                        <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                         <td>₱<?= number_format($row['requested_amount'],2) ?></td>
                         <td><?= $row['requested_months'] ?></td>
                         <td><?= $row['created_at'] ?></td>

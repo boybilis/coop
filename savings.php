@@ -84,10 +84,15 @@ $netSavings = $deposits - $withdrawals;
 <select name="borrower_id" class="form-control" required>
 <option value="">Select Member</option>
 <?php
-$members = $conn->query("SELECT * FROM borrowers ORDER BY name ASC");
+$members = $conn->query("
+    SELECT borrowers.*, users.username
+    FROM borrowers
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+    ORDER BY users.username ASC, borrowers.name ASC
+");
 while($member = $members->fetch_assoc()):
 ?>
-<option value="<?= $member['id'] ?>"><?= htmlspecialchars($member['name']) ?></option>
+<option value="<?= $member['id'] ?>"><?= htmlspecialchars(($member['username'] ?: $member['name']) . ' - ' . $member['name']) ?></option>
 <?php endwhile; ?>
 </select>
 </div>
@@ -138,16 +143,17 @@ while($member = $members->fetch_assoc()):
 <tbody>
 <?php
 $transactions = $conn->query("
-    SELECT savings_transactions.*, borrowers.name
+    SELECT savings_transactions.*, borrowers.name, users.username
     FROM savings_transactions
     JOIN borrowers ON borrowers.id = savings_transactions.borrower_id
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     ORDER BY transaction_date DESC, savings_transactions.id DESC
 ");
 
 while($row = $transactions->fetch_assoc()):
 ?>
 <tr>
-<td><?= htmlspecialchars($row['name']) ?></td>
+<td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
 <td>₱<?= number_format($row['amount'],2) ?></td>
 <td>
 <span class="badge bg-<?= $row['type'] == 'DEPOSIT' ? 'success' : 'danger' ?>">

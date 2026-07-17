@@ -12,16 +12,18 @@ if (!in_array($statusFilter, ['Pending', 'Approved', 'Rejected', 'All'], true)) 
 
 if ($statusFilter === 'All') {
     $requests = $conn->query("
-        SELECT savings_withdrawal_requests.*, borrowers.name
+        SELECT savings_withdrawal_requests.*, borrowers.name, users.username
         FROM savings_withdrawal_requests
         JOIN borrowers ON borrowers.id = savings_withdrawal_requests.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
         ORDER BY savings_withdrawal_requests.created_at DESC
     ");
 } else {
     $stmt = $conn->prepare("
-        SELECT savings_withdrawal_requests.*, borrowers.name
+        SELECT savings_withdrawal_requests.*, borrowers.name, users.username
         FROM savings_withdrawal_requests
         JOIN borrowers ON borrowers.id = savings_withdrawal_requests.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
         WHERE savings_withdrawal_requests.status = ?
         ORDER BY savings_withdrawal_requests.created_at ASC
     ");
@@ -91,7 +93,7 @@ if ($statusFilter === 'All') {
             <table class="table table-bordered table-hover align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th>Borrower Name</th>
+                        <th>Borrower</th>
                         <th>Amount</th>
                         <th>GCash Name</th>
                         <th>GCash Number</th>
@@ -111,7 +113,7 @@ if ($statusFilter === 'All') {
 
                     <?php while($row = $requests->fetch_assoc()): ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                        <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                         <td>₱<?= number_format($row['amount'],2) ?></td>
                         <td><?= htmlspecialchars($row['gcash_name']) ?></td>
                         <td><?= htmlspecialchars($row['gcash_number']) ?></td>
