@@ -15,6 +15,80 @@
     background: #fff;
 }
 
+.glass-card {
+    position: relative;
+    overflow: hidden;
+    border: 0 !important;
+    color: #fff;
+    box-shadow: 0 18px 40px rgba(11, 31, 58, .18);
+}
+
+.glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .06));
+    pointer-events: none;
+}
+
+.glass-card .card-body,
+.glass-card .card-footer,
+.glass-card .card-header {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    border-color: rgba(255, 255, 255, .22);
+}
+
+.glass-card h2,
+.glass-card h3,
+.glass-card h5,
+.glass-card h6,
+.glass-card p,
+.glass-card small,
+.glass-card .text-muted,
+.glass-card .text-primary,
+.glass-card .text-success,
+.glass-card .text-info,
+.glass-card .text-danger,
+.glass-card .text-warning {
+    color: inherit !important;
+}
+
+.glass-card .btn {
+    border-color: rgba(255, 255, 255, .65);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+}
+
+.glass-warning .btn {
+    color: #1f1600;
+}
+
+.glass-success {
+    background: linear-gradient(135deg, #0f8a5f, #0b5f49);
+}
+
+.glass-primary {
+    background: linear-gradient(135deg, #1f5eff, #173a87);
+}
+
+.glass-info {
+    background: linear-gradient(135deg, #0789a8, #07556d);
+}
+
+.glass-warning {
+    background: linear-gradient(135deg, #f6c343, #b56a00);
+    color: #221500;
+}
+
+.glass-danger {
+    background: linear-gradient(135deg, #d63d57, #842136);
+}
+
+.glass-midnight {
+    background: linear-gradient(135deg, #17365f, #0b1f3a);
+}
+
 body {
     min-height: 100vh;
 }

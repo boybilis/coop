@@ -197,7 +197,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 
 <div class="row">
     <div class="col-md-3 mb-3">
-        <div class="card border-info shadow-sm">
+        <div class="card glass-card glass-info">
             <div class="card-body">
                 <h6>Savings Balance</h6>
                 <h3 class="text-info">₱<?= number_format($netSavings,2) ?></h3>
@@ -224,7 +224,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card border-primary shadow-sm">
+        <div class="card glass-card glass-primary">
             <div class="card-body">
                 <h6>Loans</h6>
                 <h3 class="text-primary"><?= number_format($loanSummary['total_loans']) ?></h3>
@@ -241,7 +241,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card border-warning shadow-sm">
+        <div class="card glass-card glass-warning">
             <div class="card-body">
                 <h6>Capital Contribution</h6>
                 <h3 class="text-warning">₱<?= number_format($capital,2) ?></h3>
@@ -251,7 +251,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card border-danger shadow-sm">
+        <div class="card glass-card glass-danger">
             <div class="card-body">
                 <h6>Payment Balance</h6>
                 <h3 class="text-danger">₱<?= number_format($payments['unpaid'],2) ?></h3>
