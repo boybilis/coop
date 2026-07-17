@@ -22,6 +22,37 @@ $requests = $conn->query("
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
 <link rel="stylesheet" href="assets/css/theme.css">
+<style>
+    .loan-requests-table {
+        min-width: 1120px;
+    }
+
+    .loan-approval-cell {
+        min-width: 360px;
+    }
+
+    .loan-approval-form {
+        display: flex;
+        gap: .5rem;
+        align-items: center;
+        min-width: 340px;
+    }
+
+    .loan-approval-form .amount-input {
+        width: 130px;
+        flex: 0 0 130px;
+    }
+
+    .loan-approval-form .months-input {
+        width: 90px;
+        flex: 0 0 90px;
+    }
+
+    .loan-approval-form .approve-btn {
+        width: 96px;
+        flex: 0 0 96px;
+    }
+</style>
 </head>
 
 <body class="bg-light">
@@ -51,7 +82,7 @@ $requests = $conn->query("
 
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
+            <table class="table table-bordered table-hover align-middle loan-requests-table">
                 <thead class="table-dark">
                     <tr>
                         <th>Queue</th>
@@ -61,7 +92,7 @@ $requests = $conn->query("
                         <th>Requested Months</th>
                         <th>Date Requested</th>
                         <th>Status</th>
-                        <th width="320">Approval</th>
+                        <th class="loan-approval-cell">Approval</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,24 +123,18 @@ $requests = $conn->query("
                                 <?= $row['status'] ?>
                             </span>
                         </td>
-                        <td>
+                        <td class="loan-approval-cell">
                             <?php if($row['status'] === 'Pending'): ?>
-                                <form method="POST" action="ajax/approve_loan_request.php" class="row g-2">
+                                <form method="POST" action="ajax/approve_loan_request.php" class="loan-approval-form">
                                     <input type="hidden" name="request_id" value="<?= $row['id'] ?>">
 
-                                    <div class="col-md-5">
-                                        <input type="number" step="0.01" min="1" name="amount" class="form-control form-control-sm" value="<?= $row['requested_amount'] ?>" required>
-                                    </div>
+                                    <input type="number" step="0.01" min="1" name="amount" class="form-control form-control-sm amount-input" value="<?= $row['requested_amount'] ?>" required>
 
-                                    <div class="col-md-4">
-                                        <input type="number" step="0.1" min="0.1" max="6" name="months" class="form-control form-control-sm" value="<?= $row['requested_months'] ?>" required>
-                                    </div>
+                                    <input type="number" step="0.1" min="0.1" max="6" name="months" class="form-control form-control-sm months-input" value="<?= $row['requested_months'] ?>" required>
 
-                                    <div class="col-md-3">
-                                        <button class="btn btn-success btn-sm w-100" onclick="return confirm('Approve this loan request?')">
-                                            Approve
-                                        </button>
-                                    </div>
+                                    <button class="btn btn-success btn-sm approve-btn" onclick="return confirm('Approve this loan request?')">
+                                        Approve
+                                    </button>
                                 </form>
                             <?php else: ?>
                                 <?php if($row['approved_loan_id']): ?>
