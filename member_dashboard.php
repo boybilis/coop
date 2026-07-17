@@ -7,14 +7,39 @@ $borrowerId = active_borrower_id();
 $activeMemberUserId = active_member_user_id();
 $currentUserId = (int)($_SESSION['user_id'] ?? 0);
 
-$memberStmt = $conn->prepare("SELECT name, status, savings_closed, created_at FROM borrowers WHERE id = ? LIMIT 1");
-$memberStmt->bind_param("i", $borrowerId);
+$memberStmt = $conn->prepare("
+    SELECT
+        borrowers.name,
+        borrowers.first_name,
+        borrowers.last_name,
+        borrowers.gcash_name,
+        borrowers.gcash_number,
+        borrowers.status,
+        borrowers.savings_closed,
+        borrowers.created_at,
+        users.username
+    FROM borrowers
+    JOIN users ON users.borrower_id = borrowers.id
+    WHERE borrowers.id = ?
+    AND users.id = ?
+    LIMIT 1
+");
+$memberStmt->bind_param("ii", $borrowerId, $activeMemberUserId);
 $memberStmt->execute();
 $member = $memberStmt->get_result()->fetch_assoc();
 
 if (!$member) {
     http_response_code(404);
     exit("Member profile not found");
+}
+
+$profileFirstName = $member['first_name'] ?? '';
+$profileLastName = $member['last_name'] ?? '';
+
+if ($profileFirstName === '' && $profileLastName === '') {
+    $nameParts = preg_split('/\s+/', trim($member['name']), 2);
+    $profileFirstName = $nameParts[0] ?? '';
+    $profileLastName = $nameParts[1] ?? '';
 }
 
 $savingsStmt = $conn->prepare("
@@ -132,7 +157,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     <div>
         <h3 class="mb-1">Member Dashboard</h3>
         <div class="text-muted">
-            <?= htmlspecialchars($member['name']) ?> • <?= $member['status'] ?> • Member since <?= date('M d, Y', strtotime($member['created_at'])) ?>
+            <span id="memberDisplayName"><?= htmlspecialchars($member['name']) ?></span> • <?= $member['status'] ?> • Member since <?= date('M d, Y', strtotime($member['created_at'])) ?>
         </div>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -262,6 +287,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
                     Payments
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others-pane" type="button" role="tab">
+                    Others
                 </button>
             </li>
         </ul>
@@ -434,6 +464,47 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 </div>
                 <div id="paymentSubmissionsPagination"></div>
             </div>
+
+            <div class="tab-pane fade" id="others-pane" role="tabpanel" aria-labelledby="others-tab">
+                <h5>Profile Settings</h5>
+                <p class="text-muted">Edit the selected linked account profile and login username.</p>
+
+                <div class="alert alert-success d-none" id="profileSuccess"></div>
+                <div class="alert alert-danger d-none" id="profileError"></div>
+
+                <form id="profileForm" class="row g-3">
+                    <input type="hidden" name="selected_member_user_id" value="<?= $activeMemberUserId ?>">
+
+                    <div class="col-md-6">
+                        <label>Username</label>
+                        <input type="text" name="username" id="profileUsername" class="form-control" value="<?= htmlspecialchars($member['username']) ?>" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" id="profileFirstName" class="form-control" value="<?= htmlspecialchars($profileFirstName) ?>" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" id="profileLastName" class="form-control" value="<?= htmlspecialchars($profileLastName) ?>" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>GCash Name</label>
+                        <input type="text" name="gcash_name" id="profileGcashName" class="form-control" value="<?= htmlspecialchars($member['gcash_name'] ?? '') ?>">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>GCash Number</label>
+                        <input type="text" name="gcash_number" id="profileGcashNumber" class="form-control" value="<?= htmlspecialchars($member['gcash_number'] ?? '') ?>">
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save Profile</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -561,12 +632,12 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 
             <div class="mb-3">
                 <label>GCash Name</label>
-                <input type="text" name="gcash_name" class="form-control" required>
+                <input type="text" name="gcash_name" class="form-control" value="<?= htmlspecialchars($member['gcash_name'] ?? '') ?>" required>
             </div>
 
             <div class="mb-3">
                 <label>GCash Number</label>
-                <input type="text" name="gcash_number" class="form-control" required>
+                <input type="text" name="gcash_number" class="form-control" value="<?= htmlspecialchars($member['gcash_number'] ?? '') ?>" required>
             </div>
         </div>
 
@@ -864,6 +935,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     event.preventDefault();
                 }
             }
+        });
+    }
+
+    let profileForm = document.getElementById('profileForm');
+    if(profileForm){
+        profileForm.addEventListener('submit', event => {
+            event.preventDefault();
+
+            let successBox = document.getElementById('profileSuccess');
+            let errorBox = document.getElementById('profileError');
+            let submitButton = profileForm.querySelector('button[type="submit"]');
+
+            successBox.classList.add('d-none');
+            errorBox.classList.add('d-none');
+            submitButton.disabled = true;
+            submitButton.innerText = 'Saving...';
+
+            fetch('ajax/update_member_profile.php', {
+                method: 'POST',
+                body: new FormData(profileForm)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.error){
+                    errorBox.innerText = data.error;
+                    errorBox.classList.remove('d-none');
+                    return;
+                }
+
+                successBox.innerText = data.message || 'Profile updated successfully.';
+                successBox.classList.remove('d-none');
+                document.getElementById('memberDisplayName').innerText = data.profile.name;
+            })
+            .catch(() => {
+                errorBox.innerText = 'Unable to update profile.';
+                errorBox.classList.remove('d-none');
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerText = 'Save Profile';
+            });
         });
     }
 });

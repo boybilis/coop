@@ -26,17 +26,29 @@ if (!$conn->connect_error) {
         LIMIT 1
     ");
 
-    $columnCheck = $conn->query("
-        SELECT 1
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'borrowers'
-        AND COLUMN_NAME = 'savings_closed'
-        LIMIT 1
-    ");
+    if ($borrowersTableCheck && $borrowersTableCheck->num_rows > 0) {
+        $borrowerColumns = [
+            'savings_closed' => "ALTER TABLE borrowers ADD COLUMN savings_closed TINYINT(1) NOT NULL DEFAULT 0 AFTER status",
+            'first_name' => "ALTER TABLE borrowers ADD COLUMN first_name VARCHAR(100) DEFAULT NULL AFTER name",
+            'last_name' => "ALTER TABLE borrowers ADD COLUMN last_name VARCHAR(100) DEFAULT NULL AFTER first_name",
+            'gcash_name' => "ALTER TABLE borrowers ADD COLUMN gcash_name VARCHAR(150) DEFAULT NULL AFTER last_name",
+            'gcash_number' => "ALTER TABLE borrowers ADD COLUMN gcash_number VARCHAR(50) DEFAULT NULL AFTER gcash_name"
+        ];
 
-    if ($borrowersTableCheck && $borrowersTableCheck->num_rows > 0 && $columnCheck && $columnCheck->num_rows === 0) {
-        $conn->query("ALTER TABLE borrowers ADD COLUMN savings_closed TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+        foreach ($borrowerColumns as $columnName => $alterSql) {
+            $columnCheck = $conn->query("
+                SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = 'borrowers'
+                AND COLUMN_NAME = '{$columnName}'
+                LIMIT 1
+            ");
+
+            if ($columnCheck && $columnCheck->num_rows === 0) {
+                $conn->query($alterSql);
+            }
+        }
     }
 
 }

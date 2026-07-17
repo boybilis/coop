@@ -10,6 +10,10 @@ SET NAMES utf8mb4;
 CREATE TABLE IF NOT EXISTS `borrowers` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `first_name` varchar(100) DEFAULT NULL,
+  `last_name` varchar(100) DEFAULT NULL,
+  `gcash_name` varchar(150) DEFAULT NULL,
+  `gcash_number` varchar(50) DEFAULT NULL,
   `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
   `savings_closed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -100,10 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <button class="btn btn-primary w-100">Login</button>
                     </form>
 
-                    <small class="text-muted d-block mt-3">
-                        Admin: admin / admin123<br>
-                        Members: member name / member
-                    </small>
                 </div>
             </div>
         </div>

@@ -25,6 +25,10 @@ DROP TABLE IF EXISTS `borrowers`;
 CREATE TABLE `borrowers` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `first_name` varchar(100) DEFAULT NULL,
+  `last_name` varchar(100) DEFAULT NULL,
+  `gcash_name` varchar(150) DEFAULT NULL,
+  `gcash_number` varchar(50) DEFAULT NULL,
   `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
   `savings_closed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -39,7 +43,7 @@ CREATE TABLE `borrowers` (
 
 LOCK TABLES `borrowers` WRITE;
 /*!40000 ALTER TABLE `borrowers` DISABLE KEYS */;
-INSERT INTO `borrowers` VALUES (1,'1-Doc Alice','Active',0,'2026-07-15 04:17:45'),(2,'2-Doc Alice','Active',0,'2026-07-15 04:18:11'),(3,'Irene B','Active',0,'2026-07-15 04:19:57'),(4,'1-Carlo T','Active',0,'2026-07-15 04:20:33'),(5,'2-Carlo T','Active',0,'2026-07-15 04:20:44'),(6,'3-Carlo T','Active',0,'2026-07-15 04:20:55'),(7,'1-Intoy G','Active',0,'2026-07-15 04:22:01'),(8,'2-Intoy G','Active',0,'2026-07-15 04:22:11'),(9,'Boybi','Active',0,'2026-07-15 04:22:30'),(10,'1-Pau C','Active',0,'2026-07-15 04:22:51'),(11,'2-Pau C','Active',0,'2026-07-15 04:23:04'),(12,'Ten','Active',0,'2026-07-15 04:23:21'),(13,'Chie','Active',0,'2026-07-15 04:32:22'),(14,'Joel','Active',0,'2026-07-15 04:32:28'),(15,'Manong','Active',0,'2026-07-15 04:32:35'),(16,'Cla','Active',0,'2026-07-15 04:32:49'),(17,'Carol A','Active',0,'2026-07-15 04:32:55'),(18,'Nati','Active',0,'2026-07-15 04:33:20');
+INSERT INTO `borrowers` VALUES (1,'1-Doc Alice',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:17:45'),(2,'2-Doc Alice',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:18:11'),(3,'Irene B',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:19:57'),(4,'1-Carlo T',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:20:33'),(5,'2-Carlo T',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:20:44'),(6,'3-Carlo T',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:20:55'),(7,'1-Intoy G',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:22:01'),(8,'2-Intoy G',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:22:11'),(9,'Boybi',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:22:30'),(10,'1-Pau C',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:22:51'),(11,'2-Pau C',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:23:04'),(12,'Ten',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:23:21'),(13,'Chie',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:32:22'),(14,'Joel',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:32:28'),(15,'Manong',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:32:35'),(16,'Cla',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:32:49'),(17,'Carol A',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:32:55'),(18,'Nati',NULL,NULL,NULL,NULL,'Active',0,'2026-07-15 04:33:20');
 /*!40000 ALTER TABLE `borrowers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -389,4 +393,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-17 11:36:01
+-- Dump completed on 2026-07-17 12:11:39

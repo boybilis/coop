@@ -7,6 +7,10 @@ USE `loan_db_repaired`;
 CREATE TABLE IF NOT EXISTS `borrowers` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `first_name` varchar(100) DEFAULT NULL,
+  `last_name` varchar(100) DEFAULT NULL,
+  `gcash_name` varchar(150) DEFAULT NULL,
+  `gcash_number` varchar(50) DEFAULT NULL,
   `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
   `savings_closed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -19,6 +23,18 @@ ALTER TABLE `borrowers`
 
 ALTER TABLE `borrowers`
   ADD COLUMN IF NOT EXISTS `savings_closed` tinyint(1) NOT NULL DEFAULT 0 AFTER `status`;
+
+ALTER TABLE `borrowers`
+  ADD COLUMN IF NOT EXISTS `first_name` varchar(100) DEFAULT NULL AFTER `name`;
+
+ALTER TABLE `borrowers`
+  ADD COLUMN IF NOT EXISTS `last_name` varchar(100) DEFAULT NULL AFTER `first_name`;
+
+ALTER TABLE `borrowers`
+  ADD COLUMN IF NOT EXISTS `gcash_name` varchar(150) DEFAULT NULL AFTER `last_name`;
+
+ALTER TABLE `borrowers`
+  ADD COLUMN IF NOT EXISTS `gcash_number` varchar(50) DEFAULT NULL AFTER `gcash_name`;
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
