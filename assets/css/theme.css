@@ -16,9 +16,20 @@
 }
 
 .login-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     background:
         radial-gradient(circle at top left, rgba(31, 94, 255, .16), transparent 34rem),
         linear-gradient(180deg, #f5f8ff 0%, #eef3fb 100%);
+}
+
+.login-page > .container {
+    flex: 1 0 auto;
+}
+
+.login-page .app-footer {
+    margin-top: auto;
 }
 
 .login-card {
@@ -28,8 +39,9 @@
     overflow: hidden;
     color: #fff;
     background:
-        linear-gradient(135deg, rgba(23, 54, 95, .96), rgba(11, 31, 58, .98)),
+        linear-gradient(135deg, rgba(11, 31, 58, .94), rgba(11, 31, 58, .98)),
         linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, .04));
+    backdrop-filter: blur(16px);
     box-shadow: 0 24px 60px rgba(11, 31, 58, .28);
 }
 
