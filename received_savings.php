@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_admin();
 
 $statusFilter = $_GET['status'] ?? 'Pending';
@@ -36,9 +37,11 @@ if ($statusFilter === 'All') {
 <title>Received Savings</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 <div class="container mt-4">
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -46,7 +49,6 @@ if ($statusFilter === 'All') {
     <div>
         <a href="index.php" class="btn btn-outline-secondary">Dashboard</a>
         <a href="savings.php" class="btn btn-outline-primary">Savings Management</a>
-        <a href="logout.php" class="btn btn-outline-danger">Logout</a>
     </div>
 </div>
 
@@ -150,5 +152,6 @@ if ($statusFilter === 'All') {
 </div>
 
 </div>
+<?php render_footer(); ?>
 </body>
 </html>

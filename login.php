@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 
 if (is_logged_in()) {
     header("Location: " . (current_user_status() === 'Admin' ? 'index.php' : 'member_dashboard.php'));
@@ -73,8 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>Login</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 </head>
 <body class="bg-light">
+<?php render_navbar(); ?>
 <div class="container">
     <div class="row justify-content-center mt-5">
         <div class="col-md-4">
@@ -162,5 +165,6 @@ function setMemberPassword(){
     });
 }
 </script>
+<?php render_footer(); ?>
 </body>
 </html>

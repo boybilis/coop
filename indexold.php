@@ -5,6 +5,7 @@
     <title>Loan Calculator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
     <style>
         table { margin-top: 15px; border-collapse: collapse; }
         td, th { border: 1px solid #ccc; padding: 8px; }

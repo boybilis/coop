@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_admin();
 
 $activeMembers = $conn->query("
@@ -120,6 +121,7 @@ function notification_badge($count)
 <title>Cooperative Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 <style>
 .notification-badge {
     position: absolute;
@@ -146,6 +148,7 @@ function notification_badge($count)
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 <div class="container mt-4">
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -153,7 +156,6 @@ function notification_badge($count)
         <h3 class="mb-1">Cooperative Loan and Savings Management System</h3>
         <div class="text-muted">Admin dashboard</div>
     </div>
-    <a href="logout.php" class="btn btn-outline-danger">Logout</a>
 </div>
 
 <div class="row mb-4">
@@ -269,5 +271,6 @@ function notification_badge($count)
 </div>
 
 </div>
+<?php render_footer(); ?>
 </body>
 </html>

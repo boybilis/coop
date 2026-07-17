@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_admin();
 
 $loans = $conn->query("
@@ -29,9 +30,11 @@ $loans = $conn->query("
 <title>Loan Management</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 <div class="container mt-4">
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -40,7 +43,6 @@ $loans = $conn->query("
         <a href="index.php" class="btn btn-outline-secondary">Dashboard</a>
         <a href="loan_requests.php" class="btn btn-outline-success">Loan Requests</a>
         <a href="loan_form.php" class="btn btn-primary">+ Add Loan</a>
-        <a href="logout.php" class="btn btn-outline-danger">Logout</a>
     </div>
 </div>
 
@@ -105,5 +107,6 @@ $loans = $conn->query("
 </div>
 
 </div>
+<?php render_footer(); ?>
 </body>
 </html>

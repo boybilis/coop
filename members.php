@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_admin();
 
 $totalInterestQuery = $conn->query("SELECT SUM(interest) AS total_interest FROM loans");
@@ -43,17 +44,18 @@ $members = $conn->query("
 <title>Member Management</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 <div class="container mt-4">
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0">Member Management</h3>
     <div>
         <a href="index.php" class="btn btn-outline-secondary">Dashboard</a>
-        <a href="logout.php" class="btn btn-outline-danger">Logout</a>
     </div>
 </div>
 
@@ -362,5 +364,6 @@ function escapeJsString(value){
     return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 </script>
+<?php render_footer(); ?>
 </body>
 </html>

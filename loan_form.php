@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_admin();
 ?>
 <!DOCTYPE html>
@@ -10,9 +11,11 @@ require_admin();
 <title>Add Member Loan</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 
 <div class="container mt-5">
 
@@ -86,5 +89,6 @@ document.getElementById("loanForm").onsubmit = function(e){
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<?php render_footer(); ?>
 </body>
 </html>

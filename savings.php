@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_admin();
 ?>
 <?php
@@ -25,10 +26,12 @@ $netSavings = $deposits - $withdrawals;
 <title>Member Savings</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 
 <div class="container mt-4">
 
@@ -175,5 +178,6 @@ $(document).ready(function () {
     });
 });
 </script>
+<?php render_footer(); ?>
 </body>
 </html>

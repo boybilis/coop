@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'auth.php';
+include 'layout.php';
 require_member();
 
 $borrowerId = active_borrower_id();
@@ -148,9 +149,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 <title>Member Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 </head>
 
 <body class="bg-light">
+<?php render_navbar(); ?>
 <div class="container mt-4 mb-5">
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -173,7 +176,6 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#linkAccountModal">
             Link Account
         </button>
-        <a href="logout.php" class="btn btn-outline-danger">Logout</a>
     </div>
 </div>
 
@@ -1202,5 +1204,6 @@ function linkAccount(){
     });
 }
 </script>
+<?php render_footer(); ?>
 </body>
 </html>

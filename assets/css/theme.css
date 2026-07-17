@@ -1,0 +1,32 @@
+:root {
+    --midnight-blue: #0b1f3a;
+}
+
+.app-navbar {
+    background: var(--midnight-blue);
+}
+
+.app-navbar .navbar-brand {
+    white-space: normal;
+}
+
+.app-footer {
+    border-top: 1px solid rgba(11, 31, 58, .12);
+    background: #fff;
+}
+
+body {
+    min-height: 100vh;
+}
+
+@media (max-width: 767.98px) {
+    .app-navbar .container {
+        align-items: flex-start;
+        gap: .5rem;
+    }
+
+    .app-navbar .navbar-brand {
+        font-size: 1rem;
+        max-width: calc(100% - 80px);
+    }
+}
