@@ -135,7 +135,7 @@ $linkedAccountsStmt = $conn->prepare("
     JOIN users linked_users ON linked_users.id = user_account_links.linked_user_id
     JOIN borrowers ON borrowers.id = linked_users.borrower_id
     WHERE user_account_links.user_id = ?
-    ORDER BY name ASC
+    ORDER BY username ASC
 ");
 $linkedAccountsStmt->bind_param("ii", $currentUserId, $currentUserId);
 $linkedAccountsStmt->execute();
@@ -165,7 +165,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <select name="selected_user_id" class="form-control" onchange="this.form.submit()">
                 <?php while($account = $linkedAccounts->fetch_assoc()): ?>
                     <option value="<?= $account['id'] ?>" <?= (int)$account['id'] === $activeMemberUserId ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($account['name']) ?>
+                        <?= htmlspecialchars($account['username']) ?>
                     </option>
                 <?php endwhile; ?>
             </select>
