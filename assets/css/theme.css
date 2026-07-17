@@ -32,25 +32,26 @@
     margin-top: auto;
 }
 
-.login-card {
-    --bs-card-bg: transparent;
+.card.login-card {
+    --bs-card-bg: #0b1f3a;
     border: 1px solid rgba(255, 255, 255, .35);
     border-radius: 1.25rem;
     overflow: hidden;
     color: #fff;
-    background:
-        linear-gradient(135deg, rgba(11, 31, 58, .94), rgba(11, 31, 58, .98)),
-        linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, .04));
+    background-color: #0b1f3a !important;
+    background-image:
+        linear-gradient(135deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04)),
+        linear-gradient(135deg, #17365f, #0b1f3a) !important;
     backdrop-filter: blur(16px);
     box-shadow: 0 24px 60px rgba(11, 31, 58, .28);
 }
 
-.login-card .card-body {
+.card.login-card .card-body {
     padding: 2rem;
 }
 
-.login-card h4,
-.login-card label {
+.card.login-card h4,
+.card.login-card label {
     color: #fff;
 }
 
@@ -73,12 +74,12 @@
     box-shadow: 0 12px 24px rgba(0, 0, 0, .18);
 }
 
-.login-card .form-control {
+.card.login-card .form-control {
     border: 1px solid rgba(255, 255, 255, .38);
     background: rgba(255, 255, 255, .94);
 }
 
-.login-card .form-control:focus {
+.card.login-card .form-control:focus {
     border-color: #93c5fd;
     box-shadow: 0 0 0 .25rem rgba(147, 197, 253, .25);
 }

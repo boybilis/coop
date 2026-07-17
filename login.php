@@ -74,14 +74,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>Login</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
-<link rel="stylesheet" href="assets/css/theme.css?v=20260717">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260717-login2">
 </head>
 <body class="login-page bg-light">
 <?php render_navbar(); ?>
 <div class="container">
     <div class="row justify-content-center mt-5">
         <div class="col-md-4">
-            <div class="card login-card">
+            <div class="card login-card glass-card glass-midnight">
                 <div class="card-body">
                     <div class="login-icon mb-3">IB</div>
                     <h4 class="mb-1">Cooperative System Login</h4>
