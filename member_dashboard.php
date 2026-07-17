@@ -376,10 +376,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                                 <th>Total Payable</th>
                                 <th>Progress</th>
                                 <th>Status</th>
+                                <th width="120">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="loansTableBody" data-table="loans" data-columns="6">
-                            <tr><td colspan="6" class="text-center text-muted">Loading loans...</td></tr>
+                        <tbody id="loansTableBody" data-table="loans" data-columns="7">
+                            <tr><td colspan="7" class="text-center text-muted">Loading loans...</td></tr>
                         </tbody>
                     </table>
                 </div>

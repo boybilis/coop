@@ -74,7 +74,7 @@ if ($table === 'loans') {
     $rows = $stmt->get_result();
 
     if ($totalRows === 0) {
-        $html = dashboard_empty_row(6, 'No loan records yet.');
+        $html = dashboard_empty_row(7, 'No loan records yet.');
     }
 
     while ($loan = $rows->fetch_assoc()) {
@@ -90,6 +90,7 @@ if ($table === 'loans') {
         $html .= '<td><strong>₱' . number_format($loan['total_payable'], 2) . '</strong></td>';
         $html .= '<td width="170"><div class="progress" style="height:20px;"><div class="progress-bar bg-success" style="width:' . $progress . '%">' . $progress . '%</div></div></td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($loan['status']) . '</span></td>';
+        $html .= '<td><a href="member_loan_view.php?id=' . $loan['id'] . '" class="btn btn-info btn-sm w-100">View Details</a></td>';
         $html .= '</tr>';
     }
 } elseif ($table === 'loan_requests') {
