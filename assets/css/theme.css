@@ -15,15 +15,18 @@
     background: #fff;
 }
 
-.glass-card {
+.card.glass-card {
+    --bs-card-bg: transparent;
+    --bs-card-border-color: transparent;
     position: relative;
     overflow: hidden;
+    background-color: transparent !important;
     border: 0 !important;
     color: #fff;
     box-shadow: 0 18px 40px rgba(11, 31, 58, .18);
 }
 
-.glass-card::before {
+.card.glass-card::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -31,62 +34,62 @@
     pointer-events: none;
 }
 
-.glass-card .card-body,
-.glass-card .card-footer,
-.glass-card .card-header {
+.card.glass-card .card-body,
+.card.glass-card .card-footer,
+.card.glass-card .card-header {
     position: relative;
     z-index: 1;
-    background: transparent;
-    border-color: rgba(255, 255, 255, .22);
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, .22) !important;
 }
 
-.glass-card h2,
-.glass-card h3,
-.glass-card h5,
-.glass-card h6,
-.glass-card p,
-.glass-card small,
-.glass-card .text-muted,
-.glass-card .text-primary,
-.glass-card .text-success,
-.glass-card .text-info,
-.glass-card .text-danger,
-.glass-card .text-warning {
+.card.glass-card h2,
+.card.glass-card h3,
+.card.glass-card h5,
+.card.glass-card h6,
+.card.glass-card p,
+.card.glass-card small,
+.card.glass-card .text-muted,
+.card.glass-card .text-primary,
+.card.glass-card .text-success,
+.card.glass-card .text-info,
+.card.glass-card .text-danger,
+.card.glass-card .text-warning {
     color: inherit !important;
 }
 
-.glass-card .btn {
+.card.glass-card .btn {
     border-color: rgba(255, 255, 255, .65);
     box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
 }
 
-.glass-warning .btn {
+.card.glass-warning .btn {
     color: #1f1600;
 }
 
-.glass-success {
-    background: linear-gradient(135deg, #0f8a5f, #0b5f49);
+.card.glass-card.glass-success {
+    background: linear-gradient(135deg, #0f8a5f, #0b5f49) !important;
 }
 
-.glass-primary {
-    background: linear-gradient(135deg, #1f5eff, #173a87);
+.card.glass-card.glass-primary {
+    background: linear-gradient(135deg, #1f5eff, #173a87) !important;
 }
 
-.glass-info {
-    background: linear-gradient(135deg, #0789a8, #07556d);
+.card.glass-card.glass-info {
+    background: linear-gradient(135deg, #0789a8, #07556d) !important;
 }
 
-.glass-warning {
-    background: linear-gradient(135deg, #f6c343, #b56a00);
+.card.glass-card.glass-warning {
+    background: linear-gradient(135deg, #f6c343, #b56a00) !important;
     color: #221500;
 }
 
-.glass-danger {
-    background: linear-gradient(135deg, #d63d57, #842136);
+.card.glass-card.glass-danger {
+    background: linear-gradient(135deg, #d63d57, #842136) !important;
 }
 
-.glass-midnight {
-    background: linear-gradient(135deg, #17365f, #0b1f3a);
+.card.glass-card.glass-midnight {
+    background: linear-gradient(135deg, #17365f, #0b1f3a) !important;
 }
 
 body {
