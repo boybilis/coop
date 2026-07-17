@@ -77,6 +77,41 @@ $savingsWithdrawals = $conn->query("
 ")->fetch_assoc()['total'];
 
 $memberSavings = $savingsDeposits - $savingsWithdrawals;
+
+$pendingLoanRequests = (int)$conn->query("
+    SELECT COUNT(*) AS total
+    FROM loan_requests
+    WHERE status = 'Pending'
+")->fetch_assoc()['total'];
+
+$pendingReceivedPayments = (int)$conn->query("
+    SELECT COUNT(*) AS total
+    FROM payment_submissions
+    WHERE status = 'Pending'
+")->fetch_assoc()['total'];
+
+$pendingReceivedSavings = (int)$conn->query("
+    SELECT COUNT(*) AS total
+    FROM savings_submissions
+    WHERE status = 'Pending'
+")->fetch_assoc()['total'];
+
+$pendingReceivedWithdrawals = (int)$conn->query("
+    SELECT COUNT(*) AS total
+    FROM savings_withdrawal_requests
+    WHERE status = 'Pending'
+")->fetch_assoc()['total'];
+
+$pendingSavingsActions = $pendingReceivedSavings + $pendingReceivedWithdrawals;
+
+function notification_badge($count)
+{
+    if ($count <= 0) {
+        return '';
+    }
+
+    return '<span class="notification-badge">' . number_format($count) . '</span>';
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -85,6 +120,29 @@ $memberSavings = $savingsDeposits - $savingsWithdrawals;
 <title>Cooperative Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
+<style>
+.notification-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #dc3545;
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 3px #fff;
+}
+
+.btn .badge {
+    vertical-align: middle;
+}
+</style>
 </head>
 
 <body class="bg-light">
@@ -113,7 +171,8 @@ $memberSavings = $savingsDeposits - $savingsWithdrawals;
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card border-primary shadow-sm">
+        <div class="card border-primary shadow-sm position-relative">
+            <?= notification_badge($pendingLoanRequests) ?>
             <div class="card-body">
                 <h6>Total Outstanding Loans</h6>
                 <h3 class="text-primary">₱<?= number_format($outstanding,2) ?></h3>
@@ -121,13 +180,19 @@ $memberSavings = $savingsDeposits - $savingsWithdrawals;
             </div>
             <div class="card-footer">
                 <a href="loans.php" class="btn btn-primary w-100">Loan Management</a>
-                <a href="loan_requests.php" class="btn btn-outline-primary w-100 mt-2">Loan Requests</a>
+                <a href="loan_requests.php" class="btn btn-outline-primary w-100 mt-2">
+                    Loan Requests
+                    <?php if($pendingLoanRequests > 0): ?>
+                        <span class="badge bg-danger ms-1"><?= number_format($pendingLoanRequests) ?></span>
+                    <?php endif; ?>
+                </a>
             </div>
         </div>
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card border-info shadow-sm">
+        <div class="card border-info shadow-sm position-relative">
+            <?= notification_badge($pendingSavingsActions) ?>
             <div class="card-body">
                 <h6>Member Savings</h6>
                 <h3 class="text-info">₱<?= number_format($memberSavings,2) ?></h3>
@@ -137,10 +202,20 @@ $memberSavings = $savingsDeposits - $savingsWithdrawals;
                 <a href="savings.php" class="btn btn-info w-100">Savings Management</a>
                 <div class="row g-2 mt-1">
                     <div class="col-6">
-                        <a href="received_savings.php" class="btn btn-outline-info w-100">Received Savings</a>
+                        <a href="received_savings.php" class="btn btn-outline-info w-100">
+                            Received Savings
+                            <?php if($pendingReceivedSavings > 0): ?>
+                                <span class="badge bg-danger ms-1"><?= number_format($pendingReceivedSavings) ?></span>
+                            <?php endif; ?>
+                        </a>
                     </div>
                     <div class="col-6">
-                        <a href="received_withdrawals.php" class="btn btn-outline-secondary w-100">Received Withdrawals</a>
+                        <a href="received_withdrawals.php" class="btn btn-outline-secondary w-100">
+                            Received Withdrawals
+                            <?php if($pendingReceivedWithdrawals > 0): ?>
+                                <span class="badge bg-danger ms-1"><?= number_format($pendingReceivedWithdrawals) ?></span>
+                            <?php endif; ?>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -177,11 +252,17 @@ $memberSavings = $savingsDeposits - $savingsWithdrawals;
     </div>
 
     <div class="col-md-6 mb-3">
-        <div class="card shadow-sm border-success">
+        <div class="card shadow-sm border-success position-relative">
+            <?= notification_badge($pendingReceivedPayments) ?>
             <div class="card-body">
                 <h5>Received Payments</h5>
                 <p class="text-muted">Review member GCash references by cutoff date and verify posted payments.</p>
-                <a href="received_payments.php" class="btn btn-success">Open Received Payments</a>
+                <a href="received_payments.php" class="btn btn-success">
+                    Open Received Payments
+                    <?php if($pendingReceivedPayments > 0): ?>
+                        <span class="badge bg-danger ms-1"><?= number_format($pendingReceivedPayments) ?></span>
+                    <?php endif; ?>
+                </a>
             </div>
         </div>
     </div>

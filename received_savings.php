@@ -54,6 +54,10 @@ if ($statusFilter === 'All') {
     <div class="alert alert-success">Savings verified and credited to member savings.</div>
 <?php endif; ?>
 
+<?php if(isset($_GET['rejected'])): ?>
+    <div class="alert alert-warning">Savings submission rejected.</div>
+<?php endif; ?>
+
 <?php if(isset($_GET['error'])): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
 <?php endif; ?>
@@ -95,7 +99,7 @@ if ($statusFilter === 'All') {
                         <th>Image File</th>
                         <th>Status</th>
                         <th>Date Submitted</th>
-                        <th width="130">Action</th>
+                        <th width="180">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -123,12 +127,18 @@ if ($statusFilter === 'All') {
                         <td><?= $row['created_at'] ?></td>
                         <td>
                             <?php if($row['status'] === 'Pending'): ?>
-                                <form method="POST" action="ajax/verify_savings_submission.php" onsubmit="return confirm('Verify this savings submission?')">
-                                    <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
-                                    <button class="btn btn-success btn-sm w-100">Verified</button>
-                                </form>
+                                <div class="d-flex gap-1">
+                                    <form method="POST" action="ajax/verify_savings_submission.php" onsubmit="return confirm('Verify this savings submission?')" class="flex-fill">
+                                        <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
+                                        <button class="btn btn-success btn-sm w-100">Verified</button>
+                                    </form>
+                                    <form method="POST" action="ajax/reject_savings_submission.php" onsubmit="return confirm('Reject this savings submission?')" class="flex-fill">
+                                        <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
+                                        <button class="btn btn-outline-danger btn-sm w-100">Reject</button>
+                                    </form>
+                                </div>
                             <?php else: ?>
-                                <span class="text-muted">Verified</span>
+                                <span class="text-muted"><?= htmlspecialchars($row['status']) ?></span>
                             <?php endif; ?>
                         </td>
                     </tr>
