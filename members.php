@@ -15,11 +15,13 @@ $sharePerBorrower = $borrowerCount > 0 ? $totalInterest / $borrowerCount : 0;
 $members = $conn->query("
     SELECT 
         borrowers.*,
+        users.username,
         COUNT(loans.id) AS total_loans,
         COALESCE(SUM(loans.amount),0) AS total_borrowed,
         COALESCE(savings_summary.total_savings,0) AS total_savings,
         COALESCE(capital_summary.total_capital,0) AS total_capital
     FROM borrowers
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     LEFT JOIN loans ON loans.borrower_id = borrowers.id
     LEFT JOIN (
         SELECT
@@ -72,7 +74,7 @@ $members = $conn->query("
 <table class="table table-bordered table-hover align-middle" id="borrowerTable">
             <thead class="table-dark">
                 <tr>
-                    <th>Name</th>
+                    <th>Username</th>
                     <th>Date Created</th>
                     <th>Total Loans</th>
                     <th>Total Borrowed</th>
@@ -86,7 +88,10 @@ $members = $conn->query("
             <tbody>
                 <?php while($row = $members->fetch_assoc()): ?>
                 <tr data-member-id="<?= $row['id'] ?>">
-                    <td class="member-name"><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                    <td class="member-name">
+                        <strong><?= htmlspecialchars($row['username'] ?: $row['name']) ?></strong>
+                        <small class="member-full-name d-block text-dark-emphasis"><?= htmlspecialchars($row['name']) ?></small>
+                    </td>
                     <td><?= $row['created_at'] ?></td>
                     <td><span class="badge bg-primary"><?= $row['total_loans'] ?></span></td>
                     <td>₱<?= number_format($row['total_borrowed'],2) ?></td>
@@ -206,7 +211,10 @@ function saveBorrower(){
 
         let row = `
             <tr data-member-id="${data.id}">
-                <td class="member-name"><strong>${data.name}</strong></td>
+                <td class="member-name">
+                    <strong>${escapeHtml(data.name)}</strong>
+                    <small class="member-full-name d-block text-dark-emphasis">${escapeHtml(data.name)}</small>
+                </td>
                 <td>Just now</td>
                 <td><span class="badge bg-primary">0</span></td>
                 <td>₱0.00</td>
@@ -293,9 +301,40 @@ function setInactive(id){
         if(!row){
             return;
         }
-        let name = row.querySelector('.member-name').innerText.trim();
-        updateMemberRow(data.id, name, data.status);
+        updateMemberStatus(data.id, data.status);
     });
+}
+
+function updateMemberStatus(id, status){
+    let row = getMemberRow(id);
+    if(!row){
+        return;
+    }
+
+    let statusClass = status === 'Active' ? 'success' : 'secondary';
+    let name = row.querySelector('.member-full-name').innerText.trim();
+    let actionHtml = `
+        <button class="btn btn-warning btn-sm" onclick="openEditMember(${id}, '${escapeJsString(name)}', '${status}')">
+            Edit
+        </button>
+    `;
+
+    if(status === 'Active'){
+        actionHtml += `
+            <button class="btn btn-outline-danger btn-sm" onclick="setInactive(${id})">
+                Set Inactive
+            </button>
+        `;
+    } else {
+        actionHtml += '<span class="text-muted small">Inactive</span>';
+    }
+
+    row.querySelector('.member-status').innerHTML = `<span class="badge bg-${statusClass}">${status}</span>`;
+    row.querySelector('td:last-child').innerHTML = actionHtml;
+
+    if(borrowerDataTable){
+        borrowerDataTable.row(row).invalidate().draw(false);
+    }
 }
 
 function updateMemberRow(id, name, status){
@@ -321,7 +360,10 @@ function updateMemberRow(id, name, status){
         actionHtml += '<span class="text-muted small">Inactive</span>';
     }
 
-    row.querySelector('.member-name').innerHTML = `<strong>${escapeHtml(name)}</strong>`;
+    row.querySelector('.member-name').innerHTML = `
+        <strong>${escapeHtml(name)}</strong>
+        <small class="member-full-name d-block text-dark-emphasis">${escapeHtml(name)}</small>
+    `;
     row.querySelector('.member-status').innerHTML = `<span class="badge bg-${statusClass}">${status}</span>`;
     row.querySelector('td:last-child').innerHTML = actionHtml;
 

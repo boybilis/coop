@@ -635,12 +635,12 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 
             <div class="mb-3">
                 <label>GCash Name</label>
-                <input type="text" name="gcash_name" class="form-control" value="<?= htmlspecialchars($member['gcash_name'] ?? '') ?>" required>
+                <input type="text" name="gcash_name" id="withdrawGcashName" class="form-control" value="<?= htmlspecialchars($member['gcash_name'] ?? '') ?>" required>
             </div>
 
             <div class="mb-3">
                 <label>GCash Number</label>
-                <input type="text" name="gcash_number" class="form-control" value="<?= htmlspecialchars($member['gcash_number'] ?? '') ?>" required>
+                <input type="text" name="gcash_number" id="withdrawGcashNumber" class="form-control" value="<?= htmlspecialchars($member['gcash_number'] ?? '') ?>" required>
             </div>
         </div>
 
@@ -970,6 +970,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 successBox.innerText = data.message || 'Profile updated successfully.';
                 successBox.classList.remove('d-none');
                 document.getElementById('memberDisplayName').innerText = data.profile.name;
+                document.getElementById('withdrawGcashName').value = data.profile.gcash_name || '';
+                document.getElementById('withdrawGcashNumber').value = data.profile.gcash_number || '';
             })
             .catch(() => {
                 errorBox.innerText = 'Unable to update profile.';
