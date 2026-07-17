@@ -84,6 +84,15 @@ $res = $stmt->get_result();
     <?php render_member_identity($loanInfo['username'] ?? '', $loanInfo['name']); ?>
 </div>
 
+<p>
+    <strong>Borrower For:</strong>
+    <?php if((int)($loanInfo['is_guarantor'] ?? 0) === 1): ?>
+        Guest Borrower - <?= htmlspecialchars($loanInfo['guest_borrower_name'] ?? '') ?>
+    <?php else: ?>
+        Member
+    <?php endif; ?>
+</p>
+
 <p><strong>Amount:</strong> ₱<?= number_format($loanInfo['amount'],2) ?></p>
 
 <p><strong>Months:</strong> <?= $loanInfo['months'] ?></p>

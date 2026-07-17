@@ -111,16 +111,21 @@ if ($table === 'loans') {
     $rows = $stmt->get_result();
 
     if ($totalRows === 0) {
-        $html = dashboard_empty_row(7, 'No loan requests yet.');
+        $html = dashboard_empty_row(8, 'No loan requests yet.');
     }
 
     while ($request = $rows->fetch_assoc()) {
         $badgeClass = dashboard_badge_class($request['status']);
         $action = '<span class="text-muted">—</span>';
+        $isGuarantor = (int)($request['is_guarantor'] ?? 0);
+        $guestBorrowerName = trim($request['guest_borrower_name'] ?? '');
+        $borrowerFor = $isGuarantor
+            ? '<span class="badge bg-info text-dark">Guest</span><br><small>' . htmlspecialchars($guestBorrowerName) . '</small>'
+            : '<span class="badge bg-secondary">Member</span>';
 
         if ($request['status'] === 'Pending') {
             $action = '
-                <button class="btn btn-warning btn-sm" onclick="openLoanRequestEdit(' . $request['id'] . ', ' . (float)$request['requested_amount'] . ', ' . (float)$request['requested_months'] . ')">Edit</button>
+                <button class="btn btn-warning btn-sm" onclick="openLoanRequestEdit(' . $request['id'] . ', ' . (float)$request['requested_amount'] . ', ' . (float)$request['requested_months'] . ', ' . $isGuarantor . ', ' . htmlspecialchars(json_encode($guestBorrowerName), ENT_QUOTES, 'UTF-8') . ')">Edit</button>
                 <button class="btn btn-outline-danger btn-sm" onclick="deleteLoanRequest(' . $request['id'] . ')">Delete</button>
             ';
         } elseif ($request['approved_loan_id']) {
@@ -131,6 +136,7 @@ if ($table === 'loans') {
         $html .= '<td>#' . $request['id'] . '</td>';
         $html .= '<td>₱' . number_format($request['requested_amount'], 2) . '</td>';
         $html .= '<td>' . $request['requested_months'] . '</td>';
+        $html .= '<td>' . $borrowerFor . '</td>';
         $html .= '<td>' . ($request['approved_amount'] !== null ? '₱' . number_format($request['approved_amount'], 2) : '—') . '</td>';
         $html .= '<td>' . htmlspecialchars($request['created_at']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($request['status']) . '</span></td>';

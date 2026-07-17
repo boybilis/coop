@@ -54,6 +54,7 @@ $loans = $conn->query("
             <thead class="table-dark">
                 <tr>
                     <th>Member</th>
+                    <th>Borrower For</th>
                     <th>Loan</th>
                     <th>Interest</th>
                     <th>Total</th>
@@ -72,6 +73,14 @@ $loans = $conn->query("
                 ?>
                 <tr>
                     <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
+                    <td>
+                        <?php if((int)($row['is_guarantor'] ?? 0) === 1): ?>
+                            <span class="badge bg-info text-dark">Guest Borrower</span><br>
+                            <small><?= htmlspecialchars($row['guest_borrower_name'] ?? '') ?></small>
+                        <?php else: ?>
+                            <span class="badge bg-secondary">Member</span>
+                        <?php endif; ?>
+                    </td>
                     <td>₱<?= number_format($row['amount'],2) ?></td>
                     <td class="text-success">₱<?= number_format($row['interest'],2) ?></td>
                     <td><strong>₱<?= number_format($row['total_payable'],2) ?></strong></td>

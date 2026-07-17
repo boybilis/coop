@@ -394,14 +394,15 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                                 <th>Request ID</th>
                                 <th>Requested Amount</th>
                                 <th>Months</th>
+                                <th>Borrower For</th>
                                 <th>Approved Amount</th>
                                 <th>Date Requested</th>
                                 <th>Status</th>
                                 <th width="160">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="loanRequestsTableBody" data-table="loan_requests" data-columns="7">
-                            <tr><td colspan="7" class="text-center text-muted">Loading loan requests...</td></tr>
+                        <tbody id="loanRequestsTableBody" data-table="loan_requests" data-columns="8">
+                            <tr><td colspan="8" class="text-center text-muted">Loading loan requests...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -746,6 +747,17 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <input type="number" step="0.1" min="0.1" max="6" name="months" class="form-control" required>
                 <small class="text-muted">Maximum of 6 months.</small>
             </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="is_guarantor" value="1" id="loanRequestGuarantor" onchange="toggleGuestBorrowerInput()">
+                <label class="form-check-label" for="loanRequestGuarantor">Act as Guarantor</label>
+            </div>
+
+            <div class="mb-3 d-none" id="guestBorrowerGroup">
+                <label>Guest Borrower Name</label>
+                <input type="text" name="guest_borrower_name" id="guestBorrowerName" class="form-control">
+                <small class="text-muted">Leave unchecked if this loan is for your own account.</small>
+            </div>
         </div>
 
         <div class="modal-footer">
@@ -778,6 +790,16 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <label>Months to Pay</label>
                 <input type="number" step="0.1" min="0.1" max="6" id="editLoanRequestMonths" class="form-control" required>
                 <small class="text-muted">Maximum of 6 months.</small>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="editLoanRequestGuarantor" onchange="toggleEditGuestBorrowerInput()">
+                <label class="form-check-label" for="editLoanRequestGuarantor">Act as Guarantor</label>
+            </div>
+
+            <div class="mb-3 d-none" id="editGuestBorrowerGroup">
+                <label>Guest Borrower Name</label>
+                <input type="text" id="editGuestBorrowerName" class="form-control">
             </div>
         </div>
 
@@ -989,10 +1011,39 @@ function loanRequestsConfig(){
     return dashboardTables.find(config => config.bodyId === 'loanRequestsTableBody');
 }
 
-function openLoanRequestEdit(id, amount, months){
+function toggleGuestBorrowerInput(){
+    let checkbox = document.getElementById('loanRequestGuarantor');
+    let group = document.getElementById('guestBorrowerGroup');
+    let input = document.getElementById('guestBorrowerName');
+
+    group.classList.toggle('d-none', !checkbox.checked);
+    input.required = checkbox.checked;
+
+    if(!checkbox.checked){
+        input.value = '';
+    }
+}
+
+function toggleEditGuestBorrowerInput(){
+    let checkbox = document.getElementById('editLoanRequestGuarantor');
+    let group = document.getElementById('editGuestBorrowerGroup');
+    let input = document.getElementById('editGuestBorrowerName');
+
+    group.classList.toggle('d-none', !checkbox.checked);
+    input.required = checkbox.checked;
+
+    if(!checkbox.checked){
+        input.value = '';
+    }
+}
+
+function openLoanRequestEdit(id, amount, months, isGuarantor, guestBorrowerName){
     document.getElementById('editLoanRequestId').value = id;
     document.getElementById('editLoanRequestAmount').value = amount;
     document.getElementById('editLoanRequestMonths').value = months;
+    document.getElementById('editLoanRequestGuarantor').checked = parseInt(isGuarantor || 0) === 1;
+    document.getElementById('editGuestBorrowerName').value = guestBorrowerName || '';
+    toggleEditGuestBorrowerInput();
     document.getElementById('loanRequestEditError').classList.add('d-none');
 
     new bootstrap.Modal(document.getElementById('editLoanRequestModal')).show();
@@ -1002,6 +1053,8 @@ function saveLoanRequestEdit(){
     let requestId = document.getElementById('editLoanRequestId').value;
     let amount = document.getElementById('editLoanRequestAmount').value;
     let months = document.getElementById('editLoanRequestMonths').value;
+    let isGuarantor = document.getElementById('editLoanRequestGuarantor').checked ? '1' : '0';
+    let guestBorrowerName = document.getElementById('editGuestBorrowerName').value;
     let errorBox = document.getElementById('loanRequestEditError');
 
     errorBox.classList.add('d-none');
@@ -1012,6 +1065,8 @@ function saveLoanRequestEdit(){
         body: 'request_id=' + encodeURIComponent(requestId)
             + '&amount=' + encodeURIComponent(amount)
             + '&months=' + encodeURIComponent(months)
+            + '&is_guarantor=' + encodeURIComponent(isGuarantor)
+            + '&guest_borrower_name=' + encodeURIComponent(guestBorrowerName)
     })
     .then(res => res.json())
     .then(data => {

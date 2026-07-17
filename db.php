@@ -51,5 +51,45 @@ if (!$conn->connect_error) {
         }
     }
 
+    $loanSchemaColumns = [
+        'loan_requests' => [
+            'is_guarantor' => "ALTER TABLE loan_requests ADD COLUMN is_guarantor TINYINT(1) NOT NULL DEFAULT 0 AFTER approved_loan_id",
+            'guest_borrower_name' => "ALTER TABLE loan_requests ADD COLUMN guest_borrower_name VARCHAR(150) DEFAULT NULL AFTER is_guarantor"
+        ],
+        'loans' => [
+            'is_guarantor' => "ALTER TABLE loans ADD COLUMN is_guarantor TINYINT(1) NOT NULL DEFAULT 0 AFTER status",
+            'guest_borrower_name' => "ALTER TABLE loans ADD COLUMN guest_borrower_name VARCHAR(150) DEFAULT NULL AFTER is_guarantor"
+        ]
+    ];
+
+    foreach ($loanSchemaColumns as $tableName => $columns) {
+        $tableCheck = $conn->query("
+            SELECT 1
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = '{$tableName}'
+            LIMIT 1
+        ");
+
+        if (!$tableCheck || $tableCheck->num_rows === 0) {
+            continue;
+        }
+
+        foreach ($columns as $columnName => $alterSql) {
+            $columnCheck = $conn->query("
+                SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = '{$tableName}'
+                AND COLUMN_NAME = '{$columnName}'
+                LIMIT 1
+            ");
+
+            if ($columnCheck && $columnCheck->num_rows === 0) {
+                $conn->query($alterSql);
+            }
+        }
+    }
+
 }
 ?>

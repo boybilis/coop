@@ -100,6 +100,16 @@ $payments = $paymentsStmt->get_result();
                         <?= htmlspecialchars($loanInfo['status']) ?>
                     </span>
                 </div>
+                <div class="col-md-4">
+                    <small class="text-muted">Borrower For</small>
+                    <h5>
+                        <?php if((int)($loanInfo['is_guarantor'] ?? 0) === 1): ?>
+                            Guest: <?= htmlspecialchars($loanInfo['guest_borrower_name'] ?? '') ?>
+                        <?php else: ?>
+                            Member
+                        <?php endif; ?>
+                    </h5>
+                </div>
                 <div class="col-md-3">
                     <small class="text-muted">Loan Amount</small>
                     <h5>₱<?= number_format($loanInfo['amount'], 2) ?></h5>

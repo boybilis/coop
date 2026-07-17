@@ -95,6 +95,8 @@ CREATE TABLE `loan_requests` (
   `approved_months` decimal(6,2) DEFAULT NULL,
   `status` enum('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
   `approved_loan_id` int(10) unsigned DEFAULT NULL,
+  `is_guarantor` tinyint(1) NOT NULL DEFAULT 0,
+  `guest_borrower_name` varchar(150) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `processed_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -112,7 +114,7 @@ CREATE TABLE `loan_requests` (
 
 LOCK TABLES `loan_requests` WRITE;
 /*!40000 ALTER TABLE `loan_requests` DISABLE KEYS */;
-INSERT INTO `loan_requests` VALUES (2,9,10000.00,6.00,10000.00,6.00,'Approved',NULL,'2026-07-15 10:17:36','2026-07-16 00:02:19');
+INSERT INTO `loan_requests` VALUES (2,9,10000.00,6.00,10000.00,6.00,'Approved',NULL,0,NULL,'2026-07-15 10:17:36','2026-07-16 00:02:19');
 /*!40000 ALTER TABLE `loan_requests` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -132,6 +134,8 @@ CREATE TABLE `loans` (
   `total_payable` decimal(12,2) NOT NULL DEFAULT 0.00,
   `start_date` date NOT NULL,
   `status` enum('Active','Completed') NOT NULL DEFAULT 'Active',
+  `is_guarantor` tinyint(1) NOT NULL DEFAULT 0,
+  `guest_borrower_name` varchar(150) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `loans_borrower_id_index` (`borrower_id`),
@@ -145,7 +149,7 @@ CREATE TABLE `loans` (
 
 LOCK TABLES `loans` WRITE;
 /*!40000 ALTER TABLE `loans` DISABLE KEYS */;
-INSERT INTO `loans` VALUES (4,12,36028.00,4324.00,6.00,40352.00,'2026-07-01','Active','2026-07-15 07:35:19');
+INSERT INTO `loans` VALUES (4,12,36028.00,4324.00,6.00,40352.00,'2026-07-01','Active',0,NULL,'2026-07-15 07:35:19');
 /*!40000 ALTER TABLE `loans` ENABLE KEYS */;
 UNLOCK TABLES;
 

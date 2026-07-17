@@ -46,17 +46,19 @@ $conn->begin_transaction();
 try {
     $loanStmt = $conn->prepare("
         INSERT INTO loans
-        (borrower_id, amount, interest, months, total_payable, start_date)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (borrower_id, amount, interest, months, total_payable, start_date, is_guarantor, guest_borrower_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $loanStmt->bind_param(
-        "idddds",
+        "iddddsis",
         $request['borrower_id'],
         $amount,
         $interest,
         $months,
         $totalPayable,
-        $start
+        $start,
+        $request['is_guarantor'],
+        $request['guest_borrower_name']
     );
     $loanStmt->execute();
     $loanId = $loanStmt->insert_id;

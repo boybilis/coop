@@ -56,6 +56,7 @@ $requests = $conn->query("
                     <tr>
                         <th>Queue</th>
                         <th>Member</th>
+                        <th>Borrower For</th>
                         <th>Requested Amount</th>
                         <th>Requested Months</th>
                         <th>Date Requested</th>
@@ -66,7 +67,7 @@ $requests = $conn->query("
                 <tbody>
                     <?php if($requests->num_rows === 0): ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted">No loan requests yet.</td>
+                            <td colspan="8" class="text-center text-muted">No loan requests yet.</td>
                         </tr>
                     <?php endif; ?>
 
@@ -75,6 +76,14 @@ $requests = $conn->query("
                     <tr>
                         <td><?= $row['status'] === 'Pending' ? $queue++ : '—' ?></td>
                         <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
+                        <td>
+                            <?php if((int)($row['is_guarantor'] ?? 0) === 1): ?>
+                                <span class="badge bg-info text-dark">Guest Borrower</span><br>
+                                <small><?= htmlspecialchars($row['guest_borrower_name'] ?? '') ?></small>
+                            <?php else: ?>
+                                <span class="badge bg-secondary">Member</span>
+                            <?php endif; ?>
+                        </td>
                         <td>₱<?= number_format($row['requested_amount'],2) ?></td>
                         <td><?= $row['requested_months'] ?></td>
                         <td><?= $row['created_at'] ?></td>
