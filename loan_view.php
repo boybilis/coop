@@ -129,7 +129,6 @@ $res = $stmt->get_result();
 
 <thead class="table-dark">
 <tr>
-    <th>Loan ID</th>
     <th>Payment #</th>
     <th>Amount</th>
     <th>Due Date</th>
@@ -146,8 +145,6 @@ $res = $stmt->get_result();
 
 <?php while($row = $res->fetch_assoc()): ?>
 <tr>
-    <td><?= $loan_id ?></td>
-
     <td><?= $row['payment_no'] ?></td>
 
     <td>₱<?= number_format($row['amount'],2) ?></td>
@@ -237,7 +234,7 @@ $res = $stmt->get_result();
 $(document).ready(function () {
     $('#paymentTable').DataTable({
         pageLength: 10,
-        order: [[3, 'asc']]
+        order: [[2, 'asc']]
     });
 });
 
