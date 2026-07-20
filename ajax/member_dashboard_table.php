@@ -1,6 +1,6 @@
-﻿<?php
-include '../db.php';
-include '../auth.php';
+<?php
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../auth.php';
 require_member();
 
 header('Content-Type: application/json');

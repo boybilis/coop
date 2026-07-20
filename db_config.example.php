@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 return [
     'host' => 'localhost',
     'user' => 'HOSTINGER_DATABASE_USER',

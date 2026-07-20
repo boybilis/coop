@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 function render_navbar($title = 'Cooperative Loan and Savings Management System')
 {
     ?>

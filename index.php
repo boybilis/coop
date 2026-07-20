@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -56,15 +56,9 @@ $cutoffCapitalStmt->execute();
 $cutoffCapitalToDate = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
 
 $cutoffPaidLoansStmt = $conn->prepare("
-    SELECT IFNULL(SUM(loans.amount / loan_payment_counts.total_payments),0) AS total
+    SELECT IFNULL(SUM(payments.amount),0) AS total
     FROM payments
-    JOIN loans ON loans.id = payments.loan_id
-    JOIN (
-        SELECT loan_id, COUNT(*) AS total_payments
-        FROM payments
-        GROUP BY loan_id
-    ) loan_payment_counts ON loan_payment_counts.loan_id = payments.loan_id
-    WHERE payments.due_date <= ?
+    WHERE payments.due_date = ?
     AND payments.paid = 1
 ");
 $cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
@@ -251,7 +245,7 @@ function notification_badge($count)
                 <small class="text-muted d-block">As of <?= date('M d, Y', strtotime($currentCutoffDate)) ?></small>
                 <small class="text-muted d-block">Initial contribution: &#8369;<?= number_format($initialCapital,2) ?></small>
                 <small class="text-muted d-block">Capcon to date: &#8369;<?= number_format($cutoffCapitalToDate,2) ?></small>
-                <small class="text-muted d-block">Paid loan principal to date: &#8369;<?= number_format($paidLoanPrincipalToDate,2) ?></small>
+                <small class="text-muted d-block">Paid loans this cutoff: &#8369;<?= number_format($paidLoanPrincipalToDate,2) ?></small>
                 <small class="text-muted d-block">Less approved principal loans: &#8369;<?= number_format($approvedLoanPrincipal,2) ?></small>
             </div>
             <div class="card-footer">

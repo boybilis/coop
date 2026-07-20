@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include 'auth.php';
 
 session_unset();
