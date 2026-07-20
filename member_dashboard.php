@@ -95,57 +95,8 @@ $capitalStmt->bind_param("i", $borrowerId);
 $capitalStmt->execute();
 $capital = $capitalStmt->get_result()->fetch_assoc()['total'];
 
-function member_current_cutoff_date()
-{
-    $today = new DateTimeImmutable('today');
-    $day = (int)$today->format('j');
-    $lastDay = (int)$today->format('t');
-
-    if ($day >= $lastDay) {
-        return $today->format('Y-m-t');
-    }
-
-    if ($day >= 15) {
-        return $today->format('Y-m-15');
-    }
-
-    return $today->modify('first day of previous month')->format('Y-m-t');
-}
-
-$currentCutoffDate = member_current_cutoff_date();
-
-$initialCapital = (float)$conn->query("
-    SELECT IFNULL(SUM(amount),0) AS total
-    FROM capital_contributions
-    WHERE type = 'INITIAL'
-")->fetch_assoc()['total'];
-
-$cutoffCapitalStmt = $conn->prepare("
-    SELECT IFNULL(SUM(amount),0) AS total
-    FROM capital_contributions
-    WHERE type = 'CUTOFF'
-    AND contribution_date <= ?
-");
-$cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
-$cutoffCapitalStmt->execute();
-$cutoffCapitalToDate = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
-
-$cutoffPaidLoansStmt = $conn->prepare("
-    SELECT IFNULL(SUM(payments.amount),0) AS total
-    FROM payments
-    WHERE payments.due_date = ?
-    AND payments.paid = 1
-");
-$cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
-$cutoffPaidLoansStmt->execute();
-$paidLoanPrincipalToDate = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
-
-$approvedLoanPrincipal = (float)$conn->query("
-    SELECT IFNULL(SUM(amount),0) AS total
-    FROM loans
-")->fetch_assoc()['total'];
-
-$availableLoanCutoff = $initialCapital + $cutoffCapitalToDate + $paidLoanPrincipalToDate - $approvedLoanPrincipal;
+$loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
+$availableLoanCutoff = $loanableBreakdown['available_amount'];
 
 $paymentSummaryStmt = $conn->prepare("
     SELECT

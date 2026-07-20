@@ -101,3 +101,65 @@ if (!$conn->connect_error) {
 
 }
 
+function cooperative_current_cutoff_date()
+{
+    $today = new DateTimeImmutable('today');
+    $day = (int)$today->format('j');
+    $lastDay = (int)$today->format('t');
+
+    if ($day >= $lastDay) {
+        return $today->format('Y-m-t');
+    }
+
+    if ($day >= 15) {
+        return $today->format('Y-m-15');
+    }
+
+    return $today->modify('first day of previous month')->format('Y-m-t');
+}
+
+function cooperative_loanable_amount_breakdown($conn)
+{
+    $currentCutoffDate = cooperative_current_cutoff_date();
+
+    $initialCapital = (float)$conn->query("
+        SELECT IFNULL(SUM(amount),0) AS total
+        FROM capital_contributions
+        WHERE type = 'INITIAL'
+    ")->fetch_assoc()['total'];
+
+    $cutoffCapitalStmt = $conn->prepare("
+        SELECT IFNULL(SUM(amount),0) AS total
+        FROM capital_contributions
+        WHERE type = 'CUTOFF'
+        AND contribution_date <= ?
+    ");
+    $cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
+    $cutoffCapitalStmt->execute();
+    $cutoffCapitalToDate = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
+
+    $cutoffPaidLoansStmt = $conn->prepare("
+        SELECT IFNULL(SUM(payments.amount),0) AS total
+        FROM payments
+        WHERE payments.due_date = ?
+        AND payments.paid = 1
+    ");
+    $cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
+    $cutoffPaidLoansStmt->execute();
+    $paidLoansThisCutoff = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
+
+    $approvedLoanPrincipal = (float)$conn->query("
+        SELECT IFNULL(SUM(amount),0) AS total
+        FROM loans
+    ")->fetch_assoc()['total'];
+
+    return [
+        'cutoff_date' => $currentCutoffDate,
+        'initial_capital' => $initialCapital,
+        'cutoff_capital_to_date' => $cutoffCapitalToDate,
+        'paid_loans_this_cutoff' => $paidLoansThisCutoff,
+        'approved_loan_principal' => $approvedLoanPrincipal,
+        'available_amount' => $initialCapital + $cutoffCapitalToDate + $paidLoansThisCutoff - $approvedLoanPrincipal
+    ];
+}
+
