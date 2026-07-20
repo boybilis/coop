@@ -1,6 +1,6 @@
 <?php
-include '../db.php';
-include '../auth.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../auth.php';
 require_member();
 
 $borrowerId = active_borrower_id();
@@ -12,15 +12,33 @@ $guestGcashName = trim($_POST['guest_gcash_name'] ?? '');
 $guestGcashNumber = trim($_POST['guest_gcash_number'] ?? '');
 
 if (!$borrowerId || $amount <= 0 || $months <= 0) {
-    exit("Amount and months are required");
+    header("Location: ../member_dashboard.php?error=" . urlencode("Amount and months are required"));
+    exit;
 }
 
 if ($months > 6) {
-    exit("Maximum payment term is 6 months");
+    header("Location: ../member_dashboard.php?error=" . urlencode("Maximum payment term is 6 months"));
+    exit;
+}
+
+$memberProfileStmt = $conn->prepare("
+    SELECT gcash_name, gcash_number
+    FROM borrowers
+    WHERE id = ?
+    LIMIT 1
+");
+$memberProfileStmt->bind_param("i", $borrowerId);
+$memberProfileStmt->execute();
+$memberProfile = $memberProfileStmt->get_result()->fetch_assoc();
+
+if (!$memberProfile || trim($memberProfile['gcash_name'] ?? '') === '' || trim($memberProfile['gcash_number'] ?? '') === '') {
+    header("Location: ../member_dashboard.php?error=" . urlencode("Please update your profile with GCash name and GCash number before filing a loan request."));
+    exit;
 }
 
 if ($isGuarantor && ($guestBorrowerName === '' || $guestGcashName === '' || $guestGcashNumber === '')) {
-    exit("Guest borrower name, GCash name, and GCash number are required");
+    header("Location: ../member_dashboard.php?error=" . urlencode("Guest borrower name, GCash name, and GCash number are required"));
+    exit;
 }
 
 if (!$isGuarantor) {

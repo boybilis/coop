@@ -5,7 +5,7 @@ include 'layout.php';
 require_admin();
 
 $requests = $conn->query("
-    SELECT loan_requests.*, borrowers.name, users.username
+    SELECT loan_requests.*, borrowers.name, borrowers.gcash_name, borrowers.gcash_number, users.username
     FROM loan_requests
     JOIN borrowers ON borrowers.id = loan_requests.borrower_id
     LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
@@ -94,7 +94,7 @@ $requests = $conn->query("
                     <?php $queue = 1; ?>
                     <?php while($row = $requests->fetch_assoc()): ?>
                     <tr>
-                        <td><?= $row['status'] === 'Pending' ? $queue++ : '—' ?></td>
+                        <td><?= $row['status'] === 'Pending' ? $queue++ : '&mdash;' ?></td>
                         <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                         <td>
                             <?php if((int)($row['is_guarantor'] ?? 0) === 1): ?>
@@ -105,7 +105,11 @@ $requests = $conn->query("
                                     <?= htmlspecialchars($row['guest_gcash_number'] ?? '') ?>
                                 </small>
                             <?php else: ?>
-                                <span class="badge bg-secondary">Member</span>
+                                <span class="badge bg-secondary">Member</span><br>
+                                <small class="text-muted">
+                                    GCash: <?= htmlspecialchars($row['gcash_name'] ?? '') ?> /
+                                    <?= htmlspecialchars($row['gcash_number'] ?? '') ?>
+                                </small>
                             <?php endif; ?>
                         </td>
                         <td>&#8369;<?= number_format($row['requested_amount'],2) ?></td>

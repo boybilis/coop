@@ -36,6 +36,7 @@ if (!$member) {
 
 $profileFirstName = $member['first_name'] ?? '';
 $profileLastName = $member['last_name'] ?? '';
+$hasMemberGcashProfile = trim($member['gcash_name'] ?? '') !== '' && trim($member['gcash_number'] ?? '') !== '';
 
 if ($profileFirstName === '' && $profileLastName === '') {
     $nameParts = preg_split('/\s+/', trim($member['name']), 2);
@@ -236,9 +237,15 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 </small>
             </div>
             <div class="card-footer">
-                <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#loanRequestModal">
-                    Loan Request
-                </button>
+                <?php if($hasMemberGcashProfile): ?>
+                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#loanRequestModal">
+                        Loan Request
+                    </button>
+                <?php else: ?>
+                    <button type="button" class="btn btn-primary w-100" onclick="appShowToast('Please update your profile with GCash name and GCash number before filing a loan request.', 'warning')">
+                        Loan Request
+                    </button>
+                <?php endif; ?>
             </div>
         </div>
     </div>
