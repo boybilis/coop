@@ -205,9 +205,6 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <div class="card-body">
                 <h6>Savings Balance</h6>
                 <h3 class="text-info">&#8369;<?= number_format($netSavings,2) ?></h3>
-                <small class="text-muted">
-                    Deposits: &#8369;<?= number_format($savings['deposits'],2) ?> | Withdrawals: &#8369;<?= number_format($savings['withdrawals'],2) ?>
-                </small>
                 <?php if($savingsClosed): ?>
                     <div><small class="text-danger">Savings account is closed after full withdrawal.</small></div>
                 <?php else: ?>
