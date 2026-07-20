@@ -91,11 +91,11 @@ $conn->begin_transaction();
 try {
     $loanStmt = $conn->prepare("
         INSERT INTO loans
-        (borrower_id, amount, interest, months, total_payable, start_date, is_guarantor, guest_borrower_name, disbursement_reference_number, disbursement_proof_image)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (borrower_id, amount, interest, months, total_payable, start_date, is_guarantor, guest_borrower_name, guest_gcash_name, guest_gcash_number, disbursement_reference_number, disbursement_proof_image)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $loanStmt->bind_param(
-        "iddddsisss",
+        "iddddsisssss",
         $request['borrower_id'],
         $amount,
         $interest,
@@ -104,6 +104,8 @@ try {
         $start,
         $request['is_guarantor'],
         $request['guest_borrower_name'],
+        $request['guest_gcash_name'],
+        $request['guest_gcash_number'],
         $disbursementReferenceNumber,
         $proofPath
     );

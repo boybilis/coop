@@ -99,7 +99,11 @@ $requests = $conn->query("
                         <td>
                             <?php if((int)($row['is_guarantor'] ?? 0) === 1): ?>
                                 <span class="badge bg-info text-dark">Guest Borrower</span><br>
-                                <small><?= htmlspecialchars($row['guest_borrower_name'] ?? '') ?></small>
+                                <small><?= htmlspecialchars($row['guest_borrower_name'] ?? '') ?></small><br>
+                                <small class="text-muted">
+                                    GCash: <?= htmlspecialchars($row['guest_gcash_name'] ?? '') ?> /
+                                    <?= htmlspecialchars($row['guest_gcash_number'] ?? '') ?>
+                                </small>
                             <?php else: ?>
                                 <span class="badge bg-secondary">Member</span>
                             <?php endif; ?>

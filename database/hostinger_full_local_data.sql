@@ -101,6 +101,8 @@ CREATE TABLE `loan_requests` (
   `approved_loan_id` int(10) unsigned DEFAULT NULL,
   `is_guarantor` tinyint(1) NOT NULL DEFAULT 0,
   `guest_borrower_name` varchar(150) DEFAULT NULL,
+  `guest_gcash_name` varchar(150) DEFAULT NULL,
+  `guest_gcash_number` varchar(50) DEFAULT NULL,
   `disbursement_reference_number` varchar(100) DEFAULT NULL,
   `disbursement_proof_image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -120,7 +122,7 @@ CREATE TABLE `loan_requests` (
 
 LOCK TABLES `loan_requests` WRITE;
 /*!40000 ALTER TABLE `loan_requests` DISABLE KEYS */;
-INSERT INTO `loan_requests` VALUES (2,9,10000.00,6.00,10000.00,6.00,'Approved',NULL,0,NULL,NULL,NULL,'2026-07-15 10:17:36','2026-07-16 00:02:19');
+INSERT INTO `loan_requests` VALUES (2,9,10000.00,6.00,10000.00,6.00,'Approved',NULL,0,NULL,NULL,NULL,NULL,NULL,'2026-07-15 10:17:36','2026-07-16 00:02:19');
 /*!40000 ALTER TABLE `loan_requests` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -142,6 +144,8 @@ CREATE TABLE `loans` (
   `status` enum('Active','Completed') NOT NULL DEFAULT 'Active',
   `is_guarantor` tinyint(1) NOT NULL DEFAULT 0,
   `guest_borrower_name` varchar(150) DEFAULT NULL,
+  `guest_gcash_name` varchar(150) DEFAULT NULL,
+  `guest_gcash_number` varchar(50) DEFAULT NULL,
   `disbursement_reference_number` varchar(100) DEFAULT NULL,
   `disbursement_proof_image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -157,7 +161,7 @@ CREATE TABLE `loans` (
 
 LOCK TABLES `loans` WRITE;
 /*!40000 ALTER TABLE `loans` DISABLE KEYS */;
-INSERT INTO `loans` VALUES (4,12,36028.00,4324.00,6.00,40352.00,'2026-07-01','Active',0,NULL,NULL,NULL,'2026-07-15 07:35:19');
+INSERT INTO `loans` VALUES (4,12,36028.00,4324.00,6.00,40352.00,'2026-07-01','Active',0,NULL,NULL,NULL,NULL,NULL,'2026-07-15 07:35:19');
 /*!40000 ALTER TABLE `loans` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -104,7 +104,11 @@ $payments = $paymentsStmt->get_result();
                     <small class="text-muted">Borrower For</small>
                     <h5>
                         <?php if((int)($loanInfo['is_guarantor'] ?? 0) === 1): ?>
-                            Guest: <?= htmlspecialchars($loanInfo['guest_borrower_name'] ?? '') ?>
+                            Guest: <?= htmlspecialchars($loanInfo['guest_borrower_name'] ?? '') ?><br>
+                            <small class="text-muted">
+                                GCash: <?= htmlspecialchars($loanInfo['guest_gcash_name'] ?? '') ?> /
+                                <?= htmlspecialchars($loanInfo['guest_gcash_number'] ?? '') ?>
+                            </small>
                         <?php else: ?>
                             Member
                         <?php endif; ?>

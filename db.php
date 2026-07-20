@@ -55,13 +55,17 @@ if (!$conn->connect_error) {
         'loan_requests' => [
             'is_guarantor' => "ALTER TABLE loan_requests ADD COLUMN is_guarantor TINYINT(1) NOT NULL DEFAULT 0 AFTER approved_loan_id",
             'guest_borrower_name' => "ALTER TABLE loan_requests ADD COLUMN guest_borrower_name VARCHAR(150) DEFAULT NULL AFTER is_guarantor",
-            'disbursement_reference_number' => "ALTER TABLE loan_requests ADD COLUMN disbursement_reference_number VARCHAR(100) DEFAULT NULL AFTER guest_borrower_name",
+            'guest_gcash_name' => "ALTER TABLE loan_requests ADD COLUMN guest_gcash_name VARCHAR(150) DEFAULT NULL AFTER guest_borrower_name",
+            'guest_gcash_number' => "ALTER TABLE loan_requests ADD COLUMN guest_gcash_number VARCHAR(50) DEFAULT NULL AFTER guest_gcash_name",
+            'disbursement_reference_number' => "ALTER TABLE loan_requests ADD COLUMN disbursement_reference_number VARCHAR(100) DEFAULT NULL AFTER guest_gcash_number",
             'disbursement_proof_image' => "ALTER TABLE loan_requests ADD COLUMN disbursement_proof_image VARCHAR(255) DEFAULT NULL AFTER disbursement_reference_number"
         ],
         'loans' => [
             'is_guarantor' => "ALTER TABLE loans ADD COLUMN is_guarantor TINYINT(1) NOT NULL DEFAULT 0 AFTER status",
             'guest_borrower_name' => "ALTER TABLE loans ADD COLUMN guest_borrower_name VARCHAR(150) DEFAULT NULL AFTER is_guarantor",
-            'disbursement_reference_number' => "ALTER TABLE loans ADD COLUMN disbursement_reference_number VARCHAR(100) DEFAULT NULL AFTER guest_borrower_name",
+            'guest_gcash_name' => "ALTER TABLE loans ADD COLUMN guest_gcash_name VARCHAR(150) DEFAULT NULL AFTER guest_borrower_name",
+            'guest_gcash_number' => "ALTER TABLE loans ADD COLUMN guest_gcash_number VARCHAR(50) DEFAULT NULL AFTER guest_gcash_name",
+            'disbursement_reference_number' => "ALTER TABLE loans ADD COLUMN disbursement_reference_number VARCHAR(100) DEFAULT NULL AFTER guest_gcash_number",
             'disbursement_proof_image' => "ALTER TABLE loans ADD COLUMN disbursement_proof_image VARCHAR(255) DEFAULT NULL AFTER disbursement_reference_number"
         ]
     ];

@@ -119,13 +119,15 @@ if ($table === 'loans') {
         $action = '<span class="text-muted">—</span>';
         $isGuarantor = (int)($request['is_guarantor'] ?? 0);
         $guestBorrowerName = trim($request['guest_borrower_name'] ?? '');
+        $guestGcashName = trim($request['guest_gcash_name'] ?? '');
+        $guestGcashNumber = trim($request['guest_gcash_number'] ?? '');
         $borrowerFor = $isGuarantor
-            ? '<span class="badge bg-info text-dark">Guest</span><br><small>' . htmlspecialchars($guestBorrowerName) . '</small>'
+            ? '<span class="badge bg-info text-dark">Guest</span><br><small>' . htmlspecialchars($guestBorrowerName) . '</small><br><small>GCash: ' . htmlspecialchars($guestGcashName) . ' / ' . htmlspecialchars($guestGcashNumber) . '</small>'
             : '<span class="badge bg-secondary">Member</span>';
 
         if ($request['status'] === 'Pending') {
             $action = '
-                <button class="btn btn-warning btn-sm" onclick="openLoanRequestEdit(' . $request['id'] . ', ' . (float)$request['requested_amount'] . ', ' . (float)$request['requested_months'] . ', ' . $isGuarantor . ', ' . htmlspecialchars(json_encode($guestBorrowerName), ENT_QUOTES, 'UTF-8') . ')">Edit</button>
+                <button class="btn btn-warning btn-sm" onclick="openLoanRequestEdit(' . $request['id'] . ', ' . (float)$request['requested_amount'] . ', ' . (float)$request['requested_months'] . ', ' . $isGuarantor . ', ' . htmlspecialchars(json_encode($guestBorrowerName), ENT_QUOTES, 'UTF-8') . ', ' . htmlspecialchars(json_encode($guestGcashName), ENT_QUOTES, 'UTF-8') . ', ' . htmlspecialchars(json_encode($guestGcashNumber), ENT_QUOTES, 'UTF-8') . ')">Edit</button>
                 <button class="btn btn-outline-danger btn-sm" onclick="deleteLoanRequest(' . $request['id'] . ')">Delete</button>
             ';
         } elseif ($request['approved_loan_id']) {
@@ -371,11 +373,21 @@ if ($table === 'loans') {
     $rows = $stmt->get_result();
 
     if ($totalRows === 0) {
-        $html = dashboard_empty_row(6, 'No payment submissions yet.');
+        $html = dashboard_empty_row(7, 'No payment submissions yet.');
     }
 
     while ($submission = $rows->fetch_assoc()) {
         $badgeClass = dashboard_badge_class($submission['status']);
+        $action = '<span class="text-muted">—</span>';
+
+        if ($submission['status'] === 'Pending') {
+            $paymentDateArg = htmlspecialchars(json_encode($submission['payment_date']), ENT_QUOTES, 'UTF-8');
+            $referenceArg = htmlspecialchars(json_encode($submission['reference_number']), ENT_QUOTES, 'UTF-8');
+            $action = '
+                <button class="btn btn-warning btn-sm" onclick="openPaymentSubmissionEdit(' . (int)$submission['id'] . ', ' . $paymentDateArg . ', ' . (float)$submission['capital_contribution'] . ', ' . (float)$submission['loan_payment'] . ', ' . $referenceArg . ')">Edit</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="cancelPaymentSubmission(' . (int)$submission['id'] . ')">Cancel</button>
+            ';
+        }
 
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($submission['payment_date']) . '</td>';
@@ -384,6 +396,7 @@ if ($table === 'loans') {
         $html .= '<td>₱' . number_format($submission['loan_payment'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($submission['reference_number']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($submission['status']) . '</span></td>';
+        $html .= '<td>' . $action . '</td>';
         $html .= '</tr>';
     }
 }

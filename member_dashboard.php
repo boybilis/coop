@@ -459,10 +459,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                                 <th>Loan Payment</th>
                                 <th>Reference</th>
                                 <th>Status</th>
+                                <th width="160">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="paymentSubmissionsTableBody" data-table="payment_submissions" data-columns="6">
-                            <tr><td colspan="6" class="text-center text-muted">Loading payment submissions...</td></tr>
+                        <tbody id="paymentSubmissionsTableBody" data-table="payment_submissions" data-columns="7">
+                            <tr><td colspan="7" class="text-center text-muted">Loading payment submissions...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -654,6 +655,52 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
   </div>
 </div>
 
+<div class="modal fade" id="editPaymentSubmissionModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Edit Payment Submission</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="editPaymentSubmissionId">
+
+            <div class="mb-3">
+                <label>Payment Cut-Off Date</label>
+                <input type="date" id="editPaymentDate" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Capital Contribution</label>
+                <input type="number" step="0.01" min="0" id="editPaymentCapital" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Loan Payment</label>
+                <input type="number" step="0.01" min="0" id="editPaymentLoan" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Reference Payment Number</label>
+                <input type="text" id="editPaymentReference" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Replace Reference Image</label>
+                <input type="file" id="editPaymentImage" class="form-control" accept="image/jpeg,image/png,image/webp">
+                <small class="text-muted">Leave blank to keep the current image.</small>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-info" onclick="savePaymentSubmissionEdit()">Save Changes</button>
+        </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="editSavingsSubmissionModal">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -756,6 +803,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <div class="mb-3 d-none" id="guestBorrowerGroup">
                 <label>Guest Borrower Name</label>
                 <input type="text" name="guest_borrower_name" id="guestBorrowerName" class="form-control">
+                <div class="mt-3">
+                    <label>Guest GCash Name</label>
+                    <input type="text" name="guest_gcash_name" id="guestGcashName" class="form-control">
+                </div>
+                <div class="mt-3">
+                    <label>Guest GCash Number</label>
+                    <input type="text" name="guest_gcash_number" id="guestGcashNumber" class="form-control">
+                </div>
                 <small class="text-muted">Leave unchecked if this loan is for your own account.</small>
             </div>
         </div>
@@ -800,6 +855,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <div class="mb-3 d-none" id="editGuestBorrowerGroup">
                 <label>Guest Borrower Name</label>
                 <input type="text" id="editGuestBorrowerName" class="form-control">
+                <div class="mt-3">
+                    <label>Guest GCash Name</label>
+                    <input type="text" id="editGuestGcashName" class="form-control">
+                </div>
+                <div class="mt-3">
+                    <label>Guest GCash Number</label>
+                    <input type="text" id="editGuestGcashNumber" class="form-control">
+                </div>
             </div>
         </div>
 
@@ -1018,35 +1081,45 @@ function loanRequestsConfig(){
 function toggleGuestBorrowerInput(){
     let checkbox = document.getElementById('loanRequestGuarantor');
     let group = document.getElementById('guestBorrowerGroup');
-    let input = document.getElementById('guestBorrowerName');
+    let inputs = [
+        document.getElementById('guestBorrowerName'),
+        document.getElementById('guestGcashName'),
+        document.getElementById('guestGcashNumber')
+    ];
 
     group.classList.toggle('d-none', !checkbox.checked);
-    input.required = checkbox.checked;
+    inputs.forEach(input => input.required = checkbox.checked);
 
     if(!checkbox.checked){
-        input.value = '';
+        inputs.forEach(input => input.value = '');
     }
 }
 
 function toggleEditGuestBorrowerInput(){
     let checkbox = document.getElementById('editLoanRequestGuarantor');
     let group = document.getElementById('editGuestBorrowerGroup');
-    let input = document.getElementById('editGuestBorrowerName');
+    let inputs = [
+        document.getElementById('editGuestBorrowerName'),
+        document.getElementById('editGuestGcashName'),
+        document.getElementById('editGuestGcashNumber')
+    ];
 
     group.classList.toggle('d-none', !checkbox.checked);
-    input.required = checkbox.checked;
+    inputs.forEach(input => input.required = checkbox.checked);
 
     if(!checkbox.checked){
-        input.value = '';
+        inputs.forEach(input => input.value = '');
     }
 }
 
-function openLoanRequestEdit(id, amount, months, isGuarantor, guestBorrowerName){
+function openLoanRequestEdit(id, amount, months, isGuarantor, guestBorrowerName, guestGcashName, guestGcashNumber){
     document.getElementById('editLoanRequestId').value = id;
     document.getElementById('editLoanRequestAmount').value = amount;
     document.getElementById('editLoanRequestMonths').value = months;
     document.getElementById('editLoanRequestGuarantor').checked = parseInt(isGuarantor || 0) === 1;
     document.getElementById('editGuestBorrowerName').value = guestBorrowerName || '';
+    document.getElementById('editGuestGcashName').value = guestGcashName || '';
+    document.getElementById('editGuestGcashNumber').value = guestGcashNumber || '';
     toggleEditGuestBorrowerInput();
     document.getElementById('loanRequestEditError').classList.add('d-none');
 
@@ -1059,6 +1132,8 @@ function saveLoanRequestEdit(){
     let months = document.getElementById('editLoanRequestMonths').value;
     let isGuarantor = document.getElementById('editLoanRequestGuarantor').checked ? '1' : '0';
     let guestBorrowerName = document.getElementById('editGuestBorrowerName').value;
+    let guestGcashName = document.getElementById('editGuestGcashName').value;
+    let guestGcashNumber = document.getElementById('editGuestGcashNumber').value;
     let errorBox = document.getElementById('loanRequestEditError');
 
     errorBox.classList.add('d-none');
@@ -1071,6 +1146,8 @@ function saveLoanRequestEdit(){
             + '&months=' + encodeURIComponent(months)
             + '&is_guarantor=' + encodeURIComponent(isGuarantor)
             + '&guest_borrower_name=' + encodeURIComponent(guestBorrowerName)
+            + '&guest_gcash_name=' + encodeURIComponent(guestGcashName)
+            + '&guest_gcash_number=' + encodeURIComponent(guestGcashNumber)
     })
     .then(res => res.json())
     .then(data => {
@@ -1116,8 +1193,81 @@ function savingsSubmissionsConfig(){
     return dashboardTables.find(config => config.bodyId === 'savingsSubmissionsTableBody');
 }
 
+function paymentSubmissionsConfig(){
+    return dashboardTables.find(config => config.bodyId === 'paymentSubmissionsTableBody');
+}
+
 function withdrawalRequestsConfig(){
     return dashboardTables.find(config => config.bodyId === 'withdrawalRequestsTableBody');
+}
+
+function openPaymentSubmissionEdit(id, paymentDate, capitalContribution, loanPayment, referenceNumber){
+    document.getElementById('editPaymentSubmissionId').value = id;
+    document.getElementById('editPaymentDate').value = paymentDate;
+    document.getElementById('editPaymentCapital').value = capitalContribution;
+    document.getElementById('editPaymentLoan').value = loanPayment;
+    document.getElementById('editPaymentReference').value = referenceNumber;
+    document.getElementById('editPaymentImage').value = '';
+
+    new bootstrap.Modal(document.getElementById('editPaymentSubmissionModal')).show();
+}
+
+function savePaymentSubmissionEdit(){
+    let formData = new FormData();
+    let image = document.getElementById('editPaymentImage').files[0];
+
+    formData.append('submission_id', document.getElementById('editPaymentSubmissionId').value);
+    formData.append('payment_date', document.getElementById('editPaymentDate').value);
+    formData.append('capital_contribution', document.getElementById('editPaymentCapital').value);
+    formData.append('loan_payment', document.getElementById('editPaymentLoan').value);
+    formData.append('reference_number', document.getElementById('editPaymentReference').value);
+
+    if(image){
+        formData.append('proof_image', image);
+    }
+
+    fetch('ajax/update_payment_submission.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.error){
+            appShowToast(data.error, 'error');
+            return;
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('editPaymentSubmissionModal')).hide();
+        appShowToast('Payment submission updated.', 'success');
+        loadDashboardTable(paymentSubmissionsConfig());
+    });
+}
+
+function cancelPaymentSubmission(id){
+    appConfirm('Cancel this pending payment submission?', {
+        okText: 'Cancel Payment',
+        okClass: 'btn-danger'
+    }).then(confirmed => {
+        if(!confirmed){
+            return;
+        }
+
+        fetch('ajax/delete_payment_submission.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: 'submission_id=' + encodeURIComponent(id)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error){
+                appShowToast(data.error, 'error');
+                return;
+            }
+
+            appShowToast('Payment submission cancelled.', 'success');
+            loadDashboardTable(paymentSubmissionsConfig());
+        });
+    });
 }
 
 function openSavingsSubmissionEdit(id, amount, referenceNumber){
