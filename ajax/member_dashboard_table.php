@@ -387,6 +387,8 @@ if ($table === 'loans') {
                 <button class="btn btn-warning btn-sm" onclick="openPaymentSubmissionEdit(' . (int)$submission['id'] . ', ' . $paymentDateArg . ', ' . (float)$submission['capital_contribution'] . ', ' . (float)$submission['loan_payment'] . ', ' . $referenceArg . ')">Edit</button>
                 <button class="btn btn-outline-danger btn-sm" onclick="cancelPaymentSubmission(' . (int)$submission['id'] . ')">Cancel</button>
             ';
+        } elseif ($submission['status'] === 'Approved' && !empty($submission['proof_image'])) {
+            $action = '<a href="' . htmlspecialchars($submission['proof_image']) . '" data-image-preview class="btn btn-outline-primary btn-sm">View</a>';
         }
 
         $html .= '<tr>';
