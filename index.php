@@ -190,7 +190,7 @@ function notification_badge($count)
             <?= notification_badge($pendingLoanRequests) ?>
             <div class="card-body">
                 <h6>Total Outstanding Loans</h6>
-                <h3 class="text-primary">â‚±<?= number_format($outstanding,2) ?></h3>
+                <h3 class="text-primary">&#8369;<?= number_format($outstanding,2) ?></h3>
                 <small class="text-muted">Includes unpaid principal and interest</small>
             </div>
             <div class="card-footer">
@@ -210,7 +210,7 @@ function notification_badge($count)
             <?= notification_badge($pendingSavingsActions) ?>
             <div class="card-body">
                 <h6>Member Savings</h6>
-                <h3 class="text-info">â‚±<?= number_format($memberSavings,2) ?></h3>
+                <h3 class="text-info">&#8369;<?= number_format($memberSavings,2) ?></h3>
                 <small class="text-muted">Deposits less withdrawals</small>
             </div>
             <div class="card-footer">
@@ -260,7 +260,7 @@ function notification_badge($count)
         <div class="card glass-card glass-midnight">
             <div class="card-body">
                 <h5>Capital Fund</h5>
-                <h2>â‚±<?= number_format($capital,2) ?></h2>
+                <h2>&#8369;<?= number_format($capital,2) ?></h2>
                 <p class="text-muted mb-0">Total capital contributions of all members.</p>
             </div>
         </div>
