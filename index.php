@@ -42,7 +42,8 @@ $currentCutoffDate = current_cutoff_date();
 $cutoffCapitalStmt = $conn->prepare("
     SELECT IFNULL(SUM(amount),0) AS total
     FROM capital_contributions
-    WHERE contribution_date = ?
+    WHERE type = 'INITIAL'
+    OR (type = 'CUTOFF' AND contribution_date = ?)
 ");
 $cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
 $cutoffCapitalStmt->execute();
@@ -242,8 +243,7 @@ function notification_badge($count)
                 <h6>Available Loan for this Cut-off</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($availableLoanCutoff,2) ?></h3>
                 <small class="text-muted">
-                    Cut-off <?= date('M d, Y', strtotime($currentCutoffDate)) ?>:
-                    capcon &#8369;<?= number_format($cutoffCapital,2) ?> +
+                    initial capcon + cutoff capcon &#8369;<?= number_format($cutoffCapital,2) ?> +
                     paid loan principal &#8369;<?= number_format($cutoffPaidLoans,2) ?> -
                     approved loan principal &#8369;<?= number_format($approvedLoanPrincipal,2) ?>
                 </small>
