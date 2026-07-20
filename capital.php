@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -91,8 +91,8 @@ $count = $conn->query("SELECT COUNT(DISTINCT borrower_id) as t FROM capital_cont
 $average = $count > 0 ? $total / $count : 0;
 ?>
 
-<h5>Total Capital Pool: <span id="capitalTotalText">₱<?= number_format($total,2) ?></span></h5>
-<h6>Average per Member: <span id="capitalAverageText">₱<?= number_format($average,2) ?></span></h6>
+<h5>Total Capital Pool: <span id="capitalTotalText">&#8369;<?= number_format($total,2) ?></span></h5>
+<h6>Average per Member: <span id="capitalAverageText">&#8369;<?= number_format($average,2) ?></span></h6>
 
 </div>
 </div>
@@ -128,7 +128,7 @@ while($row = $res->fetch_assoc()):
 
 <tr>
 <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
-<td>₱<?= number_format($row['amount'],2) ?></td>
+<td>&#8369;<?= number_format($row['amount'],2) ?></td>
 <td>
 <span class="badge bg-<?= $row['type']=='INITIAL'?'primary':'success' ?>">
 <?= $row['type'] ?>
@@ -173,7 +173,7 @@ $(document).ready(function () {
     });
 
     function money(amount){
-        return '₱' + Number(amount).toLocaleString(undefined, {
+        return '\u20B1' + Number(amount).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
@@ -241,3 +241,4 @@ function escapeHtml(value){
 <?php render_footer(); ?>
 </body>
 </html>
+

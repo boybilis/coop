@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -50,3 +50,4 @@ echo json_encode([
     "name" => $name,
     "status" => $status
 ]);
+

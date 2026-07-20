@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -48,7 +48,7 @@ if ($amountCents > $balanceCents) {
 }
 
 if (!$isFullWithdrawal && $remainingCents < 50000) {
-    echo json_encode(["error" => "Withdrawal must leave at least ₱500 maintaining balance, unless withdrawing the full savings balance to close the account"]);
+    echo json_encode(["error" => "Withdrawal must leave at least &#8369;500 maintaining balance, unless withdrawing the full savings balance to close the account"]);
     exit;
 }
 
@@ -70,3 +70,4 @@ if ($stmt->affected_rows === 0) {
 }
 
 echo json_encode(["ok" => true]);
+

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -94,10 +94,10 @@ $members = $conn->query("
                     </td>
                     <td><?= $row['created_at'] ?></td>
                     <td><span class="badge bg-primary"><?= $row['total_loans'] ?></span></td>
-                    <td>₱<?= number_format($row['total_borrowed'],2) ?></td>
-                    <td class="text-info fw-bold">₱<?= number_format($row['total_savings'],2) ?></td>
-                    <td class="text-warning fw-bold">₱<?= number_format($row['total_capital'],2) ?></td>
-                    <td><span class="text-success fw-bold">₱<?= number_format($sharePerBorrower,2) ?></span></td>
+                    <td>&#8369;<?= number_format($row['total_borrowed'],2) ?></td>
+                    <td class="text-info fw-bold">&#8369;<?= number_format($row['total_savings'],2) ?></td>
+                    <td class="text-warning fw-bold">&#8369;<?= number_format($row['total_capital'],2) ?></td>
+                    <td><span class="text-success fw-bold">&#8369;<?= number_format($sharePerBorrower,2) ?></span></td>
                     <td class="member-status">
                         <span class="badge bg-<?= $row['status'] === 'Active' ? 'success' : 'secondary' ?>">
                             <?= $row['status'] ?>
@@ -217,10 +217,10 @@ function saveBorrower(){
                 </td>
                 <td>Just now</td>
                 <td><span class="badge bg-primary">0</span></td>
-                <td>₱0.00</td>
-                <td class="text-info fw-bold">₱0.00</td>
-                <td class="text-warning fw-bold">₱0.00</td>
-                <td><span class="text-success fw-bold">₱0.00</span></td>
+                <td>&#8369;0.00</td>
+                <td class="text-info fw-bold">&#8369;0.00</td>
+                <td class="text-warning fw-bold">&#8369;0.00</td>
+                <td><span class="text-success fw-bold">&#8369;0.00</span></td>
                 <td class="member-status"><span class="badge bg-success">Active</span></td>
                 <td>
                     <button class="btn btn-warning btn-sm" onclick="openEditMember(${data.id}, '${data.name.replace(/'/g, "\\'")}', 'Active')">
@@ -417,3 +417,4 @@ function escapeJsString(value){
 <?php render_footer(); ?>
 </body>
 </html>
+

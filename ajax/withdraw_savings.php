@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -63,7 +63,7 @@ if ($amountCents > $balanceCents) {
 }
 
 if (!$isFullWithdrawal && $remainingCents < 50000) {
-    redirect_withdrawal_notice('error', 'Withdrawal must leave at least ₱500 maintaining balance, unless withdrawing the full savings balance to close the account');
+    redirect_withdrawal_notice('error', 'Withdrawal must leave at least &#8369;500 maintaining balance, unless withdrawing the full savings balance to close the account');
 }
 
 $stmt = $conn->prepare("
@@ -75,3 +75,4 @@ $stmt->bind_param("idss", $borrowerId, $amount, $gcashName, $gcashNumber);
 $stmt->execute();
 
 redirect_withdrawal_notice($isFullWithdrawal ? 'closing' : 'submitted');
+

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -71,3 +71,4 @@ try {
 
 header("Location: ../received_savings.php?verified=1");
 exit;
+

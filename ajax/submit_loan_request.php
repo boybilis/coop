@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -39,3 +39,4 @@ $stmt->execute();
 
 header("Location: ../member_dashboard.php?loan_requested=1");
 exit;
+

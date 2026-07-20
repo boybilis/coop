@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $dbHost = "localhost";
 $dbUser = "root";
 $dbPassword = "";
@@ -101,3 +101,4 @@ if (!$conn->connect_error) {
 
 }
 ?>
+

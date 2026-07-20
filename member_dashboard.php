@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -200,14 +200,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <div class="card glass-card glass-info">
             <div class="card-body">
                 <h6>Savings Balance</h6>
-                <h3 class="text-info">₱<?= number_format($netSavings,2) ?></h3>
+                <h3 class="text-info">&#8369;<?= number_format($netSavings,2) ?></h3>
                 <small class="text-muted">
-                    Deposits: ₱<?= number_format($savings['deposits'],2) ?> | Withdrawals: ₱<?= number_format($savings['withdrawals'],2) ?>
+                    Deposits: &#8369;<?= number_format($savings['deposits'],2) ?> | Withdrawals: &#8369;<?= number_format($savings['withdrawals'],2) ?>
                 </small>
                 <?php if($savingsClosed): ?>
                     <div><small class="text-danger">Savings account is closed after full withdrawal.</small></div>
                 <?php else: ?>
-                    <div><small class="text-muted">Maintaining balance: ₱500.00</small></div>
+                    <div><small class="text-muted">Maintaining balance: &#8369;500.00</small></div>
                 <?php endif; ?>
             </div>
             <div class="card-footer">
@@ -229,7 +229,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <h6>Loans</h6>
                 <h3 class="text-primary"><?= number_format($loanSummary['total_loans']) ?></h3>
                 <small class="text-muted">
-                    Active payable: ₱<?= number_format($loanSummary['active_total'],2) ?>
+                    Active payable: &#8369;<?= number_format($loanSummary['active_total'],2) ?>
                 </small>
             </div>
             <div class="card-footer">
@@ -244,7 +244,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <div class="card glass-card glass-warning">
             <div class="card-body">
                 <h6>Capital Contribution</h6>
-                <h3 class="text-warning">₱<?= number_format($capital,2) ?></h3>
+                <h3 class="text-warning">&#8369;<?= number_format($capital,2) ?></h3>
                 <small class="text-muted">Total posted capital</small>
             </div>
         </div>
@@ -254,9 +254,9 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <div class="card glass-card glass-danger">
             <div class="card-body">
                 <h6>Payment Balance</h6>
-                <h3 class="text-danger">₱<?= number_format($payments['unpaid'],2) ?></h3>
+                <h3 class="text-danger">&#8369;<?= number_format($payments['unpaid'],2) ?></h3>
                 <small class="text-muted">
-                    Paid: ₱<?= number_format($payments['paid'],2) ?>
+                    Paid: &#8369;<?= number_format($payments['paid'],2) ?>
                 </small>
             </div>
             <div class="card-footer">
@@ -530,7 +530,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <div class="col-md-6">
                     <label class="fw-bold">Payment Cut-Off Date</label>
                     <input type="date" name="payment_date" id="paymentDate" class="form-control" value="<?= date('Y-m-d') ?>" required onchange="updateDueAmount()">
-                    <small class="text-muted" id="dueAmountText">Amount due: ₱0.00</small>
+                    <small class="text-muted" id="dueAmountText">Amount due: &#8369;0.00</small>
                 </div>
 
                 <div class="col-md-6">
@@ -557,7 +557,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <div class="col-12">
                     <div class="alert alert-info mb-0">
                         <strong>TOTAL Amount:</strong>
-                        <span id="paymentTotalText">₱0.00</span>
+                        <span id="paymentTotalText">&#8369;0.00</span>
                         <small class="d-block text-muted">Loan payment + capital contribution</small>
                     </div>
                 </div>
@@ -626,13 +626,13 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <div class="modal-body">
             <div class="alert alert-info py-2">
                 This withdrawal will be submitted for <strong><?= htmlspecialchars($member['name']) ?></strong>.
-                A withdrawal must leave at least <strong>₱500.00</strong>, unless you withdraw the full balance to close the savings account.
+                A withdrawal must leave at least <strong>&#8369;500.00</strong>, unless you withdraw the full balance to close the savings account.
             </div>
 
             <div class="mb-3">
                 <label>Amount to Withdraw</label>
                 <input type="number" step="0.01" min="1" max="<?= $netSavings ?>" name="amount" id="withdrawSavingsAmount" class="form-control" required>
-                <small class="text-muted">Available savings: ₱<?= number_format($netSavings,2) ?></small>
+                <small class="text-muted">Available savings: &#8369;<?= number_format($netSavings,2) ?></small>
             </div>
 
             <div class="mb-3">
@@ -946,7 +946,7 @@ function updateDueAmount(){
     let paymentDate = document.getElementById('paymentDate').value;
     let amount = parseFloat(cutoffAmounts[paymentDate] || '0');
 
-    document.getElementById('dueAmountText').innerText = 'Amount due: ₱' + amount.toLocaleString(undefined, {
+    document.getElementById('dueAmountText').innerText = 'Amount due: \u20B1' + amount.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
@@ -963,7 +963,7 @@ function updatePaymentTotal(){
     let loanAmount = parseFloat(document.getElementById('loanPaymentInput').value || '0');
     let totalAmount = capitalAmount + loanAmount;
 
-    document.getElementById('paymentTotalText').innerText = '₱' + totalAmount.toLocaleString(undefined, {
+    document.getElementById('paymentTotalText').innerText = '\u20B1' + totalAmount.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
@@ -1430,3 +1430,4 @@ function linkAccount(){
 <?php render_footer(); ?>
 </body>
 </html>
+

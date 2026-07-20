@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -83,7 +83,7 @@ if ($amountCents > $balanceCents) {
 }
 
 if (!$isFullWithdrawal && $remainingCents < 50000) {
-    header("Location: ../received_withdrawals.php?error=" . urlencode("Withdrawal must leave at least ₱500 maintaining balance, unless withdrawing the full savings balance to close the account"));
+    header("Location: ../received_withdrawals.php?error=" . urlencode("Withdrawal must leave at least &#8369;500 maintaining balance, unless withdrawing the full savings balance to close the account"));
     exit;
 }
 
@@ -144,3 +144,4 @@ try {
 
 header("Location: ../received_withdrawals.php?verified=1");
 exit;
+

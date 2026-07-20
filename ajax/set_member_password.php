@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 
@@ -43,3 +43,4 @@ $_SESSION['active_member_user_id'] = $user['id'];
 $_SESSION['active_borrower_id'] = $user['borrower_id'];
 
 echo json_encode(["ok" => true]);
+

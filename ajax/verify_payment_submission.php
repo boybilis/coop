@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -178,3 +178,4 @@ try {
 
 header("Location: ../received_payments.php?cutoff_date={$redirectCutoff}&verified=1");
 exit;
+

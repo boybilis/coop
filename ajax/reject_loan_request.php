@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -27,3 +27,4 @@ if ($stmt->affected_rows === 0) {
 
 header("Location: ../loan_requests.php?rejected=1");
 exit;
+

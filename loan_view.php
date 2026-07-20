@@ -180,24 +180,24 @@ $res = $stmt->get_result();
 <tr>
     <td><?= $row['payment_no'] ?></td>
 
-    <td>â‚±<?= number_format($row['amount'],2) ?></td>
+    <td>&#8369;<?= number_format($row['amount'],2) ?></td>
 
     <td><?= $row['due_date'] ?></td>
 
     <td>
         <?php if($row['reference_number']): ?>
             <small>
-                Capital: â‚±<?= number_format($row['capital_contribution'],2) ?><br>
-                Loan: â‚±<?= number_format($row['loan_payment'],2) ?><br>
+                Capital: &#8369;<?= number_format($row['capital_contribution'],2) ?><br>
+                Loan: &#8369;<?= number_format($row['loan_payment'],2) ?><br>
                 Date: <?= $row['payment_date'] ?>
             </small>
         <?php else: ?>
-            <span class="text-muted">â€”</span>
+            <span class="text-muted">&mdash;</span>
         <?php endif; ?>
     </td>
 
     <td>
-        <?= $row['reference_number'] ? htmlspecialchars($row['reference_number']) : '<span class="text-muted">â€”</span>' ?>
+        <?= $row['reference_number'] ? htmlspecialchars($row['reference_number']) : '<span class="text-muted">&mdash;</span>' ?>
     </td>
 
     <td>
@@ -206,7 +206,7 @@ $res = $stmt->get_result();
                 View Image
             </a>
         <?php else: ?>
-            <span class="text-muted">â€”</span>
+            <span class="text-muted">&mdash;</span>
         <?php endif; ?>
     </td>
 
@@ -216,7 +216,7 @@ $res = $stmt->get_result();
                 <?= $row['submission_status'] ?>
             </span>
         <?php else: ?>
-            <span class="text-muted">â€”</span>
+            <span class="text-muted">&mdash;</span>
         <?php endif; ?>
     </td>
 
@@ -233,7 +233,7 @@ $res = $stmt->get_result();
                 Mark Paid
             </button>
         <?php else: ?>
-            <span class="text-muted">â€”</span>
+            <span class="text-muted">&mdash;</span>
         <?php endif; ?>
     </td>
 </tr>
@@ -292,5 +292,6 @@ function markPaid(id){
 <?php render_footer(); ?>
 </body>
 </html>
+
 
 

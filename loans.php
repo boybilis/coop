@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -85,9 +85,9 @@ $loans = $conn->query("
                             <span class="badge bg-secondary">Member</span>
                         <?php endif; ?>
                     </td>
-                    <td>₱<?= number_format($row['amount'],2) ?></td>
-                    <td class="text-success">₱<?= number_format($row['interest'],2) ?></td>
-                    <td><strong>₱<?= number_format($row['total_payable'],2) ?></strong></td>
+                    <td>&#8369;<?= number_format($row['amount'],2) ?></td>
+                    <td class="text-success">&#8369;<?= number_format($row['interest'],2) ?></td>
+                    <td><strong>&#8369;<?= number_format($row['total_payable'],2) ?></strong></td>
                     <td width="180">
                         <div class="progress" style="height:20px;">
                             <div class="progress-bar bg-success" style="width:<?= $progress ?>%">
@@ -124,3 +124,4 @@ $loans = $conn->query("
 <?php render_footer(); ?>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -116,15 +116,15 @@ $payments = $paymentsStmt->get_result();
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Loan Amount</small>
-                    <h5>₱<?= number_format($loanInfo['amount'], 2) ?></h5>
+                    <h5>&#8369;<?= number_format($loanInfo['amount'], 2) ?></h5>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Interest</small>
-                    <h5 class="text-success">₱<?= number_format($loanInfo['interest'], 2) ?></h5>
+                    <h5 class="text-success">&#8369;<?= number_format($loanInfo['interest'], 2) ?></h5>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Total Payable</small>
-                    <h5>₱<?= number_format($loanInfo['total_payable'], 2) ?></h5>
+                    <h5>&#8369;<?= number_format($loanInfo['total_payable'], 2) ?></h5>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">Months</small>
@@ -182,13 +182,13 @@ $payments = $paymentsStmt->get_result();
                         <?php while($payment = $payments->fetch_assoc()): ?>
                             <tr>
                                 <td><?= $payment['payment_no'] ?></td>
-                                <td>₱<?= number_format($payment['amount'], 2) ?></td>
+                                <td>&#8369;<?= number_format($payment['amount'], 2) ?></td>
                                 <td><?= htmlspecialchars($payment['due_date']) ?></td>
                                 <td>
                                     <?php if($payment['reference_number']): ?>
                                         <small>
-                                            Capital: ₱<?= number_format($payment['capital_contribution'], 2) ?><br>
-                                            Loan: ₱<?= number_format($payment['loan_payment'], 2) ?><br>
+                                            Capital: &#8369;<?= number_format($payment['capital_contribution'], 2) ?><br>
+                                            Loan: &#8369;<?= number_format($payment['loan_payment'], 2) ?><br>
                                             Date: <?= htmlspecialchars($payment['payment_date']) ?>
                                         </small>
                                     <?php else: ?>
@@ -246,3 +246,4 @@ $(document).ready(function () {
 <?php render_footer(); ?>
 </body>
 </html>
+

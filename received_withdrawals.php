@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -114,7 +114,7 @@ if ($statusFilter === 'All') {
                     <?php while($row = $requests->fetch_assoc()): ?>
                     <tr>
                         <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
-                        <td>₱<?= number_format($row['amount'],2) ?></td>
+                        <td>&#8369;<?= number_format($row['amount'],2) ?></td>
                         <td><?= htmlspecialchars($row['gcash_name']) ?></td>
                         <td><?= htmlspecialchars($row['gcash_number']) ?></td>
                         <td><?= htmlspecialchars($row['admin_reference_number'] ?? '—') ?></td>
@@ -197,3 +197,4 @@ function setWithdrawalRequest(id){
 <?php render_footer(); ?>
 </body>
 </html>
+

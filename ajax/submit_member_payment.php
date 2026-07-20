@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -75,3 +75,4 @@ $stmt->execute();
 
 header("Location: ../member_dashboard.php?payment_submitted=1");
 exit;
+

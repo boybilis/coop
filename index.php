@@ -293,3 +293,4 @@ function notification_badge($count)
 <?php render_footer(); ?>
 </body>
 </html>
+

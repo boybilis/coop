@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -41,3 +41,4 @@ $_SESSION['active_borrower_id'] = $selectedUser['borrower_id'];
 
 header("Location: ../member_dashboard.php");
 exit;
+

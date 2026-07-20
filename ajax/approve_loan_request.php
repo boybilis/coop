@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -168,3 +168,4 @@ try {
 
 header("Location: ../loan_requests.php?approved=1");
 exit;
+

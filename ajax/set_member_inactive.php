@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -20,3 +20,4 @@ echo json_encode([
     "id" => $id,
     "status" => "Inactive"
 ]);
+

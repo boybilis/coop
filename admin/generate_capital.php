@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 
 $start = new DateTime("2025-07-15");

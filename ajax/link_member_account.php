@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -62,3 +62,4 @@ echo json_encode([
     "linked_user_id" => $linkedUser['id'],
     "username" => $linkedUser['username']
 ]);
+

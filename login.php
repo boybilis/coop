@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -170,3 +170,4 @@ function setMemberPassword(){
 <?php render_footer(); ?>
 </body>
 </html>
+

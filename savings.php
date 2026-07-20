@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -49,7 +49,7 @@ $netSavings = $deposits - $withdrawals;
         <div class="card border-success shadow-sm">
             <div class="card-body">
                 <h6>Total Deposits</h6>
-                <h3 class="text-success">₱<?= number_format($deposits,2) ?></h3>
+                <h3 class="text-success">&#8369;<?= number_format($deposits,2) ?></h3>
             </div>
         </div>
     </div>
@@ -58,7 +58,7 @@ $netSavings = $deposits - $withdrawals;
         <div class="card border-danger shadow-sm">
             <div class="card-body">
                 <h6>Total Withdrawals</h6>
-                <h3 class="text-danger">₱<?= number_format($withdrawals,2) ?></h3>
+                <h3 class="text-danger">&#8369;<?= number_format($withdrawals,2) ?></h3>
             </div>
         </div>
     </div>
@@ -67,7 +67,7 @@ $netSavings = $deposits - $withdrawals;
         <div class="card border-primary shadow-sm">
             <div class="card-body">
                 <h6>Net Savings</h6>
-                <h3 class="text-primary">₱<?= number_format($netSavings,2) ?></h3>
+                <h3 class="text-primary">&#8369;<?= number_format($netSavings,2) ?></h3>
             </div>
         </div>
     </div>
@@ -154,7 +154,7 @@ while($row = $transactions->fetch_assoc()):
 ?>
 <tr>
 <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
-<td>₱<?= number_format($row['amount'],2) ?></td>
+<td>&#8369;<?= number_format($row['amount'],2) ?></td>
 <td>
 <span class="badge bg-<?= $row['type'] == 'DEPOSIT' ? 'success' : 'danger' ?>">
 <?= $row['type'] ?>
@@ -187,3 +187,4 @@ $(document).ready(function () {
 <?php render_footer(); ?>
 </body>
 </html>
+

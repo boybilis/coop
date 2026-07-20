@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -108,7 +108,7 @@ $requests = $conn->query("
                                 <span class="badge bg-secondary">Member</span>
                             <?php endif; ?>
                         </td>
-                        <td>₱<?= number_format($row['requested_amount'],2) ?></td>
+                        <td>&#8369;<?= number_format($row['requested_amount'],2) ?></td>
                         <td><?= $row['requested_months'] ?></td>
                         <td><?= $row['created_at'] ?></td>
                         <td>
@@ -203,3 +203,4 @@ function openApproveLoanRequestModal(requestId, amount, months){
 <?php render_footer(); ?>
 </body>
 </html>
+

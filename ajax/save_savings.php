@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_admin();
@@ -28,3 +28,4 @@ $stmt->execute();
 
 header("Location: ../savings.php");
 exit;
+

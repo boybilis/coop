@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -101,3 +101,4 @@ $updateStmt->bind_param(
 $updateStmt->execute();
 
 echo json_encode(["ok" => true]);
+

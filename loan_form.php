@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -98,3 +98,4 @@ document.getElementById("loanForm").onsubmit = function(e){
 <?php render_footer(); ?>
 </body>
 </html>
+

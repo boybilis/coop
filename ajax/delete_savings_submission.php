@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -28,3 +28,4 @@ if ($stmt->affected_rows === 0) {
 }
 
 echo json_encode(["ok" => true]);
+

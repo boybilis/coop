@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include '../db.php';
 include '../auth.php';
 require_member();
@@ -85,9 +85,9 @@ if ($table === 'loans') {
 
         $html .= '<tr>';
         $html .= '<td>#' . $loan['id'] . '</td>';
-        $html .= '<td>₱' . number_format($loan['amount'], 2) . '</td>';
-        $html .= '<td>₱' . number_format($loan['interest'], 2) . '</td>';
-        $html .= '<td><strong>₱' . number_format($loan['total_payable'], 2) . '</strong></td>';
+        $html .= '<td>&#8369;' . number_format($loan['amount'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($loan['interest'], 2) . '</td>';
+        $html .= '<td><strong>&#8369;' . number_format($loan['total_payable'], 2) . '</strong></td>';
         $html .= '<td width="170"><div class="progress" style="height:20px;"><div class="progress-bar bg-success" style="width:' . $progress . '%">' . $progress . '%</div></div></td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($loan['status']) . '</span></td>';
         $html .= '<td><a href="member_loan_view.php?id=' . $loan['id'] . '" class="btn btn-info btn-sm w-100">View Details</a></td>';
@@ -136,10 +136,10 @@ if ($table === 'loans') {
 
         $html .= '<tr>';
         $html .= '<td>#' . $request['id'] . '</td>';
-        $html .= '<td>₱' . number_format($request['requested_amount'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($request['requested_amount'], 2) . '</td>';
         $html .= '<td>' . $request['requested_months'] . '</td>';
         $html .= '<td>' . $borrowerFor . '</td>';
-        $html .= '<td>' . ($request['approved_amount'] !== null ? '₱' . number_format($request['approved_amount'], 2) : '—') . '</td>';
+        $html .= '<td>' . ($request['approved_amount'] !== null ? '&#8369;' . number_format($request['approved_amount'], 2) : '—') . '</td>';
         $html .= '<td>' . htmlspecialchars($request['created_at']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($request['status']) . '</span></td>';
         $html .= '<td>' . $action . '</td>';
@@ -178,7 +178,7 @@ if ($table === 'loans') {
         $html .= '<tr>';
         $html .= '<td>#' . $payment['loan_id'] . '</td>';
         $html .= '<td>' . $payment['payment_no'] . '</td>';
-        $html .= '<td>₱' . number_format($payment['amount'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($payment['amount'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($payment['due_date']) . '</td>';
         $html .= '</tr>';
     }
@@ -219,15 +219,15 @@ if ($table === 'loans') {
     while ($row = $rows->fetch_assoc()) {
         $isDeposit = $row['type'] === 'DEPOSIT';
         $badgeClass = $isDeposit ? 'success' : 'danger';
-        $depositAmount = $isDeposit ? '₱' . number_format($row['amount'], 2) : '—';
-        $withdrawalAmount = !$isDeposit ? '₱' . number_format($row['amount'], 2) : '—';
+        $depositAmount = $isDeposit ? '&#8369;' . number_format($row['amount'], 2) : '—';
+        $withdrawalAmount = !$isDeposit ? '&#8369;' . number_format($row['amount'], 2) : '—';
 
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($row['transaction_date']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($row['type']) . '</span></td>';
         $html .= '<td class="text-success">' . $depositAmount . '</td>';
         $html .= '<td class="text-danger">' . $withdrawalAmount . '</td>';
-        $html .= '<td><strong>₱' . number_format($row['running_balance'], 2) . '</strong></td>';
+        $html .= '<td><strong>&#8369;' . number_format($row['running_balance'], 2) . '</strong></td>';
         $html .= '<td>' . htmlspecialchars($row['remarks'] ?? '') . '</td>';
         $html .= '</tr>';
     }
@@ -257,7 +257,7 @@ if ($table === 'loans') {
 
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($submission['created_at']) . '</td>';
-        $html .= '<td>₱' . number_format($submission['amount'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($submission['amount'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($submission['reference_number']) . '</td>';
         $action = '<span class="text-muted">—</span>';
 
@@ -300,7 +300,7 @@ if ($table === 'loans') {
 
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($request['created_at']) . '</td>';
-        $html .= '<td>₱' . number_format($request['amount'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($request['amount'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($request['gcash_name']) . '</td>';
         $html .= '<td>' . htmlspecialchars($request['gcash_number']) . '</td>';
         $html .= '<td>' . htmlspecialchars($adminReference) . '</td>';
@@ -351,7 +351,7 @@ if ($table === 'loans') {
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($row['contribution_date']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($row['type']) . '</span></td>';
-        $html .= '<td>₱' . number_format($row['amount'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($row['amount'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($row['period_label'] ?? '') . '</td>';
         $html .= '</tr>';
     }
@@ -392,8 +392,8 @@ if ($table === 'loans') {
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($submission['payment_date']) . '</td>';
         $html .= '<td>' . htmlspecialchars($submission['cutoff_date']) . '</td>';
-        $html .= '<td>₱' . number_format($submission['capital_contribution'], 2) . '</td>';
-        $html .= '<td>₱' . number_format($submission['loan_payment'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($submission['capital_contribution'], 2) . '</td>';
+        $html .= '<td>&#8369;' . number_format($submission['loan_payment'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($submission['reference_number']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($submission['status']) . '</span></td>';
         $html .= '<td>' . $action . '</td>';
@@ -410,3 +410,4 @@ echo json_encode([
     "total_pages" => $totalPages,
     "total_rows" => $totalRows
 ]);
+

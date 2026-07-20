@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 function render_navbar($title = 'Cooperative Loan and Savings Management System')
 {
     ?>
@@ -218,3 +218,4 @@ function render_member_identity($username, $fullName)
     <small class="d-block text-dark-emphasis"><?= htmlspecialchars($fullName) ?></small>
     <?php
 }
+

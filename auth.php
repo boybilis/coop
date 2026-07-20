@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -82,3 +82,4 @@ function member_borrower_id_for_user($conn, $selectedUserId)
 
     return (int)($user['borrower_id'] ?? 0);
 }
+
