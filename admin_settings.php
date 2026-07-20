@@ -36,6 +36,9 @@ if (is_superadmin_user()) {
     <?php if(isset($_GET['password_updated'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Admin password updated.'});</script>
     <?php endif; ?>
+    <?php if(isset($_GET['username_updated'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'SuperAdmin username updated.'});</script>
+    <?php endif; ?>
     <?php if(isset($_GET['admin_created'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'New admin user created.'});</script>
     <?php endif; ?>
@@ -71,6 +74,23 @@ if (is_superadmin_user()) {
 
         <?php if(is_superadmin_user()): ?>
             <div class="col-lg-7 mb-3">
+                <div class="card shadow mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Change SuperAdmin Username</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="ajax/change_superadmin_username.php" class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">New Username</label>
+                                <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($_SESSION['username'] ?? '') ?>" required>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-warning w-100">Update Username</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="card shadow mb-3">
                     <div class="card-header">
                         <h5 class="mb-0">Create Admin User</h5>

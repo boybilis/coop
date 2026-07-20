@@ -29,6 +29,32 @@ function require_login()
         header("Location: login.php");
         exit;
     }
+
+    if (isset($GLOBALS['conn'])) {
+        refresh_logged_in_user($GLOBALS['conn']);
+    }
+}
+
+function refresh_logged_in_user($conn)
+{
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+
+    if (!$userId) {
+        return;
+    }
+
+    $stmt = $conn->prepare("SELECT username, status, borrower_id FROM users WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!$user) {
+        return;
+    }
+
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['user_status'] = $user['status'];
+    $_SESSION['borrower_id'] = $user['borrower_id'];
 }
 
 function require_admin()
