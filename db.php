@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('Asia/Manila');
+
 $dbHost = "localhost";
 $dbUser = "root";
 $dbPassword = "";
@@ -18,6 +20,8 @@ if (file_exists($localConfig)) {
 $conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
 
 if (!$conn->connect_error) {
+    $conn->query("SET time_zone = '+08:00'");
+
     $borrowersTableCheck = $conn->query("
         SELECT 1
         FROM INFORMATION_SCHEMA.TABLES
