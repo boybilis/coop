@@ -39,15 +39,21 @@ function current_cutoff_date()
 
 $currentCutoffDate = current_cutoff_date();
 
-$cutoffCapitalStmt = $conn->prepare("
+$initialCapital = (float)$conn->query("
     SELECT IFNULL(SUM(amount),0) AS total
     FROM capital_contributions
     WHERE type = 'INITIAL'
-    OR (type = 'CUTOFF' AND contribution_date = ?)
+")->fetch_assoc()['total'];
+
+$cutoffCapitalStmt = $conn->prepare("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM capital_contributions
+    WHERE type = 'CUTOFF'
+    AND contribution_date <= ?
 ");
 $cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
 $cutoffCapitalStmt->execute();
-$cutoffCapital = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
+$cutoffCapitalToDate = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
 
 $cutoffPaidLoansStmt = $conn->prepare("
     SELECT IFNULL(SUM(loans.amount / loan_payment_counts.total_payments),0) AS total
@@ -58,19 +64,19 @@ $cutoffPaidLoansStmt = $conn->prepare("
         FROM payments
         GROUP BY loan_id
     ) loan_payment_counts ON loan_payment_counts.loan_id = payments.loan_id
-    WHERE payments.due_date = ?
+    WHERE payments.due_date <= ?
     AND payments.paid = 1
 ");
 $cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
 $cutoffPaidLoansStmt->execute();
-$cutoffPaidLoans = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
+$paidLoanPrincipalToDate = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
 
 $approvedLoanPrincipal = (float)$conn->query("
     SELECT IFNULL(SUM(amount),0) AS total
     FROM loans
 ")->fetch_assoc()['total'];
 
-$availableLoanCutoff = $cutoffCapital + $cutoffPaidLoans - $approvedLoanPrincipal;
+$availableLoanCutoff = $initialCapital + $cutoffCapitalToDate + $paidLoanPrincipalToDate - $approvedLoanPrincipal;
 
 $outstanding = $conn->query("
     SELECT IFNULL(SUM(amount),0) AS total
@@ -240,13 +246,13 @@ function notification_badge($count)
     <div class="col-md-3 mb-3">
         <div class="card glass-card glass-warning">
             <div class="card-body">
-                <h6>Available Loan for this Cut-off</h6>
+                <h6>Available Loanable Amount to Date</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($availableLoanCutoff,2) ?></h3>
-                <small class="text-muted">
-                    initial capcon + cutoff capcon &#8369;<?= number_format($cutoffCapital,2) ?> +
-                    paid loan principal &#8369;<?= number_format($cutoffPaidLoans,2) ?> -
-                    approved loan principal &#8369;<?= number_format($approvedLoanPrincipal,2) ?>
-                </small>
+                <small class="text-muted d-block">As of <?= date('M d, Y', strtotime($currentCutoffDate)) ?></small>
+                <small class="text-muted d-block">Initial contribution: &#8369;<?= number_format($initialCapital,2) ?></small>
+                <small class="text-muted d-block">Capcon to date: &#8369;<?= number_format($cutoffCapitalToDate,2) ?></small>
+                <small class="text-muted d-block">Paid loan principal to date: &#8369;<?= number_format($paidLoanPrincipalToDate,2) ?></small>
+                <small class="text-muted d-block">Less approved principal loans: &#8369;<?= number_format($approvedLoanPrincipal,2) ?></small>
             </div>
             <div class="card-footer">
                 <a href="capital.php" class="btn btn-warning w-100">Capital Contributions</a>
