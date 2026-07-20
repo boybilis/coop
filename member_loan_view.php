@@ -133,7 +133,7 @@ $payments = $paymentsStmt->get_result();
                 <div class="col-md-6">
                     <small class="text-muted">Disbursement Proof</small><br>
                     <?php if($loanInfo['disbursement_proof_image']): ?>
-                        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                             View Image
                         </a>
                     <?php else: ?>
@@ -196,7 +196,7 @@ $payments = $paymentsStmt->get_result();
                                 </td>
                                 <td>
                                     <?php if($payment['proof_image']): ?>
-                                        <a href="<?= htmlspecialchars($payment['proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <a href="<?= htmlspecialchars($payment['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                                             View Image
                                         </a>
                                     <?php else: ?>

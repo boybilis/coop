@@ -120,7 +120,7 @@ if ($statusFilter === 'All') {
                         <td><?= htmlspecialchars($row['admin_reference_number'] ?? '—') ?></td>
                         <td>
                             <?php if($row['admin_proof_image']): ?>
-                                <a href="<?= htmlspecialchars($row['admin_proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <a href="<?= htmlspecialchars($row['admin_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                                     View Image
                                 </a>
                             <?php else: ?>

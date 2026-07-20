@@ -303,7 +303,7 @@ if ($table === 'loans') {
         $html .= '<td>' . htmlspecialchars($request['gcash_number']) . '</td>';
         $html .= '<td>' . htmlspecialchars($adminReference) . '</td>';
         if (!empty($request['admin_proof_image'])) {
-            $html .= '<td><a href="' . htmlspecialchars($request['admin_proof_image']) . '" target="_blank" class="btn btn-outline-primary btn-sm">View File</a></td>';
+            $html .= '<td><a href="' . htmlspecialchars($request['admin_proof_image']) . '" data-image-preview class="btn btn-outline-primary btn-sm">View File</a></td>';
         } else {
             $html .= '<td><span class="text-muted">—</span></td>';
         }

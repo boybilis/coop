@@ -109,7 +109,7 @@ $res = $stmt->get_result();
 <p>
     <strong>Disbursement Proof:</strong>
     <?php if($loanInfo['disbursement_proof_image']): ?>
-        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
             View Image
         </a>
     <?php else: ?>
@@ -169,7 +169,7 @@ $res = $stmt->get_result();
 
     <td>
         <?php if($row['proof_image']): ?>
-            <a href="<?= htmlspecialchars($row['proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+            <a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                 View Image
             </a>
         <?php else: ?>

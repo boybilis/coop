@@ -119,7 +119,7 @@ if ($statusFilter === 'All') {
                         <td>₱<?= number_format($row['amount'],2) ?></td>
                         <td><?= htmlspecialchars($row['reference_number']) ?></td>
                         <td>
-                            <a href="<?= htmlspecialchars($row['proof_image']) ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                                 View Image
                             </a>
                         </td>
