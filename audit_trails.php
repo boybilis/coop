@@ -6,48 +6,6 @@ require_superadmin();
 
 $actionFilter = trim($_GET['action'] ?? '');
 $userFilter = trim($_GET['user'] ?? '');
-$page = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 25;
-$offset = ($page - 1) * $perPage;
-$where = [];
-$types = '';
-$params = [];
-
-if ($actionFilter !== '') {
-    $where[] = "action LIKE ?";
-    $types .= 's';
-    $params[] = '%' . $actionFilter . '%';
-}
-
-if ($userFilter !== '') {
-    $where[] = "(username LIKE ? OR user_status LIKE ?)";
-    $types .= 'ss';
-    $params[] = '%' . $userFilter . '%';
-    $params[] = '%' . $userFilter . '%';
-}
-
-$whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-
-$countStmt = $conn->prepare("SELECT COUNT(*) AS total FROM audit_trails {$whereSql}");
-if ($types !== '') {
-    $countStmt->bind_param($types, ...$params);
-}
-$countStmt->execute();
-$totalRows = (int)$countStmt->get_result()->fetch_assoc()['total'];
-$totalPages = max(1, (int)ceil($totalRows / $perPage));
-
-$listTypes = $types . 'ii';
-$listParams = array_merge($params, [$perPage, $offset]);
-$stmt = $conn->prepare("
-    SELECT *
-    FROM audit_trails
-    {$whereSql}
-    ORDER BY created_at DESC, id DESC
-    LIMIT ? OFFSET ?
-");
-$stmt->bind_param($listTypes, ...$listParams);
-$stmt->execute();
-$logs = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html>
@@ -69,12 +27,12 @@ $logs = $stmt->get_result();
 
     <div class="card shadow mb-3">
         <div class="card-body">
-            <form class="row g-2">
+            <form class="row g-2" id="auditFilterForm">
                 <div class="col-md-4">
-                    <input type="text" name="action" class="form-control" placeholder="Filter by action" value="<?= htmlspecialchars($actionFilter) ?>">
+                    <input type="text" name="action" id="auditActionFilter" class="form-control" placeholder="Filter by action" value="<?= htmlspecialchars($actionFilter) ?>">
                 </div>
                 <div class="col-md-4">
-                    <input type="text" name="user" class="form-control" placeholder="Filter by user or role" value="<?= htmlspecialchars($userFilter) ?>">
+                    <input type="text" name="user" id="auditUserFilter" class="form-control" placeholder="Filter by user or role" value="<?= htmlspecialchars($userFilter) ?>">
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-primary">Search</button>
@@ -98,44 +56,16 @@ $logs = $stmt->get_result();
                         <th>IP</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php if($logs->num_rows === 0): ?>
-                        <tr><td colspan="7" class="text-center text-muted">No audit records found.</td></tr>
-                    <?php endif; ?>
-                    <?php while($log = $logs->fetch_assoc()): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($log['created_at']) ?></td>
-                            <td><?= htmlspecialchars($log['username'] ?? 'System') ?></td>
-                            <td><?= htmlspecialchars($log['user_status'] ?? '') ?></td>
-                            <td><span class="badge bg-primary"><?= htmlspecialchars($log['action']) ?></span></td>
-                            <td>
-                                <?= htmlspecialchars($log['description']) ?>
-                                <?php if(!empty($log['metadata'])): ?>
-                                    <details class="mt-1">
-                                        <summary class="text-muted small">Metadata</summary>
-                                        <pre class="small bg-light border rounded p-2 mb-0"><?= htmlspecialchars($log['metadata']) ?></pre>
-                                    </details>
-                                <?php endif; ?>
-                            </td>
-                            <td><?= htmlspecialchars(trim(($log['entity_type'] ?? '') . ' #' . ($log['entity_id'] ?? ''), ' #')) ?></td>
-                            <td><?= htmlspecialchars($log['ip_address'] ?? '') ?></td>
-                        </tr>
-                    <?php endwhile; ?>
+                <tbody id="auditTrailsTableBody">
+                    <tr><td colspan="7" class="text-center text-muted">Loading audit trails...</td></tr>
                 </tbody>
             </table>
 
             <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Page <?= $page ?> of <?= $totalPages ?> · <?= $totalRows ?> records</small>
+                <small class="text-muted" id="auditTrailsSummary">Loading...</small>
                 <div>
-                    <?php
-                    $queryBase = http_build_query(array_filter([
-                        'action' => $actionFilter,
-                        'user' => $userFilter
-                    ], fn($value) => $value !== ''));
-                    $prefix = $queryBase ? $queryBase . '&' : '';
-                    ?>
-                    <a class="btn btn-outline-secondary btn-sm <?= $page <= 1 ? 'disabled' : '' ?>" href="audit_trails.php?<?= $prefix ?>page=<?= $page - 1 ?>">Previous</a>
-                    <a class="btn btn-outline-secondary btn-sm <?= $page >= $totalPages ? 'disabled' : '' ?>" href="audit_trails.php?<?= $prefix ?>page=<?= $page + 1 ?>">Next</a>
+                    <button class="btn btn-outline-secondary btn-sm" id="auditPrevPage" disabled>Previous</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="auditNextPage" disabled>Next</button>
                 </div>
             </div>
         </div>
@@ -143,6 +73,74 @@ $logs = $stmt->get_result();
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let auditCurrentPage = 1;
+let auditTotalPages = 1;
+
+function auditFilters(){
+    return {
+        action: document.getElementById('auditActionFilter').value.trim(),
+        user: document.getElementById('auditUserFilter').value.trim()
+    };
+}
+
+function loadAuditTrails(page = 1){
+    const body = document.getElementById('auditTrailsTableBody');
+    const summary = document.getElementById('auditTrailsSummary');
+    const prev = document.getElementById('auditPrevPage');
+    const next = document.getElementById('auditNextPage');
+    const filters = auditFilters();
+    const params = new URLSearchParams({
+        page: page,
+        action: filters.action,
+        user: filters.user
+    });
+
+    body.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Loading audit trails...</td></tr>';
+    prev.disabled = true;
+    next.disabled = true;
+
+    fetch('ajax/audit_trails_table.php?' + params.toString(), {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            auditCurrentPage = data.page;
+            auditTotalPages = data.total_pages;
+            body.innerHTML = data.html;
+            summary.innerText = 'Page ' + data.page + ' of ' + data.total_pages + ' · ' + data.total_rows + ' records';
+            prev.disabled = data.page <= 1;
+            next.disabled = data.page >= data.total_pages;
+        })
+        .catch(() => {
+            body.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Unable to load audit trails.</td></tr>';
+            summary.innerText = 'Unable to load data.';
+        });
+}
+
+document.getElementById('auditFilterForm').addEventListener('submit', function(event){
+    event.preventDefault();
+    loadAuditTrails(1);
+});
+
+document.getElementById('auditPrevPage').addEventListener('click', function(){
+    if (auditCurrentPage > 1) {
+        loadAuditTrails(auditCurrentPage - 1);
+    }
+});
+
+document.getElementById('auditNextPage').addEventListener('click', function(){
+    if (auditCurrentPage < auditTotalPages) {
+        loadAuditTrails(auditCurrentPage + 1);
+    }
+});
+
+loadAuditTrails(1);
+</script>
 <?php render_footer(); ?>
 </body>
 </html>

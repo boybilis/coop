@@ -21,6 +21,19 @@ if ($months > 6) {
     exit;
 }
 
+$loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
+$availableLoanAmount = (float)$loanableBreakdown['available_amount'];
+
+if ($amount > $availableLoanAmount) {
+    audit_log($conn, 'block_loan_request_over_loanable', 'Member attempted to request a loan above the available loanable amount.', 'borrowers', $borrowerId, [
+        'requested_amount' => $amount,
+        'available_loanable_amount' => $availableLoanAmount
+    ]);
+
+    header("Location: ../member_dashboard.php?error=" . urlencode("Loan request amount cannot exceed the Available Loanable Amount to date. Available: " . number_format($availableLoanAmount, 2) . "."));
+    exit;
+}
+
 $memberProfileStmt = $conn->prepare("
     SELECT gcash_name, gcash_number
     FROM borrowers

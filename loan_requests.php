@@ -4,6 +4,9 @@ include 'auth.php';
 include 'layout.php';
 require_admin();
 
+$loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
+$availableLoanAmount = (float)$loanableBreakdown['available_amount'];
+
 $requests = $conn->query("
     SELECT loan_requests.*, borrowers.name, borrowers.gcash_name, borrowers.gcash_number, users.username
     FROM loan_requests
@@ -157,7 +160,7 @@ $requests = $conn->query("
 <div class="modal fade" id="approveLoanRequestModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="ajax/approve_loan_request.php" enctype="multipart/form-data" data-confirm="Approve and mark this loan as disbursed?" data-confirm-ok="Approve Loan" data-confirm-class="btn-success">
+      <form method="POST" action="ajax/approve_loan_request.php" enctype="multipart/form-data" id="approveLoanRequestForm" data-confirm="Approve and mark this loan as disbursed?" data-confirm-ok="Approve Loan" data-confirm-class="btn-success">
         <div class="modal-header">
             <h5 class="modal-title">Approve Loan Request</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -168,6 +171,10 @@ $requests = $conn->query("
             <div class="mb-3">
                 <label class="form-label">Approved Amount</label>
                 <input type="number" step="0.01" min="1" name="amount" id="approveAmount" class="form-control" required>
+                <small class="text-muted">Available Loanable Amount to date: &#8369;<?= number_format($availableLoanAmount, 2) ?></small>
+                <div class="text-danger small d-none" id="approveAmountWarning">
+                    Approved amount cannot exceed the Available Loanable Amount to date.
+                </div>
             </div>
 
             <div class="mb-3">
@@ -188,7 +195,7 @@ $requests = $conn->query("
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button class="btn btn-success">Approve Loan</button>
+            <button class="btn btn-success" id="approveLoanButton">Approve Loan</button>
         </div>
       </form>
     </div>
@@ -197,12 +204,38 @@ $requests = $conn->query("
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const availableLoanAmount = <?= json_encode($availableLoanAmount) ?>;
+
+function validateApproveAmount(){
+    const amountInput = document.getElementById('approveAmount');
+    const warning = document.getElementById('approveAmountWarning');
+    const approveButton = document.getElementById('approveLoanButton');
+    const amount = parseFloat(amountInput.value || '0');
+    const isTooHigh = amount > availableLoanAmount;
+
+    warning.classList.toggle('d-none', !isTooHigh);
+    approveButton.disabled = isTooHigh;
+}
+
 function openApproveLoanRequestModal(requestId, amount, months){
     document.getElementById('approveRequestId').value = requestId;
     document.getElementById('approveAmount').value = amount;
     document.getElementById('approveMonths').value = months;
+    validateApproveAmount();
     new bootstrap.Modal(document.getElementById('approveLoanRequestModal')).show();
 }
+
+document.getElementById('approveAmount').addEventListener('input', validateApproveAmount);
+document.getElementById('approveLoanRequestForm').addEventListener('submit', function(event){
+    const amount = parseFloat(document.getElementById('approveAmount').value || '0');
+
+    if (amount > availableLoanAmount) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        validateApproveAmount();
+        appShowToast('Approved amount cannot exceed the Available Loanable Amount to date.', 'error');
+    }
+});
 </script>
 <?php render_footer(); ?>
 </body>

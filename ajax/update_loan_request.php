@@ -24,6 +24,20 @@ if ($months > 6) {
     exit;
 }
 
+$loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
+$availableLoanAmount = (float)$loanableBreakdown['available_amount'];
+
+if ($amount > $availableLoanAmount) {
+    audit_log($conn, 'block_update_loan_request_over_loanable', 'Member attempted to edit a loan request above the available loanable amount.', 'loan_requests', $requestId, [
+        'borrower_id' => $borrowerId,
+        'requested_amount' => $amount,
+        'available_loanable_amount' => $availableLoanAmount
+    ]);
+
+    echo json_encode(["error" => "Loan request amount cannot exceed the Available Loanable Amount to date. Available: " . number_format($availableLoanAmount, 2) . "."]);
+    exit;
+}
+
 if ($isGuarantor && ($guestBorrowerName === '' || $guestGcashName === '' || $guestGcashNumber === '')) {
     echo json_encode(["error" => "Guest borrower name, GCash name, and GCash number are required"]);
     exit;
