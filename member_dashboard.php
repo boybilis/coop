@@ -298,10 +298,10 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <h6>Capital Contribution</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($capital,2) ?></h3>
                 <small class="text-muted d-block">Total posted capital</small>
-                <div class="mt-2">
-                    <small class="text-muted d-block">Total Available Loanable Amount</small>
-                    <strong>&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
-                </div>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted d-block">Total Available Loanable Amount</small>
+                <strong>&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
             </div>
         </div>
     </div>
