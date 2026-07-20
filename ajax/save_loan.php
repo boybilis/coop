@@ -18,7 +18,8 @@ if(!$borrower_id || !$amount || !$months || !$start){
 // =============================
 // LOAN COMPUTATION
 // =============================
-$rate = 0.02;
+$effectiveRate = cooperative_effective_interest_rate($conn, $start);
+$rate = ((float)$effectiveRate['monthly_rate']) / 100;
 $interest = (int) ceil($amount * $rate * $months);
 $totalPayable = (int) ceil($amount + $interest);
 
@@ -126,6 +127,8 @@ for($i = 1; $i <= $totalPayments; $i++){
 audit_log($conn, 'save_loan', 'Admin created a direct loan record.', 'loans', $loan_id, [
     'borrower_id' => $borrower_id,
     'amount' => $amount,
+    'monthly_rate' => $effectiveRate['monthly_rate'],
+    'rate_implementation_date' => $effectiveRate['implementation_date'],
     'interest' => $interest,
     'months' => $months,
     'total_payable' => $totalPayable,

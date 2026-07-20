@@ -93,7 +93,8 @@ if (!move_uploaded_file($_FILES['disbursement_proof_image']['tmp_name'], $target
 $proofPath = 'uploads/loan_disbursements/' . $fileName;
 
 $start = date('Y-m-d');
-$rate = 0.02;
+$effectiveRate = cooperative_effective_interest_rate($conn, $start);
+$rate = ((float)$effectiveRate['monthly_rate']) / 100;
 $interest = (int) ceil($amount * $rate * $months);
 $totalPayable = (int) ceil($amount + $interest);
 $totalPayments = (int) ceil($months * 2);
@@ -178,6 +179,8 @@ try {
         'loan_id' => $loanId,
         'approved_amount' => $amount,
         'approved_months' => $months,
+        'monthly_rate' => $effectiveRate['monthly_rate'],
+        'rate_implementation_date' => $effectiveRate['implementation_date'],
         'disbursement_reference_number' => $disbursementReferenceNumber
     ]);
 

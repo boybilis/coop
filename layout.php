@@ -13,6 +13,7 @@ function render_navbar($title = 'Cooperative Loan and Savings Management System'
                         <a href="admin_settings.php" class="btn btn-outline-light btn-sm">Admin Settings</a>
                     <?php endif; ?>
                     <?php if (is_superadmin_user()): ?>
+                        <a href="system_settings.php" class="btn btn-outline-light btn-sm">System Settings</a>
                         <a href="audit_trails.php" class="btn btn-outline-light btn-sm">Audit Trails</a>
                     <?php endif; ?>
                     <a href="logout.php" class="btn btn-outline-light btn-sm">Logout</a>

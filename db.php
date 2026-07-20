@@ -155,6 +155,27 @@ if (!$conn->connect_error) {
         )
     ");
 
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS loan_interest_rates (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            monthly_rate DECIMAL(8,4) NOT NULL,
+            implementation_date DATE NOT NULL,
+            created_by INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY loan_interest_rates_implementation_unique (implementation_date),
+            INDEX loan_interest_rates_date_index (implementation_date)
+        )
+    ");
+
+    $rateCheck = $conn->query("SELECT id FROM loan_interest_rates LIMIT 1");
+
+    if (!$rateCheck || $rateCheck->num_rows === 0) {
+        $conn->query("
+            INSERT INTO loan_interest_rates (monthly_rate, implementation_date)
+            VALUES (2.0000, '2026-06-30')
+        ");
+    }
+
 }
 
 function cooperative_current_cutoff_date()
@@ -216,6 +237,39 @@ function cooperative_loanable_amount_breakdown($conn)
         'paid_loans_this_cutoff' => $paidLoansThisCutoff,
         'approved_loan_principal' => $approvedLoanPrincipal,
         'available_amount' => $initialCapital + $cutoffCapitalToDate + $paidLoansThisCutoff - $approvedLoanPrincipal
+    ];
+}
+
+function cooperative_effective_interest_rate($conn, $loanDate)
+{
+    $stmt = $conn->prepare("
+        SELECT monthly_rate, implementation_date
+        FROM loan_interest_rates
+        WHERE implementation_date <= ?
+        ORDER BY implementation_date DESC, id DESC
+        LIMIT 1
+    ");
+    $stmt->bind_param("s", $loanDate);
+    $stmt->execute();
+    $rate = $stmt->get_result()->fetch_assoc();
+
+    if ($rate) {
+        return [
+            'monthly_rate' => (float)$rate['monthly_rate'],
+            'implementation_date' => $rate['implementation_date']
+        ];
+    }
+
+    $fallback = $conn->query("
+        SELECT monthly_rate, implementation_date
+        FROM loan_interest_rates
+        ORDER BY implementation_date ASC, id ASC
+        LIMIT 1
+    ")->fetch_assoc();
+
+    return [
+        'monthly_rate' => (float)($fallback['monthly_rate'] ?? 2.0000),
+        'implementation_date' => $fallback['implementation_date'] ?? '2026-06-30'
     ];
 }
 
