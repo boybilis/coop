@@ -18,6 +18,13 @@ $serviceFeeRates = $conn->query("
     ORDER BY implementation_date DESC, id DESC
 ");
 $currentServiceFeeRate = cooperative_effective_service_fee_rate($conn, date('Y-m-d'));
+$lastBackup = $conn->query("
+    SELECT created_at, username
+    FROM audit_trails
+    WHERE action = 'download_database_backup'
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+")->fetch_assoc();
 $paymentScheduleSettings = $conn->query("
     SELECT loan_payment_schedule_settings.*, users.username AS created_by_username
     FROM loan_payment_schedule_settings
@@ -298,12 +305,23 @@ function payment_schedule_label($setting)
                         Download a full MySQL backup containing all database tables, structure, and data.
                         This file can be imported later through phpMyAdmin if restoration is needed.
                     </p>
-                    <a href="ajax/download_database_backup.php" class="btn btn-danger">
+                    <a href="ajax/download_database_backup.php" class="btn btn-danger" id="downloadDatabaseBackupBtn">
                         Download Full MySQL Backup
                     </a>
                     <small class="text-muted ms-2 d-inline-block">
                         SuperAdmin only. Keep this file private.
                     </small>
+                    <div class="mt-3">
+                        <strong>Last Backup:</strong>
+                        <span id="lastBackupText">
+                            <?php if($lastBackup): ?>
+                                <?= htmlspecialchars(date('M d, Y h:i A', strtotime($lastBackup['created_at']))) ?>
+                                by <?= htmlspecialchars($lastBackup['username'] ?? 'System') ?>
+                            <?php else: ?>
+                                No backup recorded yet.
+                            <?php endif; ?>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -315,6 +333,8 @@ function payment_schedule_label($setting)
 document.addEventListener('DOMContentLoaded', function () {
     const paymentType = document.getElementById('paymentType');
     const fields = document.querySelectorAll('.payment-schedule-field');
+    const backupButton = document.getElementById('downloadDatabaseBackupBtn');
+    const lastBackupText = document.getElementById('lastBackupText');
 
     function togglePaymentScheduleFields() {
         fields.forEach(function (field) {
@@ -328,6 +348,65 @@ document.addEventListener('DOMContentLoaded', function () {
 
     paymentType.addEventListener('change', togglePaymentScheduleFields);
     togglePaymentScheduleFields();
+
+    if (backupButton) {
+        backupButton.addEventListener('click', async function (event) {
+            if (!window.fetch || !window.URL || !window.Blob) {
+                return;
+            }
+
+            event.preventDefault();
+            const originalText = backupButton.textContent;
+            backupButton.classList.add('disabled');
+            backupButton.textContent = 'Preparing Backup...';
+
+            try {
+                const response = await fetch(backupButton.href, {
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Backup download failed.');
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const match = disposition.match(/filename="([^"]+)"/);
+                const filename = match ? match[1] : 'cooperative_database_backup.sql';
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                const now = new Date();
+                if (lastBackupText) {
+                    lastBackupText.textContent = now.toLocaleString([], {
+                        year: 'numeric',
+                        month: 'short',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) + ' by ' + <?= json_encode($_SESSION['username'] ?? 'System') ?>;
+                }
+
+                if (window.appShowToast) {
+                    window.appShowToast('Full database backup downloaded.', 'success');
+                }
+            } catch (error) {
+                if (window.appShowToast) {
+                    window.appShowToast(error.message || 'Backup download failed.', 'error');
+                }
+            } finally {
+                backupButton.classList.remove('disabled');
+                backupButton.textContent = originalText;
+            }
+        });
+    }
 });
 </script>
 <?php render_footer(); ?>
