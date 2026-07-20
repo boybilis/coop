@@ -23,6 +23,7 @@ if (is_superadmin_user()) {
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
 <link rel="stylesheet" href="assets/css/theme.css?v=20260720-ui">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 <body class="bg-light">
 <?php render_navbar(); ?>
@@ -41,6 +42,9 @@ if (is_superadmin_user()) {
     <?php endif; ?>
     <?php if(isset($_GET['admin_created'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'New admin user created.'});</script>
+    <?php endif; ?>
+    <?php if(isset($_GET['admin_deleted'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Admin user deleted.'});</script>
     <?php endif; ?>
     <?php if(isset($_GET['error'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
@@ -121,12 +125,13 @@ if (is_superadmin_user()) {
                         <h5 class="mb-0">Admin Users</h5>
                     </div>
                     <div class="card-body table-responsive">
-                        <table class="table table-bordered table-hover align-middle">
+                        <table class="table table-bordered table-hover align-middle" id="adminUsersTable">
                             <thead class="table-dark">
                                 <tr>
                                     <th>Username</th>
                                     <th>Role</th>
                                     <th>Created</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -135,6 +140,16 @@ if (is_superadmin_user()) {
                                         <td><?= htmlspecialchars($admin['username']) ?></td>
                                         <td><span class="badge bg-<?= $admin['status'] === 'SuperAdmin' ? 'danger' : 'primary' ?>"><?= htmlspecialchars($admin['status']) ?></span></td>
                                         <td><?= htmlspecialchars($admin['created_at']) ?></td>
+                                        <td>
+                                            <?php if($admin['status'] === 'SuperAdmin'): ?>
+                                                <span class="text-muted">Protected</span>
+                                            <?php else: ?>
+                                                <form method="POST" action="ajax/delete_admin_user.php" class="m-0" data-confirm="Delete this admin user?" data-confirm-ok="Delete" data-confirm-class="btn-danger">
+                                                    <input type="hidden" name="admin_id" value="<?= (int)$admin['id'] ?>">
+                                                    <button class="btn btn-outline-danger btn-sm">Delete</button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php endwhile; ?>
                             </tbody>
@@ -146,7 +161,21 @@ if (is_superadmin_user()) {
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function(){
+    $('#adminUsersTable').DataTable({
+        pageLength: 10,
+        order: [[1, 'desc'], [0, 'asc']],
+        columnDefs: [
+            { orderable: false, targets: 3 }
+        ]
+    });
+});
+</script>
 <?php render_footer(); ?>
 </body>
 </html>
