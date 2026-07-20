@@ -28,6 +28,11 @@ $loanStmt->bind_param("i", $loan_id);
 $loanStmt->execute();
 $loanInfo = $loanStmt->get_result()->fetch_assoc();
 
+if (!$loanInfo) {
+    http_response_code(404);
+    exit("Loan not found");
+}
+
 // =============================
 // PAYMENTS
 // =============================
