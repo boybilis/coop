@@ -29,9 +29,10 @@ if ($existingStmt->get_result()->fetch_assoc()) {
 $oldUsername = $_SESSION['username'] ?? '';
 $updateStmt = $conn->prepare("
     UPDATE users
-    SET username = ?
+    SET username = ?,
+        status = 'SuperAdmin'
     WHERE id = ?
-    AND status = 'SuperAdmin'
+    AND status IN ('Admin', 'SuperAdmin')
 ");
 $updateStmt->bind_param("si", $username, $userId);
 $updateStmt->execute();
