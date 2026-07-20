@@ -402,9 +402,7 @@
 
 @media (min-width: 768px) {
     .admin-loan-summary .card-body {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: .875rem;
+        display: block;
     }
 
     .admin-loan-summary .card-body > h4 {
@@ -414,6 +412,58 @@
     .admin-loan-summary .card-body > .mb-3,
     .admin-loan-summary .card-body > p:nth-of-type(2),
     .admin-loan-summary .card-body > p:nth-of-type(7) {
+        grid-column: span 2;
+    }
+}
+
+.admin-loan-summary .card-body > h4,
+.admin-loan-summary .card-body > p,
+.admin-loan-summary .card-body > .mb-3 {
+    display: none;
+}
+
+.loan-summary-modern {
+    display: block;
+}
+
+.loan-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.loan-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .875rem;
+}
+
+.loan-detail-item {
+    padding: .875rem;
+    background: #f8fafc;
+    border: 1px solid #e3e9f0;
+    border-radius: .875rem;
+}
+
+.loan-detail-item small {
+    display: block;
+    margin-bottom: .25rem;
+    color: #667085;
+    font-weight: 600;
+}
+
+.loan-detail-item strong {
+    color: #0b1f3a;
+}
+
+@media (min-width: 768px) {
+    .loan-detail-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .loan-detail-wide {
         grid-column: span 2;
     }
 }

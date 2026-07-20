@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -13,7 +13,12 @@ $loan_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 // GET LOAN + BORROWER INFO
 // =============================
 $loanStmt = $conn->prepare("
-    SELECT loans.*, borrowers.name, users.username
+    SELECT
+        loans.*,
+        borrowers.name,
+        users.username,
+        (SELECT COUNT(*) FROM payments WHERE loan_id = loans.id) AS total_payments,
+        (SELECT COUNT(*) FROM payments WHERE loan_id = loans.id AND paid = 1) AS paid_payments
     FROM loans
     JOIN borrowers ON borrowers.id = loans.borrower_id
     LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
@@ -60,7 +65,7 @@ $res = $stmt->get_result();
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
-<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260720-ui">
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
@@ -72,54 +77,78 @@ $res = $stmt->get_result();
 <div class="container mt-4">
 
 <!-- ================= LOAN SUMMARY ================= -->
-<div class="card loan-summary-card admin-loan-summary mb-3">
-<div class="card-body">
-
-<h4>Member Loan Details</h4>
-
-<p><strong>Loan ID:</strong> <?= $loan_id ?></p>
-
-<div class="mb-3">
-    <strong>Member:</strong>
-    <?php render_member_identity($loanInfo['username'] ?? '', $loanInfo['name']); ?>
+<div class="card loan-summary-card member-loan-summary shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted">Loan ID</small>
+                <h5>#<?= $loanInfo['id'] ?></h5>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Member</small>
+                <div class="h5 mb-0"><?php render_member_identity($loanInfo['username'] ?? '', $loanInfo['name']); ?></div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Status</small><br>
+                <span class="badge bg-<?= $loanInfo['status'] === 'Active' ? 'warning text-dark' : 'success' ?>">
+                    <?= htmlspecialchars($loanInfo['status']) ?>
+                </span>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Borrower For</small>
+                <h5>
+                    <?php if((int)($loanInfo['is_guarantor'] ?? 0) === 1): ?>
+                        Guest: <?= htmlspecialchars($loanInfo['guest_borrower_name'] ?? '') ?>
+                    <?php else: ?>
+                        Member
+                    <?php endif; ?>
+                </h5>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">Loan Amount</small>
+                <h5>&#8369;<?= number_format($loanInfo['amount'], 2) ?></h5>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">Interest</small>
+                <h5 class="text-success">&#8369;<?= number_format($loanInfo['interest'], 2) ?></h5>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">Total Payable</small>
+                <h5>&#8369;<?= number_format($loanInfo['total_payable'], 2) ?></h5>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted">Months</small>
+                <h5><?= number_format($loanInfo['months'], 1) ?></h5>
+            </div>
+            <div class="col-md-6">
+                <small class="text-muted">Disbursement Reference</small>
+                <h5><?= $loanInfo['disbursement_reference_number'] ? htmlspecialchars($loanInfo['disbursement_reference_number']) : '—' ?></h5>
+            </div>
+            <div class="col-md-6">
+                <small class="text-muted">Disbursement Proof</small><br>
+                <?php if($loanInfo['disbursement_proof_image']): ?>
+                    <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
+                        View Image
+                    </a>
+                <?php else: ?>
+                    <span class="text-muted">—</span>
+                <?php endif; ?>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">Payment Progress</small>
+                <?php $progress = ((int)$loanInfo['total_payments'] > 0) ? round(((int)$loanInfo['paid_payments'] / (int)$loanInfo['total_payments']) * 100) : 0; ?>
+                <div class="progress" style="height:24px;">
+                    <div class="progress-bar bg-success" style="width:<?= $progress ?>%">
+                        <?= $progress ?>%
+                    </div>
+                </div>
+                <small class="text-muted">
+                    <?= number_format($loanInfo['paid_payments']) ?> of <?= number_format($loanInfo['total_payments']) ?> payments paid
+                </small>
+            </div>
+        </div>
+    </div>
 </div>
-
-<p>
-    <strong>Borrower For:</strong>
-    <?php if((int)($loanInfo['is_guarantor'] ?? 0) === 1): ?>
-        Guest Borrower - <?= htmlspecialchars($loanInfo['guest_borrower_name'] ?? '') ?>
-    <?php else: ?>
-        Member
-    <?php endif; ?>
-</p>
-
-<p><strong>Amount:</strong> ₱<?= number_format($loanInfo['amount'],2) ?></p>
-
-<p><strong>Months:</strong> <?= $loanInfo['months'] ?></p>
-
-<p><strong>Interest:</strong> ₱<?= number_format($loanInfo['interest'],2) ?></p>
-
-<p><strong>Total Payable:</strong> ₱<?= number_format($loanInfo['total_payable'],2) ?></p>
-
-<p>
-    <strong>Disbursement Reference:</strong>
-    <?= $loanInfo['disbursement_reference_number'] ? htmlspecialchars($loanInfo['disbursement_reference_number']) : '<span class="text-muted">—</span>' ?>
-</p>
-
-<p>
-    <strong>Disbursement Proof:</strong>
-    <?php if($loanInfo['disbursement_proof_image']): ?>
-        <a href="<?= htmlspecialchars($loanInfo['disbursement_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
-            View Image
-        </a>
-    <?php else: ?>
-        <span class="text-muted">—</span>
-    <?php endif; ?>
-</p>
-
-</div>
-</div>
-
 <!-- ================= PAYMENT TABLE ================= -->
 <div class="card shadow mb-3">
 <div class="card-body">
@@ -147,24 +176,24 @@ $res = $stmt->get_result();
 <tr>
     <td><?= $row['payment_no'] ?></td>
 
-    <td>₱<?= number_format($row['amount'],2) ?></td>
+    <td>â‚±<?= number_format($row['amount'],2) ?></td>
 
     <td><?= $row['due_date'] ?></td>
 
     <td>
         <?php if($row['reference_number']): ?>
             <small>
-                Capital: ₱<?= number_format($row['capital_contribution'],2) ?><br>
-                Loan: ₱<?= number_format($row['loan_payment'],2) ?><br>
+                Capital: â‚±<?= number_format($row['capital_contribution'],2) ?><br>
+                Loan: â‚±<?= number_format($row['loan_payment'],2) ?><br>
                 Date: <?= $row['payment_date'] ?>
             </small>
         <?php else: ?>
-            <span class="text-muted">—</span>
+            <span class="text-muted">â€”</span>
         <?php endif; ?>
     </td>
 
     <td>
-        <?= $row['reference_number'] ? htmlspecialchars($row['reference_number']) : '<span class="text-muted">—</span>' ?>
+        <?= $row['reference_number'] ? htmlspecialchars($row['reference_number']) : '<span class="text-muted">â€”</span>' ?>
     </td>
 
     <td>
@@ -173,7 +202,7 @@ $res = $stmt->get_result();
                 View Image
             </a>
         <?php else: ?>
-            <span class="text-muted">—</span>
+            <span class="text-muted">â€”</span>
         <?php endif; ?>
     </td>
 
@@ -183,7 +212,7 @@ $res = $stmt->get_result();
                 <?= $row['submission_status'] ?>
             </span>
         <?php else: ?>
-            <span class="text-muted">—</span>
+            <span class="text-muted">â€”</span>
         <?php endif; ?>
     </td>
 
@@ -200,7 +229,7 @@ $res = $stmt->get_result();
                 Mark Paid
             </button>
         <?php else: ?>
-            <span class="text-muted">—</span>
+            <span class="text-muted">â€”</span>
         <?php endif; ?>
     </td>
 </tr>
@@ -259,3 +288,5 @@ function markPaid(id){
 <?php render_footer(); ?>
 </body>
 </html>
+
+

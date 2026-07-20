@@ -22,7 +22,7 @@ function render_footer()
     ?>
     <div class="app-toast-container" id="appToastContainer" aria-live="polite" aria-atomic="true"></div>
 
-    <div class="app-confirm-modal" id="appConfirmModal" aria-hidden="true">
+    <div class="app-confirm-modal" id="appConfirmModal" aria-hidden="true" style="display:none;">
         <div class="app-confirm-backdrop"></div>
         <div class="app-confirm-dialog" role="dialog" aria-modal="true" aria-label="Confirmation">
             <h5 id="appConfirmTitle">Confirm Action</h5>
@@ -34,7 +34,7 @@ function render_footer()
         </div>
     </div>
 
-    <div class="image-preview-modal" id="imagePreviewModal" aria-hidden="true">
+    <div class="image-preview-modal" id="imagePreviewModal" aria-hidden="true" style="display:none;">
         <div class="image-preview-backdrop" data-image-preview-close></div>
         <div class="image-preview-dialog" role="dialog" aria-modal="true" aria-label="Reference image preview">
             <div class="image-preview-header">
@@ -103,6 +103,7 @@ function render_footer()
 
             const close = function(result) {
                 modal.classList.remove('show');
+                modal.style.display = 'none';
                 modal.setAttribute('aria-hidden', 'true');
                 okButton.onclick = null;
                 cancelButton.onclick = null;
@@ -122,6 +123,7 @@ function render_footer()
             };
 
             modal.classList.add('show');
+            modal.style.display = 'flex';
             modal.setAttribute('aria-hidden', 'false');
         });
     };
@@ -192,6 +194,7 @@ function render_footer()
             event.preventDefault();
             image.src = previewLink.getAttribute('href');
             modal.classList.add('show');
+            modal.style.display = 'flex';
             modal.setAttribute('aria-hidden', 'false');
             return;
         }
@@ -199,6 +202,7 @@ function render_footer()
         if (closeButton && modal && image) {
             image.src = '';
             modal.classList.remove('show');
+            modal.style.display = 'none';
             modal.setAttribute('aria-hidden', 'true');
         }
     });
