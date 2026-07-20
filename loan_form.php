@@ -86,7 +86,8 @@ document.getElementById("loanForm").onsubmit = function(e){
     })
     .then(res => res.text())
     .then(() => {
-        alert("Loan Saved!");
+        sessionStorage.setItem('appToastMessage', 'Loan saved successfully.');
+        sessionStorage.setItem('appToastType', 'success');
         window.location = "index.php";
     });
 }

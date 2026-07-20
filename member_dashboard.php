@@ -180,19 +180,19 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 </div>
 
 <?php if(isset($_GET['payment_submitted'])): ?>
-    <div class="alert alert-success">Payment submitted for admin review.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Payment submitted for admin review.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['savings_submitted'])): ?>
-    <div class="alert alert-success">Savings submitted for admin verification.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Savings submitted for admin verification.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['loan_requested'])): ?>
-    <div class="alert alert-success">Loan request submitted. Requests are reviewed first come, first served.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan request submitted. Requests are reviewed first come, first served.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
 <?php endif; ?>
 
 <div class="row">
@@ -955,10 +955,21 @@ document.addEventListener('DOMContentLoaded', () => {
         withdrawForm.addEventListener('submit', event => {
             let amount = parseFloat(document.getElementById('withdrawSavingsAmount').value || '0');
             if(Math.round(amount * 100) === Math.round(currentSavingsBalance * 100)){
-                let confirmed = confirm('You are withdrawing the full savings balance. After admin verification, this savings account will be closed and Deposit/Withdraw will be disabled. Continue?');
-                if(!confirmed){
-                    event.preventDefault();
+                if(withdrawForm.dataset.confirmed === '1'){
+                    return;
                 }
+
+                event.preventDefault();
+
+                appConfirm('You are withdrawing the full savings balance. After admin verification, this savings account will be closed and Deposit/Withdraw will be disabled. Continue?', {
+                    okText: 'Continue',
+                    okClass: 'btn-warning'
+                }).then(confirmed => {
+                    if(confirmed){
+                        withdrawForm.dataset.confirmed = '1';
+                        withdrawForm.submit();
+                    }
+                });
             }
         });
     }
@@ -968,12 +979,8 @@ document.addEventListener('DOMContentLoaded', () => {
         profileForm.addEventListener('submit', event => {
             event.preventDefault();
 
-            let successBox = document.getElementById('profileSuccess');
-            let errorBox = document.getElementById('profileError');
             let submitButton = profileForm.querySelector('button[type="submit"]');
 
-            successBox.classList.add('d-none');
-            errorBox.classList.add('d-none');
             submitButton.disabled = true;
             submitButton.innerText = 'Saving...';
 
@@ -984,20 +991,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if(data.error){
-                    errorBox.innerText = data.error;
-                    errorBox.classList.remove('d-none');
+                    appShowToast(data.error, 'error');
                     return;
                 }
 
-                successBox.innerText = data.message || 'Profile updated successfully.';
-                successBox.classList.remove('d-none');
+                appShowToast(data.message || 'Profile updated successfully.', 'success');
                 document.getElementById('memberDisplayName').innerText = data.profile.name;
                 document.getElementById('withdrawGcashName').value = data.profile.gcash_name || '';
                 document.getElementById('withdrawGcashNumber').value = data.profile.gcash_number || '';
             })
             .catch(() => {
-                errorBox.innerText = 'Unable to update profile.';
-                errorBox.classList.remove('d-none');
+                appShowToast('Unable to update profile.', 'error');
             })
             .finally(() => {
                 submitButton.disabled = false;
@@ -1071,34 +1075,40 @@ function saveLoanRequestEdit(){
     .then(res => res.json())
     .then(data => {
         if(data.error){
-            errorBox.innerText = data.error;
-            errorBox.classList.remove('d-none');
+            appShowToast(data.error, 'error');
             return;
         }
 
         bootstrap.Modal.getInstance(document.getElementById('editLoanRequestModal')).hide();
+        appShowToast('Loan request updated.', 'success');
         loadDashboardTable(loanRequestsConfig());
     });
 }
 
 function deleteLoanRequest(id){
-    if(!confirm('Delete this pending loan request?')){
-        return;
-    }
-
-    fetch('ajax/delete_loan_request.php', {
-        method: 'POST',
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-        body: 'request_id=' + encodeURIComponent(id)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.error){
-            alert(data.error);
+    appConfirm('Delete this pending loan request?', {
+        okText: 'Delete',
+        okClass: 'btn-danger'
+    }).then(confirmed => {
+        if(!confirmed){
             return;
         }
 
-        loadDashboardTable(loanRequestsConfig());
+        fetch('ajax/delete_loan_request.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: 'request_id=' + encodeURIComponent(id)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error){
+                appShowToast(data.error, 'error');
+                return;
+            }
+
+            appShowToast('Loan request deleted.', 'success');
+            loadDashboardTable(loanRequestsConfig());
+        });
     });
 }
 
@@ -1141,34 +1151,40 @@ function saveSavingsSubmissionEdit(){
     .then(res => res.json())
     .then(data => {
         if(data.error){
-            errorBox.innerText = data.error;
-            errorBox.classList.remove('d-none');
+            appShowToast(data.error, 'error');
             return;
         }
 
         bootstrap.Modal.getInstance(document.getElementById('editSavingsSubmissionModal')).hide();
+        appShowToast('Savings submission updated.', 'success');
         loadDashboardTable(savingsSubmissionsConfig());
     });
 }
 
 function deleteSavingsSubmission(id){
-    if(!confirm('Delete this pending savings submission?')){
-        return;
-    }
-
-    fetch('ajax/delete_savings_submission.php', {
-        method: 'POST',
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-        body: 'submission_id=' + encodeURIComponent(id)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.error){
-            alert(data.error);
+    appConfirm('Delete this pending savings submission?', {
+        okText: 'Delete',
+        okClass: 'btn-danger'
+    }).then(confirmed => {
+        if(!confirmed){
             return;
         }
 
-        loadDashboardTable(savingsSubmissionsConfig());
+        fetch('ajax/delete_savings_submission.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: 'submission_id=' + encodeURIComponent(id)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error){
+                appShowToast(data.error, 'error');
+                return;
+            }
+
+            appShowToast('Savings submission deleted.', 'success');
+            loadDashboardTable(savingsSubmissionsConfig());
+        });
     });
 }
 
@@ -1202,45 +1218,46 @@ function saveWithdrawalRequestEdit(){
     .then(res => res.json())
     .then(data => {
         if(data.error){
-            errorBox.innerText = data.error;
-            errorBox.classList.remove('d-none');
+            appShowToast(data.error, 'error');
             return;
         }
 
         bootstrap.Modal.getInstance(document.getElementById('editWithdrawalRequestModal')).hide();
+        appShowToast('Withdrawal request updated.', 'success');
         loadDashboardTable(withdrawalRequestsConfig());
     });
 }
 
 function deleteWithdrawalRequest(id){
-    if(!confirm('Delete this pending withdrawal request?')){
-        return;
-    }
-
-    fetch('ajax/delete_withdrawal_request.php', {
-        method: 'POST',
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-        body: 'request_id=' + encodeURIComponent(id)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.error){
-            alert(data.error);
+    appConfirm('Delete this pending withdrawal request?', {
+        okText: 'Delete',
+        okClass: 'btn-danger'
+    }).then(confirmed => {
+        if(!confirmed){
             return;
         }
 
-        loadDashboardTable(withdrawalRequestsConfig());
+        fetch('ajax/delete_withdrawal_request.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: 'request_id=' + encodeURIComponent(id)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error){
+                appShowToast(data.error, 'error');
+                return;
+            }
+
+            appShowToast('Withdrawal request deleted.', 'success');
+            loadDashboardTable(withdrawalRequestsConfig());
+        });
     });
 }
 
 function linkAccount(){
     let username = document.getElementById('linkUsername').value.trim();
     let password = document.getElementById('linkPassword').value;
-    let errorBox = document.getElementById('linkAccountError');
-    let successBox = document.getElementById('linkAccountSuccess');
-
-    errorBox.classList.add('d-none');
-    successBox.classList.add('d-none');
 
     fetch('ajax/link_member_account.php', {
         method: 'POST',
@@ -1251,13 +1268,11 @@ function linkAccount(){
     .then(res => res.json())
     .then(data => {
         if(data.error){
-            errorBox.innerText = data.error;
-            errorBox.classList.remove('d-none');
+            appShowToast(data.error, 'error');
             return;
         }
 
-        successBox.innerText = 'Account linked. Reloading dashboard...';
-        successBox.classList.remove('d-none');
+        appShowToast('Account linked. Reloading dashboard...', 'success');
         setTimeout(() => window.location.reload(), 700);
     });
 }

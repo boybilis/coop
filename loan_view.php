@@ -72,7 +72,7 @@ $res = $stmt->get_result();
 <div class="container mt-4">
 
 <!-- ================= LOAN SUMMARY ================= -->
-<div class="card mb-3">
+<div class="card loan-summary-card admin-loan-summary mb-3">
 <div class="card-body">
 
 <h4>Member Loan Details</h4>
@@ -239,11 +239,18 @@ $(document).ready(function () {
 });
 
 function markPaid(id){
-    if(confirm("Mark this payment as paid?")){
+    appConfirm('Mark this payment as paid?', {
+        okText: 'Mark Paid',
+        okClass: 'btn-success'
+    }).then(confirmed => {
+        if(!confirmed){
+            return;
+        }
+
         fetch('ajax/mark_paid.php?id=' + id)
         .then(res => res.text())
         .then(() => location.reload());
-    }
+    });
 }
 </script>
 

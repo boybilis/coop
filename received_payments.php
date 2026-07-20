@@ -49,11 +49,11 @@ if ($selectedCutoff !== '') {
 </div>
 
 <?php if(isset($_GET['verified'])): ?>
-    <div class="alert alert-success">Payment verified. Loan payment and capital contribution were recorded.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Payment verified. Loan payment and capital contribution were recorded.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
@@ -131,7 +131,7 @@ if ($selectedCutoff !== '') {
                             </td>
                             <td>
                                 <?php if($row['status'] === 'Pending'): ?>
-                                    <form method="POST" action="ajax/verify_payment_submission.php" onsubmit="return confirm('Verify this payment and record it?')">
+                                    <form method="POST" action="ajax/verify_payment_submission.php" data-confirm="Verify this payment and record it?" data-confirm-ok="Verify" data-confirm-class="btn-success">
                                         <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
                                         <button class="btn btn-success btn-sm w-100">Verified</button>
                                     </form>

@@ -193,7 +193,7 @@ function saveBorrower(){
     let name = document.getElementById("borrowerName").value.trim();
 
     if(!name){
-        alert("Enter member name");
+        appShowToast('Enter member name.', 'warning');
         return;
     }
 
@@ -205,7 +205,7 @@ function saveBorrower(){
     .then(res => res.json())
     .then(data => {
         if(data.error){
-            alert(data.error);
+            appShowToast(data.error, 'error');
             return;
         }
 
@@ -238,6 +238,7 @@ function saveBorrower(){
 
         let modal = bootstrap.Modal.getInstance(document.getElementById('addBorrowerModal'));
         modal.hide();
+        appShowToast('Member added successfully.', 'success');
     });
 }
 
@@ -255,7 +256,7 @@ function saveMemberEdit(){
     let status = document.getElementById('editMemberStatus').value;
 
     if(!name){
-        alert('Enter member name');
+        appShowToast('Enter member name.', 'warning');
         return;
     }
 
@@ -269,7 +270,7 @@ function saveMemberEdit(){
     .then(res => res.json())
     .then(data => {
         if(data.error){
-            alert(data.error);
+            appShowToast(data.error, 'error');
             return;
         }
 
@@ -277,31 +278,38 @@ function saveMemberEdit(){
 
         let modal = bootstrap.Modal.getInstance(document.getElementById('editMemberModal'));
         modal.hide();
+        appShowToast('Member updated successfully.', 'success');
     });
 }
 
 function setInactive(id){
-    if(!confirm('Set this member as inactive?')){
-        return;
-    }
-
-    fetch('ajax/set_member_inactive.php', {
-        method: 'POST',
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-        body: 'id=' + encodeURIComponent(id)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.error){
-            alert(data.error);
+    appConfirm('Set this member as inactive?', {
+        okText: 'Set Inactive',
+        okClass: 'btn-danger'
+    }).then(confirmed => {
+        if(!confirmed){
             return;
         }
 
-        let row = getMemberRow(data.id);
-        if(!row){
-            return;
-        }
-        updateMemberStatus(data.id, data.status);
+        fetch('ajax/set_member_inactive.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: 'id=' + encodeURIComponent(id)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error){
+                appShowToast(data.error, 'error');
+                return;
+            }
+
+            let row = getMemberRow(data.id);
+            if(!row){
+                return;
+            }
+            updateMemberStatus(data.id, data.status);
+            appShowToast('Member set as inactive.', 'success');
+        });
     });
 }
 

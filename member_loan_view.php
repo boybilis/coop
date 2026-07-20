@@ -83,7 +83,7 @@ $payments = $paymentsStmt->get_result();
         <a href="member_dashboard.php" class="btn btn-outline-secondary">Back to Dashboard</a>
     </div>
 
-    <div class="card shadow-sm mb-3">
+    <div class="card loan-summary-card member-loan-summary shadow-sm mb-3">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">

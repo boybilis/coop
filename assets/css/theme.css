@@ -265,6 +265,159 @@
     border-radius: .5rem;
 }
 
+.app-toast-container {
+    position: fixed;
+    top: 5rem;
+    right: 1rem;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    width: min(360px, calc(100vw - 2rem));
+}
+
+.app-toast {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .875rem 1rem;
+    border-radius: .875rem;
+    color: #fff;
+    box-shadow: 0 14px 36px rgba(11, 31, 58, .24);
+    opacity: 0;
+    transform: translateX(1rem);
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.app-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.app-toast button {
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.app-toast-success {
+    background: linear-gradient(135deg, #0f8a5f, #0b5f49);
+}
+
+.app-toast-error {
+    background: linear-gradient(135deg, #d63d57, #842136);
+}
+
+.app-toast-warning {
+    color: #221500;
+    background: linear-gradient(135deg, #f6c343, #b56a00);
+}
+
+.app-toast-info {
+    background: linear-gradient(135deg, #0789a8, #07556d);
+}
+
+.app-confirm-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2990;
+    padding: 1rem;
+}
+
+.app-confirm-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(11, 31, 58, .68);
+}
+
+.app-confirm-dialog {
+    position: relative;
+    width: min(420px, 100%);
+    padding: 1.25rem;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+}
+
+.app-confirm-dialog p {
+    color: #475467;
+}
+
+.app-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .75rem;
+}
+
+.loan-summary-card {
+    border: 1px solid #dbe3ec;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 14px 34px rgba(11, 31, 58, .08);
+}
+
+.loan-summary-card .card-body {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.admin-loan-summary .card-body > h4 {
+    margin-bottom: .25rem;
+}
+
+.admin-loan-summary .card-body > p,
+.admin-loan-summary .card-body > .mb-3,
+.member-loan-summary .row > [class*="col-"] {
+    padding: .875rem;
+    background: #f8fafc;
+    border: 1px solid #e3e9f0;
+    border-radius: .875rem;
+}
+
+.admin-loan-summary .card-body > p {
+    margin-bottom: 0;
+}
+
+.admin-loan-summary .card-body > .mb-3 {
+    margin-bottom: 0 !important;
+}
+
+.admin-loan-summary strong,
+.member-loan-summary h5 {
+    color: #0b1f3a;
+}
+
+.member-loan-summary h5 {
+    margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+    .admin-loan-summary .card-body {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .875rem;
+    }
+
+    .admin-loan-summary .card-body > h4 {
+        grid-column: 1 / -1;
+    }
+
+    .admin-loan-summary .card-body > .mb-3,
+    .admin-loan-summary .card-body > p:nth-of-type(2),
+    .admin-loan-summary .card-body > p:nth-of-type(7) {
+        grid-column: span 2;
+    }
+}
+
 body {
     min-height: 100vh;
 }

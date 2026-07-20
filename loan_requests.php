@@ -53,15 +53,15 @@ $requests = $conn->query("
 </div>
 
 <?php if(isset($_GET['approved'])): ?>
-    <div class="alert alert-success">Loan request approved and saved as a loan.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan request approved and saved as a loan.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['rejected'])): ?>
-    <div class="alert alert-success">Loan request rejected.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Loan request rejected.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
 <?php endif; ?>
 
 <div class="card shadow">
@@ -119,9 +119,9 @@ $requests = $conn->query("
                                         onclick="openApproveLoanRequestModal(<?= (int)$row['id'] ?>, <?= (float)$row['requested_amount'] ?>, <?= (float)$row['requested_months'] ?>)">
                                         Approve
                                     </button>
-                                    <form method="POST" action="ajax/reject_loan_request.php" class="m-0">
+                                    <form method="POST" action="ajax/reject_loan_request.php" class="m-0" data-confirm="Reject this loan request?" data-confirm-ok="Reject" data-confirm-class="btn-danger">
                                         <input type="hidden" name="request_id" value="<?= (int)$row['id'] ?>">
-                                        <button class="btn btn-outline-danger btn-sm" onclick="return confirm('Reject this loan request?')">
+                                        <button class="btn btn-outline-danger btn-sm">
                                             Reject
                                         </button>
                                     </form>
@@ -149,7 +149,7 @@ $requests = $conn->query("
 <div class="modal fade" id="approveLoanRequestModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="ajax/approve_loan_request.php" enctype="multipart/form-data">
+      <form method="POST" action="ajax/approve_loan_request.php" enctype="multipart/form-data" data-confirm="Approve and mark this loan as disbursed?" data-confirm-ok="Approve Loan" data-confirm-class="btn-success">
         <div class="modal-header">
             <h5 class="modal-title">Approve Loan Request</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -180,7 +180,7 @@ $requests = $conn->query("
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button class="btn btn-success" onclick="return confirm('Approve and mark this loan as disbursed?')">Approve Loan</button>
+            <button class="btn btn-success">Approve Loan</button>
         </div>
       </form>
     </div>

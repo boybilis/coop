@@ -55,15 +55,15 @@ if ($statusFilter === 'All') {
 </div>
 
 <?php if(isset($_GET['verified'])): ?>
-    <div class="alert alert-success">Savings verified and credited to member savings.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Savings verified and credited to member savings.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['rejected'])): ?>
-    <div class="alert alert-warning">Savings submission rejected.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Savings submission rejected.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
@@ -132,11 +132,11 @@ if ($statusFilter === 'All') {
                         <td>
                             <?php if($row['status'] === 'Pending'): ?>
                                 <div class="d-flex gap-1">
-                                    <form method="POST" action="ajax/verify_savings_submission.php" onsubmit="return confirm('Verify this savings submission?')" class="flex-fill">
+                                    <form method="POST" action="ajax/verify_savings_submission.php" data-confirm="Verify this savings submission?" data-confirm-ok="Verify" data-confirm-class="btn-success" class="flex-fill">
                                         <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
                                         <button class="btn btn-success btn-sm w-100">Verified</button>
                                     </form>
-                                    <form method="POST" action="ajax/reject_savings_submission.php" onsubmit="return confirm('Reject this savings submission?')" class="flex-fill">
+                                    <form method="POST" action="ajax/reject_savings_submission.php" data-confirm="Reject this savings submission?" data-confirm-ok="Reject" data-confirm-class="btn-danger" class="flex-fill">
                                         <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
                                         <button class="btn btn-outline-danger btn-sm w-100">Reject</button>
                                     </form>

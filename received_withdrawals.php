@@ -55,11 +55,11 @@ if ($statusFilter === 'All') {
 </div>
 
 <?php if(isset($_GET['verified'])): ?>
-    <div class="alert alert-success">Withdrawal approved and deducted from member savings.</div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Withdrawal approved and deducted from member savings.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($_GET['error']) ?></div>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
@@ -159,7 +159,7 @@ if ($statusFilter === 'All') {
 <div class="modal fade" id="verifyWithdrawalModal">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="ajax/verify_withdrawal_request.php" enctype="multipart/form-data">
+      <form method="POST" action="ajax/verify_withdrawal_request.php" enctype="multipart/form-data" data-confirm="Approve this withdrawal and deduct member savings?" data-confirm-ok="Approve Withdrawal" data-confirm-class="btn-success">
         <div class="modal-header">
             <h5 class="modal-title">Verify Withdrawal</h5>
             <button class="btn-close" data-bs-dismiss="modal"></button>
