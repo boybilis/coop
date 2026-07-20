@@ -286,6 +286,28 @@ function payment_schedule_label($setting)
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Full Data Backup</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Download a full MySQL backup containing all database tables, structure, and data.
+                        This file can be imported later through phpMyAdmin if restoration is needed.
+                    </p>
+                    <a href="ajax/download_database_backup.php" class="btn btn-danger">
+                        Download Full MySQL Backup
+                    </a>
+                    <small class="text-muted ms-2 d-inline-block">
+                        SuperAdmin only. Keep this file private.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
