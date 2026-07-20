@@ -44,7 +44,7 @@ function refresh_logged_in_user($conn)
         return;
     }
 
-    $stmt = $conn->prepare("SELECT username, status, borrower_id FROM users WHERE id = ? LIMIT 1");
+    $stmt = $conn->prepare("SELECT username, status, borrower_id, two_factor_enabled FROM users WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
@@ -56,6 +56,44 @@ function refresh_logged_in_user($conn)
     $_SESSION['username'] = $user['username'];
     $_SESSION['user_status'] = $user['status'];
     $_SESSION['borrower_id'] = $user['borrower_id'];
+    $_SESSION['two_factor_enabled'] = (int)($user['two_factor_enabled'] ?? 0);
+}
+
+function current_script_name()
+{
+    return basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
+}
+
+function admin_two_factor_setup_allowed_page()
+{
+    $script = current_script_name();
+    $requestUri = str_replace('\\', '/', $_SERVER['REQUEST_URI'] ?? '');
+
+    if (in_array($script, ['admin_settings.php', 'logout.php'], true)) {
+        return true;
+    }
+
+    return strpos($requestUri, '/ajax/start_admin_2fa_setup.php') !== false
+        || strpos($requestUri, '/ajax/confirm_admin_2fa.php') !== false;
+}
+
+function enforce_admin_two_factor_setup()
+{
+    if (!is_admin_user()) {
+        return;
+    }
+
+    if ((int)($_SESSION['two_factor_enabled'] ?? 0) === 1) {
+        return;
+    }
+
+    if (admin_two_factor_setup_allowed_page()) {
+        return;
+    }
+
+    $prefix = strpos(str_replace('\\', '/', $_SERVER['REQUEST_URI'] ?? ''), '/ajax/') !== false ? '../' : '';
+    header("Location: {$prefix}admin_settings.php?force_2fa=1#twoFactorSetupCard");
+    exit;
 }
 
 function require_admin()
@@ -66,6 +104,8 @@ function require_admin()
         http_response_code(403);
         exit("Access denied");
     }
+
+    enforce_admin_two_factor_setup();
 }
 
 function require_superadmin()
@@ -76,6 +116,8 @@ function require_superadmin()
         http_response_code(403);
         exit("Access denied");
     }
+
+    enforce_admin_two_factor_setup();
 }
 
 function require_member()

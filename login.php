@@ -5,7 +5,15 @@ include 'layout.php';
 include 'totp.php';
 
 if (is_logged_in()) {
-    header("Location: " . (is_admin_user() ? 'index.php' : 'member_dashboard.php'));
+    if (isset($conn)) {
+        refresh_logged_in_user($conn);
+    }
+
+    if (is_admin_user() && (int)($_SESSION['two_factor_enabled'] ?? 0) !== 1) {
+        header("Location: admin_settings.php?force_2fa=1#twoFactorSetupCard");
+    } else {
+        header("Location: " . (is_admin_user() ? 'index.php' : 'member_dashboard.php'));
+    }
     exit;
 }
 
@@ -51,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $pendingUser['username'];
             $_SESSION['user_status'] = $pendingUser['status'];
             $_SESSION['borrower_id'] = $pendingUser['borrower_id'];
+            $_SESSION['two_factor_enabled'] = (int)$pendingUser['two_factor_enabled'];
             $_SESSION['active_member_user_id'] = $pendingUser['id'];
             $_SESSION['active_borrower_id'] = $pendingUser['borrower_id'];
 
@@ -60,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'two_factor' => true
             ]);
 
-            header("Location: index.php");
+            header("Location: " . ((int)($pendingUser['two_factor_enabled'] ?? 0) === 1 ? 'index.php' : 'admin_settings.php?force_2fa=1#twoFactorSetupCard'));
             exit;
         }
 
@@ -120,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['username'] = $user['username'];
         $_SESSION['user_status'] = $user['status'];
         $_SESSION['borrower_id'] = $user['borrower_id'];
+        $_SESSION['two_factor_enabled'] = (int)($user['two_factor_enabled'] ?? 0);
         $_SESSION['active_member_user_id'] = $user['id'];
         $_SESSION['active_borrower_id'] = $user['borrower_id'];
 
@@ -129,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         if (in_array($user['status'], ['Admin', 'SuperAdmin'], true)) {
-            header("Location: index.php");
+            header("Location: admin_settings.php?force_2fa=1#twoFactorSetupCard");
         } else {
             header("Location: member_dashboard.php");
         }

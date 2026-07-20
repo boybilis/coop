@@ -72,6 +72,12 @@ if (is_superadmin_user()) {
     <?php if(isset($_GET['two_factor_disabled'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Authenticator 2FA disabled.'});</script>
     <?php endif; ?>
+    <?php if(isset($_GET['force_2fa'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Authenticator setup is required before accessing admin pages.'});</script>
+        <div class="alert alert-warning">
+            Admin accounts must set up Microsoft Authenticator or Google Authenticator before accessing the admin dashboard.
+        </div>
+    <?php endif; ?>
     <?php if(isset($_GET['error'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
     <?php endif; ?>
@@ -101,7 +107,7 @@ if (is_superadmin_user()) {
                 </div>
             </div>
 
-            <div class="card shadow mt-3">
+            <div class="card shadow mt-3" id="twoFactorSetupCard">
                 <div class="card-header">
                     <h5 class="mb-0">Authenticator App 2FA</h5>
                 </div>
