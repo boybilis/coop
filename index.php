@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
@@ -49,15 +49,27 @@ $cutoffCapitalStmt->execute();
 $cutoffCapital = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
 
 $cutoffPaidLoansStmt = $conn->prepare("
-    SELECT IFNULL(SUM(amount),0) AS total
+    SELECT IFNULL(SUM(loans.amount / loan_payment_counts.total_payments),0) AS total
     FROM payments
-    WHERE due_date = ?
-    AND paid = 1
+    JOIN loans ON loans.id = payments.loan_id
+    JOIN (
+        SELECT loan_id, COUNT(*) AS total_payments
+        FROM payments
+        GROUP BY loan_id
+    ) loan_payment_counts ON loan_payment_counts.loan_id = payments.loan_id
+    WHERE payments.due_date = ?
+    AND payments.paid = 1
 ");
 $cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
 $cutoffPaidLoansStmt->execute();
 $cutoffPaidLoans = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
-$availableLoanCutoff = $cutoffCapital + $cutoffPaidLoans;
+
+$approvedLoanPrincipal = (float)$conn->query("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM loans
+")->fetch_assoc()['total'];
+
+$availableLoanCutoff = $cutoffCapital + $cutoffPaidLoans - $approvedLoanPrincipal;
 
 $outstanding = $conn->query("
     SELECT IFNULL(SUM(amount),0) AS total
@@ -177,7 +189,7 @@ function notification_badge($count)
             <?= notification_badge($pendingLoanRequests) ?>
             <div class="card-body">
                 <h6>Total Outstanding Loans</h6>
-                <h3 class="text-primary">₱<?= number_format($outstanding,2) ?></h3>
+                <h3 class="text-primary">â‚±<?= number_format($outstanding,2) ?></h3>
                 <small class="text-muted">Includes unpaid principal and interest</small>
             </div>
             <div class="card-footer">
@@ -197,7 +209,7 @@ function notification_badge($count)
             <?= notification_badge($pendingSavingsActions) ?>
             <div class="card-body">
                 <h6>Member Savings</h6>
-                <h3 class="text-info">₱<?= number_format($memberSavings,2) ?></h3>
+                <h3 class="text-info">â‚±<?= number_format($memberSavings,2) ?></h3>
                 <small class="text-muted">Deposits less withdrawals</small>
             </div>
             <div class="card-footer">
@@ -228,11 +240,12 @@ function notification_badge($count)
         <div class="card glass-card glass-warning">
             <div class="card-body">
                 <h6>Available Loan for this Cut-off</h6>
-                <h3 class="text-warning">₱<?= number_format($availableLoanCutoff,2) ?></h3>
+                <h3 class="text-warning">&#8369;<?= number_format($availableLoanCutoff,2) ?></h3>
                 <small class="text-muted">
                     Cut-off <?= date('M d, Y', strtotime($currentCutoffDate)) ?>:
-                    capcon ₱<?= number_format($cutoffCapital,2) ?> +
-                    paid loans ₱<?= number_format($cutoffPaidLoans,2) ?>
+                    capcon &#8369;<?= number_format($cutoffCapital,2) ?> +
+                    paid loan principal &#8369;<?= number_format($cutoffPaidLoans,2) ?> -
+                    approved loan principal &#8369;<?= number_format($approvedLoanPrincipal,2) ?>
                 </small>
             </div>
             <div class="card-footer">
@@ -247,7 +260,7 @@ function notification_badge($count)
         <div class="card glass-card glass-midnight">
             <div class="card-body">
                 <h5>Capital Fund</h5>
-                <h2>₱<?= number_format($capital,2) ?></h2>
+                <h2>â‚±<?= number_format($capital,2) ?></h2>
                 <p class="text-muted mb-0">Total capital contributions of all members.</p>
             </div>
         </div>
