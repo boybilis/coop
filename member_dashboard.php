@@ -95,6 +95,58 @@ $capitalStmt->bind_param("i", $borrowerId);
 $capitalStmt->execute();
 $capital = $capitalStmt->get_result()->fetch_assoc()['total'];
 
+function member_current_cutoff_date()
+{
+    $today = new DateTimeImmutable('today');
+    $day = (int)$today->format('j');
+    $lastDay = (int)$today->format('t');
+
+    if ($day >= $lastDay) {
+        return $today->format('Y-m-t');
+    }
+
+    if ($day >= 15) {
+        return $today->format('Y-m-15');
+    }
+
+    return $today->modify('first day of previous month')->format('Y-m-t');
+}
+
+$currentCutoffDate = member_current_cutoff_date();
+
+$initialCapital = (float)$conn->query("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM capital_contributions
+    WHERE type = 'INITIAL'
+")->fetch_assoc()['total'];
+
+$cutoffCapitalStmt = $conn->prepare("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM capital_contributions
+    WHERE type = 'CUTOFF'
+    AND contribution_date <= ?
+");
+$cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
+$cutoffCapitalStmt->execute();
+$cutoffCapitalToDate = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
+
+$cutoffPaidLoansStmt = $conn->prepare("
+    SELECT IFNULL(SUM(payments.amount),0) AS total
+    FROM payments
+    WHERE payments.due_date = ?
+    AND payments.paid = 1
+");
+$cutoffPaidLoansStmt->bind_param("s", $currentCutoffDate);
+$cutoffPaidLoansStmt->execute();
+$paidLoanPrincipalToDate = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
+
+$approvedLoanPrincipal = (float)$conn->query("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM loans
+")->fetch_assoc()['total'];
+
+$availableLoanCutoff = $initialCapital + $cutoffCapitalToDate + $paidLoanPrincipalToDate - $approvedLoanPrincipal;
+
 $paymentSummaryStmt = $conn->prepare("
     SELECT
         IFNULL(SUM(CASE WHEN payments.paid = 0 THEN payments.amount ELSE 0 END),0) AS unpaid,
@@ -245,7 +297,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <div class="card-body">
                 <h6>Capital Contribution</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($capital,2) ?></h3>
-                <small class="text-muted">Total posted capital</small>
+                <small class="text-muted d-block">Total posted capital</small>
+                <div class="mt-2">
+                    <small class="text-muted d-block">Total Available Loanable Amount</small>
+                    <strong>&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
+                </div>
             </div>
         </div>
     </div>
