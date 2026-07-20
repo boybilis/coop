@@ -2,6 +2,7 @@
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
+include 'totp.php';
 
 if (is_logged_in()) {
     header("Location: " . (is_admin_user() ? 'index.php' : 'member_dashboard.php'));
@@ -10,12 +11,71 @@ if (is_logged_in()) {
 
 $error = '';
 $showPasswordSetup = false;
+$showTwoFactorSetup = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['two_factor_login'])) {
+        $pendingUserId = (int)($_SESSION['pending_2fa_user_id'] ?? 0);
+        $pendingUsername = $_SESSION['pending_2fa_username'] ?? '';
+        $pendingStatus = $_SESSION['pending_2fa_status'] ?? '';
+        $pendingBorrowerId = $_SESSION['pending_2fa_borrower_id'] ?? null;
+        $code = $_POST['two_factor_code'] ?? '';
+
+        $stmt = $conn->prepare("
+            SELECT id, username, status, borrower_id, two_factor_secret, two_factor_enabled
+            FROM users
+            WHERE id = ?
+            AND status IN ('Admin', 'SuperAdmin')
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $pendingUserId);
+        $stmt->execute();
+        $pendingUser = $stmt->get_result()->fetch_assoc();
+
+        if (
+            $pendingUser
+            && $pendingUser['username'] === $pendingUsername
+            && $pendingUser['status'] === $pendingStatus
+            && (int)$pendingUser['two_factor_enabled'] === 1
+            && !empty($pendingUser['two_factor_secret'])
+            && totp_verify($pendingUser['two_factor_secret'], $code)
+        ) {
+            unset(
+                $_SESSION['pending_2fa_user_id'],
+                $_SESSION['pending_2fa_username'],
+                $_SESSION['pending_2fa_status'],
+                $_SESSION['pending_2fa_borrower_id']
+            );
+
+            $_SESSION['user_id'] = $pendingUser['id'];
+            $_SESSION['username'] = $pendingUser['username'];
+            $_SESSION['user_status'] = $pendingUser['status'];
+            $_SESSION['borrower_id'] = $pendingUser['borrower_id'];
+            $_SESSION['active_member_user_id'] = $pendingUser['id'];
+            $_SESSION['active_borrower_id'] = $pendingUser['borrower_id'];
+
+            audit_log($conn, 'login', 'Admin logged in successfully with authenticator 2FA.', 'users', (int)$pendingUser['id'], [
+                'username' => $pendingUser['username'],
+                'status' => $pendingUser['status'],
+                'two_factor' => true
+            ]);
+
+            header("Location: index.php");
+            exit;
+        }
+
+        audit_log($conn, 'failed_admin_2fa_login', 'Admin entered an invalid authenticator login code.', 'users', $pendingUserId, [
+            'username' => $pendingUsername,
+            'status' => $pendingStatus
+        ]);
+
+        $error = "Invalid authenticator code";
+        $showTwoFactorSetup = true;
+    } else {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    $stmt = $conn->prepare("SELECT id, username, password, status, borrower_id FROM users WHERE username = ? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, username, password, status, borrower_id, two_factor_secret, two_factor_enabled FROM users WHERE username = ? LIMIT 1");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
@@ -49,6 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['pending_member_username'] = $user['username'];
         $showPasswordSetup = true;
     } elseif ($user && $user['password'] !== '' && password_verify($password, $user['password'])) {
+        if (in_array($user['status'], ['Admin', 'SuperAdmin'], true) && (int)($user['two_factor_enabled'] ?? 0) === 1) {
+            $_SESSION['pending_2fa_user_id'] = $user['id'];
+            $_SESSION['pending_2fa_username'] = $user['username'];
+            $_SESSION['pending_2fa_status'] = $user['status'];
+            $_SESSION['pending_2fa_borrower_id'] = $user['borrower_id'];
+            $showTwoFactorSetup = true;
+        } else {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['user_status'] = $user['status'];
@@ -67,8 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: member_dashboard.php");
         }
         exit;
+        }
     } elseif (!$showPasswordSetup) {
         $error = "Invalid username or password";
+    }
     }
 }
 ?>
@@ -116,6 +185,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
+<div class="modal fade" id="twoFactorLoginModal" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST">
+        <div class="modal-header">
+          <h5>Authenticator Code Required</h5>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted">
+              Enter the 6-digit code from Microsoft Authenticator or Google Authenticator.
+          </p>
+          <input type="hidden" name="two_factor_login" value="1">
+          <input type="text" name="two_factor_code" class="form-control" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required autofocus>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary w-100">Verify Login</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="passwordSetupModal" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -140,6 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 <?php if ($showPasswordSetup): ?>
 new bootstrap.Modal(document.getElementById('passwordSetupModal')).show();
+<?php endif; ?>
+<?php if ($showTwoFactorSetup): ?>
+new bootstrap.Modal(document.getElementById('twoFactorLoginModal')).show();
 <?php endif; ?>
 
 function setMemberPassword(){

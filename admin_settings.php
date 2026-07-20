@@ -2,13 +2,30 @@
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
+include 'totp.php';
 require_admin();
 
 $adminUsers = null;
+$currentAdminTwoFactor = null;
+$twoFactorSetupUri = null;
+
+$currentAdminStmt = $conn->prepare("
+    SELECT two_factor_secret, two_factor_enabled, two_factor_confirmed_at
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+");
+$currentAdminStmt->bind_param("i", $_SESSION['user_id']);
+$currentAdminStmt->execute();
+$currentAdminTwoFactor = $currentAdminStmt->get_result()->fetch_assoc();
+
+if ($currentAdminTwoFactor && !empty($currentAdminTwoFactor['two_factor_secret']) && !(int)$currentAdminTwoFactor['two_factor_enabled']) {
+    $twoFactorSetupUri = totp_otpauth_uri('Cooperative System', $_SESSION['username'] ?? 'admin', $currentAdminTwoFactor['two_factor_secret']);
+}
 
 if (is_superadmin_user()) {
     $adminUsers = $conn->query("
-        SELECT id, username, status, created_at
+        SELECT id, username, status, two_factor_enabled, two_factor_confirmed_at, created_at
         FROM users
         WHERE status IN ('Admin', 'SuperAdmin')
         ORDER BY FIELD(status, 'SuperAdmin', 'Admin'), username ASC
@@ -46,6 +63,15 @@ if (is_superadmin_user()) {
     <?php if(isset($_GET['admin_deleted'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Admin user deleted.'});</script>
     <?php endif; ?>
+    <?php if(isset($_GET['two_factor_setup'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'info', message:'Authenticator setup started. Add the setup key to your app.'});</script>
+    <?php endif; ?>
+    <?php if(isset($_GET['two_factor_enabled'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Authenticator 2FA enabled.'});</script>
+    <?php endif; ?>
+    <?php if(isset($_GET['two_factor_disabled'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Authenticator 2FA disabled.'});</script>
+    <?php endif; ?>
     <?php if(isset($_GET['error'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
     <?php endif; ?>
@@ -72,6 +98,58 @@ if (is_superadmin_user()) {
                         </div>
                         <button class="btn btn-primary">Update Password</button>
                     </form>
+                </div>
+            </div>
+
+            <div class="card shadow mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Authenticator App 2FA</h5>
+                </div>
+                <div class="card-body">
+                    <?php if((int)($currentAdminTwoFactor['two_factor_enabled'] ?? 0) === 1): ?>
+                        <p class="text-success mb-2">
+                            Authenticator 2FA is enabled.
+                        </p>
+                        <small class="text-muted d-block mb-3">
+                            Enabled since <?= htmlspecialchars($currentAdminTwoFactor['two_factor_confirmed_at'] ?? '') ?>.
+                        </small>
+                        <form method="POST" action="ajax/disable_admin_2fa.php" data-confirm="Disable authenticator 2FA for your admin login?" data-confirm-ok="Disable 2FA" data-confirm-class="btn-danger">
+                            <div class="mb-3">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" name="current_password" class="form-control" required>
+                            </div>
+                            <button class="btn btn-outline-danger">Disable 2FA</button>
+                        </form>
+                    <?php elseif($twoFactorSetupUri): ?>
+                        <p class="text-muted">
+                            Add this setup key to Microsoft Authenticator or Google Authenticator, then enter the generated 6-digit code.
+                        </p>
+                        <label class="form-label">Setup Key</label>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($currentAdminTwoFactor['two_factor_secret']) ?>" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard && navigator.clipboard.writeText('<?= htmlspecialchars($currentAdminTwoFactor['two_factor_secret'], ENT_QUOTES, 'UTF-8') ?>')">Copy</button>
+                        </div>
+                        <small class="text-muted d-block mb-3">
+                            In the authenticator app, choose manual setup or enter setup key. Account name: <?= htmlspecialchars($_SESSION['username'] ?? 'admin') ?>.
+                        </small>
+                        <a href="<?= htmlspecialchars($twoFactorSetupUri) ?>" class="btn btn-outline-primary btn-sm mb-3">
+                            Open Authenticator Setup Link
+                        </a>
+                        <form method="POST" action="ajax/confirm_admin_2fa.php">
+                            <div class="mb-3">
+                                <label class="form-label">6-Digit Code</label>
+                                <input type="text" name="two_factor_code" class="form-control" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+                            </div>
+                            <button class="btn btn-success">Enable 2FA</button>
+                        </form>
+                    <?php else: ?>
+                        <p class="text-muted">
+                            Protect admin login with a 6-digit code from Microsoft Authenticator or Google Authenticator.
+                        </p>
+                        <form method="POST" action="ajax/start_admin_2fa_setup.php">
+                            <button class="btn btn-primary">Start Authenticator Setup</button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -130,6 +208,7 @@ if (is_superadmin_user()) {
                                 <tr>
                                     <th>Username</th>
                                     <th>Role</th>
+                                    <th>2FA</th>
                                     <th>Created</th>
                                     <th>Action</th>
                                 </tr>
@@ -139,6 +218,13 @@ if (is_superadmin_user()) {
                                     <tr>
                                         <td><?= htmlspecialchars($admin['username']) ?></td>
                                         <td><span class="badge bg-<?= $admin['status'] === 'SuperAdmin' ? 'danger' : 'primary' ?>"><?= htmlspecialchars($admin['status']) ?></span></td>
+                                        <td>
+                                            <?php if((int)$admin['two_factor_enabled'] === 1): ?>
+                                                <span class="badge bg-success">Enabled</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Off</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?= htmlspecialchars($admin['created_at']) ?></td>
                                         <td>
                                             <?php if($admin['status'] === 'SuperAdmin'): ?>
@@ -171,7 +257,7 @@ $(document).ready(function(){
         pageLength: 10,
         order: [[1, 'desc'], [0, 'asc']],
         columnDefs: [
-            { orderable: false, targets: 3 }
+            { orderable: false, targets: 4 }
         ]
     });
 });

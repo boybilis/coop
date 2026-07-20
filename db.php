@@ -115,6 +115,27 @@ if (!$conn->connect_error) {
     if ($usersTableCheck && $usersTableCheck->num_rows > 0) {
         $conn->query("ALTER TABLE users MODIFY status ENUM('SuperAdmin','Admin','Member') NOT NULL DEFAULT 'Member'");
 
+        $userSecurityColumns = [
+            'two_factor_secret' => "ALTER TABLE users ADD COLUMN two_factor_secret VARCHAR(64) DEFAULT NULL AFTER password",
+            'two_factor_enabled' => "ALTER TABLE users ADD COLUMN two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER two_factor_secret",
+            'two_factor_confirmed_at' => "ALTER TABLE users ADD COLUMN two_factor_confirmed_at DATETIME DEFAULT NULL AFTER two_factor_enabled"
+        ];
+
+        foreach ($userSecurityColumns as $columnName => $alterSql) {
+            $columnCheck = $conn->query("
+                SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = 'users'
+                AND COLUMN_NAME = '{$columnName}'
+                LIMIT 1
+            ");
+
+            if ($columnCheck && $columnCheck->num_rows === 0) {
+                $conn->query($alterSql);
+            }
+        }
+
         $superAdminCheck = $conn->query("SELECT id FROM users WHERE status = 'SuperAdmin' LIMIT 1");
 
         if (!$superAdminCheck || $superAdminCheck->num_rows === 0) {
