@@ -20,8 +20,11 @@ if(!$borrower_id || !$amount || !$months || !$start){
 // =============================
 $effectiveRate = cooperative_effective_interest_rate($conn, $start);
 $rate = ((float)$effectiveRate['monthly_rate']) / 100;
+$effectiveServiceFeeRate = cooperative_effective_service_fee_rate($conn, $start);
+$serviceFeeRate = ((float)$effectiveServiceFeeRate['service_fee_rate']) / 100;
 $interest = (int) ceil($amount * $rate * $months);
-$totalPayable = (int) ceil($amount + $interest);
+$serviceFee = (int) ceil($amount * $serviceFeeRate);
+$totalPayable = (int) ceil($amount + $interest + $serviceFee);
 
 // payments (2 per month)
 $totalPayments = (int) ceil($months * 2);
@@ -35,15 +38,16 @@ $remainder = $totalPayable - ($basePayment * $totalPayments);
 // =============================
 $loanStmt = $conn->prepare("
     INSERT INTO loans
-    (borrower_id, amount, interest, months, total_payable, start_date)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (borrower_id, amount, interest, service_fee, months, total_payable, start_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
 ");
 
 $loanStmt->bind_param(
-    "idddds",
+    "iddddds",
     $borrower_id,
     $amount,
     $interest,
+    $serviceFee,
     $months,
     $totalPayable,
     $start
@@ -129,7 +133,10 @@ audit_log($conn, 'save_loan', 'Admin created a direct loan record.', 'loans', $l
     'amount' => $amount,
     'monthly_rate' => $effectiveRate['monthly_rate'],
     'rate_implementation_date' => $effectiveRate['implementation_date'],
+    'service_fee_rate' => $effectiveServiceFeeRate['service_fee_rate'],
+    'service_fee_implementation_date' => $effectiveServiceFeeRate['implementation_date'],
     'interest' => $interest,
+    'service_fee' => $serviceFee,
     'months' => $months,
     'total_payable' => $totalPayable,
     'start_date' => $start

@@ -20,6 +20,11 @@ $capital = $conn->query("
     FROM capital_contributions
 ")->fetch_assoc()['total'];
 
+$serviceFees = $conn->query("
+    SELECT IFNULL(SUM(service_fee),0) AS total
+    FROM loans
+")->fetch_assoc()['total'];
+
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $currentCutoffDate = $loanableBreakdown['cutoff_date'];
 $initialCapital = $loanableBreakdown['initial_capital'];
@@ -212,7 +217,7 @@ function notification_badge($count)
 </div>
 
 <div class="row">
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card glass-card glass-midnight">
             <div class="card-body">
                 <h5>Capital Fund</h5>
@@ -222,7 +227,17 @@ function notification_badge($count)
         </div>
     </div>
 
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
+        <div class="card glass-card glass-warning">
+            <div class="card-body">
+                <h5>Service Fees</h5>
+                <h2>&#8369;<?= number_format($serviceFees,2) ?></h2>
+                <p class="text-muted mb-0">Total service fees from all approved loans.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
         <div class="card glass-card glass-success position-relative">
             <?= notification_badge($pendingReceivedPayments) ?>
             <div class="card-body">

@@ -11,6 +11,13 @@ $rates = $conn->query("
     ORDER BY implementation_date DESC, id DESC
 ");
 $currentRate = cooperative_effective_interest_rate($conn, date('Y-m-d'));
+$serviceFeeRates = $conn->query("
+    SELECT loan_service_fee_rates.*, users.username AS created_by_username
+    FROM loan_service_fee_rates
+    LEFT JOIN users ON users.id = loan_service_fee_rates.created_by
+    ORDER BY implementation_date DESC, id DESC
+");
+$currentServiceFeeRate = cooperative_effective_service_fee_rate($conn, date('Y-m-d'));
 ?>
 <!DOCTYPE html>
 <html>
@@ -32,6 +39,9 @@ $currentRate = cooperative_effective_interest_rate($conn, date('Y-m-d'));
 
     <?php if(isset($_GET['rate_saved'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan interest rate saved.'});</script>
+    <?php endif; ?>
+    <?php if(isset($_GET['service_fee_saved'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan service fee rate saved.'});</script>
     <?php endif; ?>
     <?php if(isset($_GET['error'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
@@ -87,6 +97,66 @@ $currentRate = cooperative_effective_interest_rate($conn, date('Y-m-d'));
                                     <td><?= htmlspecialchars($rate['implementation_date']) ?></td>
                                     <td><?= htmlspecialchars($rate['created_by_username'] ?? 'System') ?></td>
                                     <td><?= htmlspecialchars($rate['created_at']) ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-3">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">Loan Service Fee</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Current effective one-time service fee:
+                        <strong><?= number_format($currentServiceFeeRate['service_fee_rate'], 2) ?>%</strong>
+                        since <?= htmlspecialchars($currentServiceFeeRate['implementation_date']) ?>.
+                    </p>
+
+                    <form method="POST" action="ajax/save_service_fee_rate.php">
+                        <div class="mb-3">
+                            <label class="form-label">Service Fee Rate (%)</label>
+                            <input type="number" step="0.01" min="0" name="service_fee_rate" class="form-control" required>
+                            <small class="text-muted">One-time fee computed from principal loan amount.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date of Implementation</label>
+                            <input type="date" name="implementation_date" class="form-control" required>
+                        </div>
+                        <button class="btn btn-primary">Save Service Fee</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-3">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">Service Fee History</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Service Fee Rate</th>
+                                <th>Implementation Date</th>
+                                <th>Created By</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while($serviceFeeRate = $serviceFeeRates->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?= number_format($serviceFeeRate['service_fee_rate'], 2) ?>%</td>
+                                    <td><?= htmlspecialchars($serviceFeeRate['implementation_date']) ?></td>
+                                    <td><?= htmlspecialchars($serviceFeeRate['created_by_username'] ?? 'System') ?></td>
+                                    <td><?= htmlspecialchars($serviceFeeRate['created_at']) ?></td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>

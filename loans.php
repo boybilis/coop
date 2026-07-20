@@ -57,6 +57,7 @@ $loans = $conn->query("
                     <th>Borrower For</th>
                     <th>Loan</th>
                     <th>Interest</th>
+                    <th>Service Fee</th>
                     <th>Total</th>
                     <th>Progress</th>
                     <th>Submissions</th>
@@ -87,6 +88,7 @@ $loans = $conn->query("
                     </td>
                     <td>&#8369;<?= number_format($row['amount'],2) ?></td>
                     <td class="text-success">&#8369;<?= number_format($row['interest'],2) ?></td>
+                    <td class="text-warning">&#8369;<?= number_format($row['service_fee'] ?? 0,2) ?></td>
                     <td><strong>&#8369;<?= number_format($row['total_payable'],2) ?></strong></td>
                     <td width="180">
                         <div class="progress" style="height:20px;">

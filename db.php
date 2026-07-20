@@ -62,6 +62,7 @@ if (!$conn->connect_error) {
         ],
         'loans' => [
             'is_guarantor' => "ALTER TABLE loans ADD COLUMN is_guarantor TINYINT(1) NOT NULL DEFAULT 0 AFTER status",
+            'service_fee' => "ALTER TABLE loans ADD COLUMN service_fee DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER interest",
             'guest_borrower_name' => "ALTER TABLE loans ADD COLUMN guest_borrower_name VARCHAR(150) DEFAULT NULL AFTER is_guarantor",
             'guest_gcash_name' => "ALTER TABLE loans ADD COLUMN guest_gcash_name VARCHAR(150) DEFAULT NULL AFTER guest_borrower_name",
             'guest_gcash_number' => "ALTER TABLE loans ADD COLUMN guest_gcash_number VARCHAR(50) DEFAULT NULL AFTER guest_gcash_name",
@@ -176,6 +177,27 @@ if (!$conn->connect_error) {
         ");
     }
 
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS loan_service_fee_rates (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            service_fee_rate DECIMAL(8,4) NOT NULL,
+            implementation_date DATE NOT NULL,
+            created_by INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY loan_service_fee_rates_implementation_unique (implementation_date),
+            INDEX loan_service_fee_rates_date_index (implementation_date)
+        )
+    ");
+
+    $serviceFeeRateCheck = $conn->query("SELECT id FROM loan_service_fee_rates LIMIT 1");
+
+    if (!$serviceFeeRateCheck || $serviceFeeRateCheck->num_rows === 0) {
+        $conn->query("
+            INSERT INTO loan_service_fee_rates (service_fee_rate, implementation_date)
+            VALUES (0.0000, '2026-06-30')
+        ");
+    }
+
 }
 
 function cooperative_current_cutoff_date()
@@ -269,6 +291,39 @@ function cooperative_effective_interest_rate($conn, $loanDate)
 
     return [
         'monthly_rate' => (float)($fallback['monthly_rate'] ?? 2.0000),
+        'implementation_date' => $fallback['implementation_date'] ?? '2026-06-30'
+    ];
+}
+
+function cooperative_effective_service_fee_rate($conn, $loanDate)
+{
+    $stmt = $conn->prepare("
+        SELECT service_fee_rate, implementation_date
+        FROM loan_service_fee_rates
+        WHERE implementation_date <= ?
+        ORDER BY implementation_date DESC, id DESC
+        LIMIT 1
+    ");
+    $stmt->bind_param("s", $loanDate);
+    $stmt->execute();
+    $rate = $stmt->get_result()->fetch_assoc();
+
+    if ($rate) {
+        return [
+            'service_fee_rate' => (float)$rate['service_fee_rate'],
+            'implementation_date' => $rate['implementation_date']
+        ];
+    }
+
+    $fallback = $conn->query("
+        SELECT service_fee_rate, implementation_date
+        FROM loan_service_fee_rates
+        ORDER BY implementation_date ASC, id ASC
+        LIMIT 1
+    ")->fetch_assoc();
+
+    return [
+        'service_fee_rate' => (float)($fallback['service_fee_rate'] ?? 0.0000),
         'implementation_date' => $fallback['implementation_date'] ?? '2026-06-30'
     ];
 }

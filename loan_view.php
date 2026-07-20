@@ -117,6 +117,10 @@ $res = $stmt->get_result();
                 <h5 class="text-success">&#8369;<?= number_format($loanInfo['interest'], 2) ?></h5>
             </div>
             <div class="col-md-3">
+                <small class="text-muted">Service Fee</small>
+                <h5 class="text-warning">&#8369;<?= number_format($loanInfo['service_fee'] ?? 0, 2) ?></h5>
+            </div>
+            <div class="col-md-3">
                 <small class="text-muted">Total Payable</small>
                 <h5>&#8369;<?= number_format($loanInfo['total_payable'], 2) ?></h5>
             </div>

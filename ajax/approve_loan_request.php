@@ -95,8 +95,11 @@ $proofPath = 'uploads/loan_disbursements/' . $fileName;
 $start = date('Y-m-d');
 $effectiveRate = cooperative_effective_interest_rate($conn, $start);
 $rate = ((float)$effectiveRate['monthly_rate']) / 100;
+$effectiveServiceFeeRate = cooperative_effective_service_fee_rate($conn, $start);
+$serviceFeeRate = ((float)$effectiveServiceFeeRate['service_fee_rate']) / 100;
 $interest = (int) ceil($amount * $rate * $months);
-$totalPayable = (int) ceil($amount + $interest);
+$serviceFee = (int) ceil($amount * $serviceFeeRate);
+$totalPayable = (int) ceil($amount + $interest + $serviceFee);
 $totalPayments = (int) ceil($months * 2);
 $basePayment = floor($totalPayable / $totalPayments);
 $remainder = $totalPayable - ($basePayment * $totalPayments);
@@ -106,14 +109,15 @@ $conn->begin_transaction();
 try {
     $loanStmt = $conn->prepare("
         INSERT INTO loans
-        (borrower_id, amount, interest, months, total_payable, start_date, is_guarantor, guest_borrower_name, guest_gcash_name, guest_gcash_number, disbursement_reference_number, disbursement_proof_image)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (borrower_id, amount, interest, service_fee, months, total_payable, start_date, is_guarantor, guest_borrower_name, guest_gcash_name, guest_gcash_number, disbursement_reference_number, disbursement_proof_image)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $loanStmt->bind_param(
-        "iddddsisssss",
+        "idddddsisssss",
         $request['borrower_id'],
         $amount,
         $interest,
+        $serviceFee,
         $months,
         $totalPayable,
         $start,
@@ -181,6 +185,9 @@ try {
         'approved_months' => $months,
         'monthly_rate' => $effectiveRate['monthly_rate'],
         'rate_implementation_date' => $effectiveRate['implementation_date'],
+        'service_fee_rate' => $effectiveServiceFeeRate['service_fee_rate'],
+        'service_fee_implementation_date' => $effectiveServiceFeeRate['implementation_date'],
+        'service_fee' => $serviceFee,
         'disbursement_reference_number' => $disbursementReferenceNumber
     ]);
 
