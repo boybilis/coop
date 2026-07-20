@@ -22,12 +22,13 @@ $effectiveRate = cooperative_effective_interest_rate($conn, $start);
 $rate = ((float)$effectiveRate['monthly_rate']) / 100;
 $effectiveServiceFeeRate = cooperative_effective_service_fee_rate($conn, $start);
 $serviceFeeRate = ((float)$effectiveServiceFeeRate['service_fee_rate']) / 100;
+$paymentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start);
 $interest = (int) ceil($amount * $rate * $months);
 $serviceFee = (int) ceil($amount * $serviceFeeRate);
 $totalPayable = (int) ceil($amount + $interest + $serviceFee);
 
-// payments (2 per month)
-$totalPayments = (int) ceil($months * 2);
+$dueDates = cooperative_generate_loan_due_dates($start, $months, $paymentScheduleSetting);
+$totalPayments = count($dueDates);
 
 // whole number base payment
 $basePayment = floor($totalPayable / $totalPayments);
@@ -66,22 +67,6 @@ $payStmt = $conn->prepare("
 ");
 
 // =============================
-// FIND FIRST CUT-OFF AFTER START DATE
-// =============================
-$startDate = new DateTime($start);
-
-// possible cutoffs in start month
-$cut15 = new DateTime($startDate->format('Y-m-15'));
-$cutEOM = new DateTime($startDate->format('Y-m-t'));
-
-// choose first valid cutoff AFTER start
-if($cut15 > $startDate){
-    $cursor = $cut15;
-} else {
-    $cursor = $cutEOM;
-}
-
-// =============================
 // GENERATE PAYMENTS
 // =============================
 for($i = 1; $i <= $totalPayments; $i++){
@@ -93,26 +78,7 @@ for($i = 1; $i <= $totalPayments; $i++){
         ? (int) ceil($basePayment + $remainder)
         : (int) $basePayment;
 
-    // =============================
-    // CURRENT CUT-OFF DATE
-    // =============================
-    $dueDate = $cursor->format('Y-m-d');
-
-    // =============================
-    // MOVE TO NEXT CUT-OFF
-    // =============================
-    if($cursor->format('d') == '15'){
-        // go to end of same month
-        $cursor->modify('last day of this month');
-    } else {
-        // go to next month's 15
-        $cursor->modify('first day of next month');
-        $cursor->setDate(
-            $cursor->format('Y'),
-            $cursor->format('m'),
-            15
-        );
-    }
+    $dueDate = $dueDates[$i - 1];
 
     // =============================
     // INSERT PAYMENT
@@ -135,6 +101,7 @@ audit_log($conn, 'save_loan', 'Admin created a direct loan record.', 'loans', $l
     'rate_implementation_date' => $effectiveRate['implementation_date'],
     'service_fee_rate' => $effectiveServiceFeeRate['service_fee_rate'],
     'service_fee_implementation_date' => $effectiveServiceFeeRate['implementation_date'],
+    'payment_schedule' => $paymentScheduleSetting,
     'interest' => $interest,
     'service_fee' => $serviceFee,
     'months' => $months,

@@ -18,6 +18,27 @@ $serviceFeeRates = $conn->query("
     ORDER BY implementation_date DESC, id DESC
 ");
 $currentServiceFeeRate = cooperative_effective_service_fee_rate($conn, date('Y-m-d'));
+$paymentScheduleSettings = $conn->query("
+    SELECT loan_payment_schedule_settings.*, users.username AS created_by_username
+    FROM loan_payment_schedule_settings
+    LEFT JOIN users ON users.id = loan_payment_schedule_settings.created_by
+    ORDER BY implementation_date DESC, id DESC
+");
+$currentPaymentSchedule = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
+
+function payment_schedule_label($setting)
+{
+    if ($setting['payment_type'] === 'monthly') {
+        return 'Monthly - Day ' . (int)$setting['monthly_day'];
+    }
+
+    if ($setting['payment_type'] === 'weekly') {
+        $days = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
+        return 'Weekly - ' . ($days[(int)$setting['weekly_day']] ?? 'Friday');
+    }
+
+    return 'Semi-monthly - Day ' . (int)$setting['semi_monthly_day_one'] . ' and Day ' . (int)$setting['semi_monthly_day_two'];
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -42,6 +63,9 @@ $currentServiceFeeRate = cooperative_effective_service_fee_rate($conn, date('Y-m
     <?php endif; ?>
     <?php if(isset($_GET['service_fee_saved'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan service fee rate saved.'});</script>
+    <?php endif; ?>
+    <?php if(isset($_GET['payment_schedule_saved'])): ?>
+        <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan payment schedule saved.'});</script>
     <?php endif; ?>
     <?php if(isset($_GET['error'])): ?>
         <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
@@ -165,9 +189,125 @@ $currentServiceFeeRate = cooperative_effective_service_fee_rate($conn, date('Y-m
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-3">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">Loan Payment Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Current effective schedule:
+                        <strong><?= htmlspecialchars(payment_schedule_label($currentPaymentSchedule)) ?></strong>
+                        since <?= htmlspecialchars($currentPaymentSchedule['implementation_date']) ?>.
+                    </p>
+
+                    <form method="POST" action="ajax/save_payment_schedule_setting.php" id="paymentScheduleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Type</label>
+                            <select name="payment_type" id="paymentType" class="form-select" required>
+                                <option value="monthly">Monthly</option>
+                                <option value="semi_monthly" selected>Semi-monthly</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3 payment-schedule-field" data-payment-field="monthly">
+                            <label class="form-label">Monthly Cut-off Day</label>
+                            <input type="number" min="1" max="31" name="monthly_day" class="form-control" value="15">
+                            <small class="text-muted">If the selected day is beyond the month length, the system uses month-end.</small>
+                        </div>
+
+                        <div class="row payment-schedule-field" data-payment-field="semi_monthly">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Cut-off Day</label>
+                                <input type="number" min="1" max="31" name="semi_monthly_day_one" class="form-control" value="15">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Second Cut-off Day</label>
+                                <input type="number" min="1" max="31" name="semi_monthly_day_two" class="form-control" value="31">
+                            </div>
+                            <div class="col-12 mb-3">
+                                <small class="text-muted">Example: 15/31 means 15th and month-end. 15/30 means 15th and 30th, but February uses month-end.</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 payment-schedule-field" data-payment-field="weekly">
+                            <label class="form-label">Weekly Cut-off Day</label>
+                            <select name="weekly_day" class="form-select">
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5" selected>Friday</option>
+                                <option value="6">Saturday</option>
+                                <option value="7">Sunday</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Date of Implementation</label>
+                            <input type="date" name="implementation_date" class="form-control" required>
+                        </div>
+                        <button class="btn btn-primary">Save Payment Schedule</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-3">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Schedule History</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Schedule</th>
+                                <th>Implementation Date</th>
+                                <th>Created By</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while($paymentSchedule = $paymentScheduleSettings->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars(payment_schedule_label(cooperative_normalize_payment_schedule_setting($paymentSchedule))) ?></td>
+                                    <td><?= htmlspecialchars($paymentSchedule['implementation_date']) ?></td>
+                                    <td><?= htmlspecialchars($paymentSchedule['created_by_username'] ?? 'System') ?></td>
+                                    <td><?= htmlspecialchars($paymentSchedule['created_at']) ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const paymentType = document.getElementById('paymentType');
+    const fields = document.querySelectorAll('.payment-schedule-field');
+
+    function togglePaymentScheduleFields() {
+        fields.forEach(function (field) {
+            const active = field.dataset.paymentField === paymentType.value;
+            field.classList.toggle('d-none', !active);
+            field.querySelectorAll('input, select').forEach(function (input) {
+                input.disabled = !active;
+            });
+        });
+    }
+
+    paymentType.addEventListener('change', togglePaymentScheduleFields);
+    togglePaymentScheduleFields();
+});
+</script>
 <?php render_footer(); ?>
 </body>
 </html>

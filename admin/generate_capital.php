@@ -1,8 +1,8 @@
 <?php
 include '../db.php';
 
-$start = new DateTime("2025-07-15");
-$today = new DateTime();
+$start = new DateTimeImmutable("2025-07-15");
+$today = new DateTimeImmutable();
 
 $borrowers = $conn->query("SELECT id FROM borrowers");
 
@@ -32,65 +32,36 @@ while($b = $borrowers->fetch_assoc()){
     // =====================================================
     // 2. CUT-OFF GENERATION (START AFTER INITIAL)
     // =====================================================
-
-    $cursor = clone $start;
-
-    // 🔥 IMPORTANT: move immediately to FIRST VALID CUT-OFF
-    $cursor->modify('last day of this month');
+    $scheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start->format('Y-m-d'));
+    $cursor = cooperative_next_cutoff_after($start->format('Y-m-d'), $scheduleSetting);
 
     while($cursor <= $today){
 
-        $cutoffs = [];
+        $date = $cursor->format('Y-m-d');
 
-        // Cutoff 1: end of current month
-        $cutoffs[] = clone $cursor;
+        // =====================================================
+        // CHECK EXISTING (NO DUPLICATE, NO OVERWRITE)
+        // =====================================================
+        $check = $conn->query("
+            SELECT id FROM capital_contributions
+            WHERE borrower_id = $borrower_id
+            AND contribution_date = '$date'
+            AND type = 'CUTOFF'
+            LIMIT 1
+        ");
 
-        // Cutoff 2: 15th of next month
-        $next = clone $cursor;
-        $next->modify('first day of next month');
-        $next->setDate(
-            $next->format('Y'),
-            $next->format('m'),
-            15
-        );
+        if($check->num_rows == 0){
 
-        if($next <= $today){
-            $cutoffs[] = $next;
-        }
-
-        foreach($cutoffs as $dateObj){
-
-            $date = $dateObj->format('Y-m-d');
-
-            // =====================================================
-            // CHECK EXISTING (NO DUPLICATE, NO OVERWRITE)
-            // =====================================================
-            $check = $conn->query("
-                SELECT id FROM capital_contributions
-                WHERE borrower_id = $borrower_id
-                AND contribution_date = '$date'
-                AND type = 'CUTOFF'
-                LIMIT 1
+            $conn->query("
+                INSERT INTO capital_contributions
+                (borrower_id, amount, type, contribution_date, period_label)
+                VALUES
+                ($borrower_id, 500, 'CUTOFF', '$date', 'AUTO')
             ");
-
-            if($check->num_rows == 0){
-
-                $conn->query("
-                    INSERT INTO capital_contributions
-                    (borrower_id, amount, type, contribution_date, period_label)
-                    VALUES
-                    ($borrower_id, 500, 'CUTOFF', '$date', 'AUTO')
-                ");
-            }
         }
 
-        // move to next month cycle
-        $cursor->modify('first day of next month');
-        $cursor->setDate(
-            $cursor->format('Y'),
-            $cursor->format('m'),
-            15
-        );
+        $scheduleSetting = cooperative_effective_payment_schedule_setting($conn, $date);
+        $cursor = cooperative_next_cutoff_after_cursor($cursor, $scheduleSetting);
     }
 }
 

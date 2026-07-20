@@ -198,10 +198,43 @@ if (!$conn->connect_error) {
         ");
     }
 
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS loan_payment_schedule_settings (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            payment_type ENUM('monthly','semi_monthly','weekly') NOT NULL DEFAULT 'semi_monthly',
+            monthly_day TINYINT UNSIGNED NULL,
+            semi_monthly_day_one TINYINT UNSIGNED NULL,
+            semi_monthly_day_two TINYINT UNSIGNED NULL,
+            weekly_day TINYINT UNSIGNED NULL,
+            implementation_date DATE NOT NULL,
+            created_by INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY loan_payment_schedule_implementation_unique (implementation_date),
+            INDEX loan_payment_schedule_date_index (implementation_date)
+        )
+    ");
+
+    $paymentScheduleCheck = $conn->query("SELECT id FROM loan_payment_schedule_settings LIMIT 1");
+
+    if (!$paymentScheduleCheck || $paymentScheduleCheck->num_rows === 0) {
+        $conn->query("
+            INSERT INTO loan_payment_schedule_settings
+            (payment_type, monthly_day, semi_monthly_day_one, semi_monthly_day_two, weekly_day, implementation_date)
+            VALUES ('semi_monthly', NULL, 15, 31, NULL, '2026-06-30')
+        ");
+    }
+
 }
 
 function cooperative_current_cutoff_date()
 {
+    global $conn;
+
+    if (isset($conn) && $conn && !$conn->connect_error) {
+        $setting = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
+        return cooperative_previous_or_current_cutoff_date(date('Y-m-d'), $setting);
+    }
+
     $today = new DateTimeImmutable('today');
     $day = (int)$today->format('j');
     $lastDay = (int)$today->format('t');
@@ -215,6 +248,229 @@ function cooperative_current_cutoff_date()
     }
 
     return $today->modify('first day of previous month')->format('Y-m-t');
+}
+
+function cooperative_effective_payment_schedule_setting($conn, $loanDate)
+{
+    $stmt = $conn->prepare("
+        SELECT payment_type, monthly_day, semi_monthly_day_one, semi_monthly_day_two, weekly_day, implementation_date
+        FROM loan_payment_schedule_settings
+        WHERE implementation_date <= ?
+        ORDER BY implementation_date DESC, id DESC
+        LIMIT 1
+    ");
+    $stmt->bind_param("s", $loanDate);
+    $stmt->execute();
+    $setting = $stmt->get_result()->fetch_assoc();
+
+    if ($setting) {
+        return cooperative_normalize_payment_schedule_setting($setting);
+    }
+
+    $fallback = $conn->query("
+        SELECT payment_type, monthly_day, semi_monthly_day_one, semi_monthly_day_two, weekly_day, implementation_date
+        FROM loan_payment_schedule_settings
+        ORDER BY implementation_date ASC, id ASC
+        LIMIT 1
+    ")->fetch_assoc();
+
+    return cooperative_normalize_payment_schedule_setting($fallback ?: [
+        'payment_type' => 'semi_monthly',
+        'monthly_day' => null,
+        'semi_monthly_day_one' => 15,
+        'semi_monthly_day_two' => 31,
+        'weekly_day' => null,
+        'implementation_date' => '2026-06-30'
+    ]);
+}
+
+function cooperative_normalize_payment_schedule_setting($setting)
+{
+    $paymentType = $setting['payment_type'] ?? 'semi_monthly';
+
+    return [
+        'payment_type' => in_array($paymentType, ['monthly', 'semi_monthly', 'weekly'], true) ? $paymentType : 'semi_monthly',
+        'monthly_day' => cooperative_clamp_month_day($setting['monthly_day'] ?? 15),
+        'semi_monthly_day_one' => cooperative_clamp_month_day($setting['semi_monthly_day_one'] ?? 15),
+        'semi_monthly_day_two' => cooperative_clamp_month_day($setting['semi_monthly_day_two'] ?? 31),
+        'weekly_day' => cooperative_clamp_week_day($setting['weekly_day'] ?? 5),
+        'implementation_date' => $setting['implementation_date'] ?? '2026-06-30'
+    ];
+}
+
+function cooperative_clamp_month_day($day)
+{
+    return max(1, min(31, (int)$day));
+}
+
+function cooperative_clamp_week_day($day)
+{
+    return max(1, min(7, (int)$day));
+}
+
+function cooperative_cutoff_date_for_month(DateTimeImmutable $monthDate, $day)
+{
+    $lastDay = (int)$monthDate->format('t');
+    $requestedDay = cooperative_clamp_month_day($day);
+
+    $requestedDay = min($requestedDay, $lastDay);
+
+    return $monthDate->setDate(
+        (int)$monthDate->format('Y'),
+        (int)$monthDate->format('m'),
+        $requestedDay
+    );
+}
+
+function cooperative_next_cutoff_after($date, array $setting)
+{
+    $current = new DateTimeImmutable($date);
+    $paymentType = $setting['payment_type'];
+
+    if ($paymentType === 'weekly') {
+        $targetDay = cooperative_clamp_week_day($setting['weekly_day']);
+        $currentDay = (int)$current->format('N');
+        $daysUntil = ($targetDay - $currentDay + 7) % 7;
+        $daysUntil = $daysUntil === 0 ? 7 : $daysUntil;
+
+        return $current->modify("+{$daysUntil} days");
+    }
+
+    if ($paymentType === 'monthly') {
+        $monthCursor = $current;
+
+        for ($i = 0; $i < 24; $i++) {
+            $cutoff = cooperative_cutoff_date_for_month($monthCursor, $setting['monthly_day']);
+
+            if ($cutoff && $cutoff > $current) {
+                return $cutoff;
+            }
+
+            $monthCursor = $monthCursor->modify('first day of next month');
+        }
+
+        return $current->modify('+1 day');
+    }
+
+    $days = [
+        cooperative_clamp_month_day($setting['semi_monthly_day_one']),
+        cooperative_clamp_month_day($setting['semi_monthly_day_two'])
+    ];
+    sort($days);
+
+    $monthCursor = $current;
+
+    for ($monthOffset = 0; $monthOffset < 24; $monthOffset++) {
+        foreach ($days as $day) {
+            $cutoff = cooperative_cutoff_date_for_month($monthCursor, $day);
+
+            if ($cutoff && $cutoff > $current) {
+                return $cutoff;
+            }
+        }
+
+        $monthCursor = $monthCursor->modify('first day of next month');
+    }
+
+    return $current->modify('+1 day');
+}
+
+function cooperative_next_cutoff_after_cursor(DateTimeImmutable $cursor, array $setting)
+{
+    return cooperative_next_cutoff_after($cursor->format('Y-m-d'), $setting);
+}
+
+function cooperative_previous_or_current_cutoff_date($date, array $setting)
+{
+    $current = new DateTimeImmutable($date);
+    $paymentType = $setting['payment_type'];
+
+    if ($paymentType === 'weekly') {
+        $targetDay = cooperative_clamp_week_day($setting['weekly_day']);
+        $currentDay = (int)$current->format('N');
+        $daysSince = ($currentDay - $targetDay + 7) % 7;
+
+        return $current->modify("-{$daysSince} days")->format('Y-m-d');
+    }
+
+    if ($paymentType === 'monthly') {
+        $monthCursor = $current;
+
+        for ($i = 0; $i < 24; $i++) {
+            $cutoff = cooperative_cutoff_date_for_month($monthCursor, $setting['monthly_day']);
+
+            if ($cutoff && $cutoff <= $current) {
+                return $cutoff->format('Y-m-d');
+            }
+
+            $monthCursor = $monthCursor->modify('first day of previous month');
+        }
+
+        return $current->format('Y-m-d');
+    }
+
+    $days = [
+        cooperative_clamp_month_day($setting['semi_monthly_day_one']),
+        cooperative_clamp_month_day($setting['semi_monthly_day_two'])
+    ];
+    sort($days);
+
+    $monthCursor = $current;
+
+    for ($monthOffset = 0; $monthOffset < 24; $monthOffset++) {
+        $monthCutoffs = [];
+
+        foreach ($days as $day) {
+            $cutoff = cooperative_cutoff_date_for_month($monthCursor, $day);
+
+            if ($cutoff) {
+                $monthCutoffs[] = $cutoff;
+            }
+        }
+
+        usort($monthCutoffs, function ($firstCutoff, $secondCutoff) {
+            return $secondCutoff->getTimestamp() <=> $firstCutoff->getTimestamp();
+        });
+
+        foreach ($monthCutoffs as $cutoff) {
+            if ($cutoff <= $current) {
+                return $cutoff->format('Y-m-d');
+            }
+        }
+
+        $monthCursor = $monthCursor->modify('first day of previous month');
+    }
+
+    return $current->format('Y-m-d');
+}
+
+function cooperative_payment_count_for_term($months, array $setting)
+{
+    $months = max(0.01, (float)$months);
+
+    if ($setting['payment_type'] === 'monthly') {
+        return max(1, (int)ceil($months));
+    }
+
+    if ($setting['payment_type'] === 'weekly') {
+        return max(1, (int)ceil(($months * 365.25 / 12) / 7));
+    }
+
+    return max(1, (int)ceil($months * 2));
+}
+
+function cooperative_generate_loan_due_dates($startDate, $months, array $setting)
+{
+    $totalPayments = cooperative_payment_count_for_term($months, $setting);
+    $dates = [];
+    $cursor = cooperative_next_cutoff_after($startDate, $setting);
+
+    for ($i = 0; $i < $totalPayments; $i++) {
+        $dates[] = $cursor->format('Y-m-d');
+        $cursor = cooperative_next_cutoff_after_cursor($cursor, $setting);
+    }
+
+    return $dates;
 }
 
 function cooperative_loanable_amount_breakdown($conn)

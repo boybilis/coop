@@ -97,10 +97,12 @@ $effectiveRate = cooperative_effective_interest_rate($conn, $start);
 $rate = ((float)$effectiveRate['monthly_rate']) / 100;
 $effectiveServiceFeeRate = cooperative_effective_service_fee_rate($conn, $start);
 $serviceFeeRate = ((float)$effectiveServiceFeeRate['service_fee_rate']) / 100;
+$paymentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start);
 $interest = (int) ceil($amount * $rate * $months);
 $serviceFee = (int) ceil($amount * $serviceFeeRate);
 $totalPayable = (int) ceil($amount + $interest + $serviceFee);
-$totalPayments = (int) ceil($months * 2);
+$dueDates = cooperative_generate_loan_due_dates($start, $months, $paymentScheduleSetting);
+$totalPayments = count($dueDates);
 $basePayment = floor($totalPayable / $totalPayments);
 $remainder = $totalPayable - ($basePayment * $totalPayments);
 
@@ -137,28 +139,12 @@ try {
         VALUES (?, ?, ?, ?)
     ");
 
-    $startDate = new DateTime($start);
-    $cut15 = new DateTime($startDate->format('Y-m-15'));
-    $cutEOM = new DateTime($startDate->format('Y-m-t'));
-    $cursor = ($cut15 > $startDate) ? $cut15 : $cutEOM;
-
     for ($i = 1; $i <= $totalPayments; $i++) {
         $amountPay = ($i == $totalPayments)
             ? (int) ceil($basePayment + $remainder)
             : (int) $basePayment;
 
-        $dueDate = $cursor->format('Y-m-d');
-
-        if ($cursor->format('d') == '15') {
-            $cursor->modify('last day of this month');
-        } else {
-            $cursor->modify('first day of next month');
-            $cursor->setDate(
-                $cursor->format('Y'),
-                $cursor->format('m'),
-                15
-            );
-        }
+        $dueDate = $dueDates[$i - 1];
 
         $payStmt->bind_param("iids", $loanId, $i, $amountPay, $dueDate);
         $payStmt->execute();
@@ -187,6 +173,7 @@ try {
         'rate_implementation_date' => $effectiveRate['implementation_date'],
         'service_fee_rate' => $effectiveServiceFeeRate['service_fee_rate'],
         'service_fee_implementation_date' => $effectiveServiceFeeRate['implementation_date'],
+        'payment_schedule' => $paymentScheduleSetting,
         'service_fee' => $serviceFee,
         'disbursement_reference_number' => $disbursementReferenceNumber
     ]);
