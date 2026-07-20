@@ -103,7 +103,11 @@ if ($table === 'loans') {
         SELECT *
         FROM loan_requests
         WHERE borrower_id = ?
-        ORDER BY created_at DESC
+        ORDER BY
+            CASE WHEN status = 'Pending' THEN 0 ELSE 1 END ASC,
+            CASE WHEN status = 'Pending' THEN created_at END ASC,
+            CASE WHEN status <> 'Pending' THEN COALESCE(processed_at, created_at) END DESC,
+            id DESC
         LIMIT ? OFFSET ?
     ");
     $stmt->bind_param("iii", $borrowerId, $perPage, $offset);

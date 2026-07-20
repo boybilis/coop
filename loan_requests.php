@@ -13,8 +13,10 @@ $requests = $conn->query("
     JOIN borrowers ON borrowers.id = loan_requests.borrower_id
     LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     ORDER BY
-        CASE loan_requests.status WHEN 'Pending' THEN 0 WHEN 'Approved' THEN 1 ELSE 2 END,
-        loan_requests.created_at ASC
+        CASE WHEN loan_requests.status = 'Pending' THEN 0 ELSE 1 END ASC,
+        CASE WHEN loan_requests.status = 'Pending' THEN loan_requests.created_at END ASC,
+        CASE WHEN loan_requests.status <> 'Pending' THEN COALESCE(loan_requests.processed_at, loan_requests.created_at) END DESC,
+        loan_requests.id DESC
 ");
 ?>
 <!DOCTYPE html>
