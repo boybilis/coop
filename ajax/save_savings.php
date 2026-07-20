@@ -26,6 +26,14 @@ $stmt = $conn->prepare("
 $stmt->bind_param("idsss", $borrower_id, $amount, $type, $date, $remarks);
 $stmt->execute();
 
+audit_log($conn, 'save_savings_transaction', 'Admin recorded a direct savings transaction.', 'savings_transactions', $stmt->insert_id, [
+    'borrower_id' => $borrower_id,
+    'amount' => $amount,
+    'type' => $type,
+    'date' => $date,
+    'remarks' => $remarks
+]);
+
 header("Location: ../savings.php");
 exit;
 

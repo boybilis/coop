@@ -69,5 +69,13 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'update_savings_withdrawal', 'Member edited a pending savings withdrawal request.', 'savings_withdrawal_requests', $requestId, [
+    'borrower_id' => $borrowerId,
+    'amount' => $amount,
+    'gcash_name' => $gcashName,
+    'gcash_number' => $gcashNumber,
+    'full_withdrawal' => $isFullWithdrawal
+]);
+
 echo json_encode(["ok" => true]);
 

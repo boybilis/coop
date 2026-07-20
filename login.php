@@ -4,7 +4,7 @@ include 'auth.php';
 include 'layout.php';
 
 if (is_logged_in()) {
-    header("Location: " . (current_user_status() === 'Admin' ? 'index.php' : 'member_dashboard.php'));
+    header("Location: " . (is_admin_user() ? 'index.php' : 'member_dashboard.php'));
     exit;
 }
 
@@ -56,7 +56,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['active_member_user_id'] = $user['id'];
         $_SESSION['active_borrower_id'] = $user['borrower_id'];
 
-        if ($user['status'] === 'Admin') {
+        audit_log($conn, 'login', 'User logged in successfully.', 'users', (int)$user['id'], [
+            'username' => $user['username'],
+            'status' => $user['status']
+        ]);
+
+        if (in_array($user['status'], ['Admin', 'SuperAdmin'], true)) {
             header("Location: index.php");
         } else {
             header("Location: member_dashboard.php");

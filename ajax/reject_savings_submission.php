@@ -25,6 +25,8 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'reject_savings_deposit', 'Admin rejected a savings deposit submission.', 'savings_submissions', $submissionId);
+
 header("Location: ../received_savings.php?rejected=1");
 exit;
 

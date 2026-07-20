@@ -159,6 +159,14 @@ try {
     $updateStmt->bind_param("ddissi", $amount, $months, $loanId, $disbursementReferenceNumber, $proofPath, $requestId);
     $updateStmt->execute();
 
+    audit_log($conn, 'approve_loan_request', 'Admin approved loan request and marked loan as disbursed.', 'loan_requests', $requestId, [
+        'borrower_id' => $request['borrower_id'],
+        'loan_id' => $loanId,
+        'approved_amount' => $amount,
+        'approved_months' => $months,
+        'disbursement_reference_number' => $disbursementReferenceNumber
+    ]);
+
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();

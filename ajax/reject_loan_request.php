@@ -25,6 +25,8 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'reject_loan_request', 'Admin rejected a pending loan request.', 'loan_requests', $requestId);
+
 header("Location: ../loan_requests.php?rejected=1");
 exit;
 

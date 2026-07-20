@@ -135,6 +135,15 @@ try {
         $closeStmt->execute();
     }
 
+    audit_log($conn, 'approve_savings_withdrawal', 'Admin approved savings withdrawal request.', 'savings_withdrawal_requests', $requestId, [
+        'borrower_id' => $request['borrower_id'],
+        'amount' => $request['amount'],
+        'gcash_name' => $request['gcash_name'],
+        'gcash_number' => $request['gcash_number'],
+        'admin_reference_number' => $adminReferenceNumber,
+        'full_withdrawal' => $isFullWithdrawal
+    ]);
+
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();

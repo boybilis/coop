@@ -87,6 +87,14 @@ try {
         $_SESSION['borrower_id'] = $borrowerId;
     }
 
+    audit_log($conn, 'update_member_profile', 'Member updated profile details.', 'borrowers', $borrowerId, [
+        'selected_member_user_id' => $selectedMemberUserId,
+        'username' => $username,
+        'full_name' => $fullName,
+        'gcash_name' => $gcashName,
+        'gcash_number' => $gcashNumber
+    ]);
+
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();

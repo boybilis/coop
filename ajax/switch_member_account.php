@@ -39,6 +39,10 @@ if (!$selectedUser || !$selectedUser['borrower_id']) {
 $_SESSION['active_member_user_id'] = $selectedUser['id'];
 $_SESSION['active_borrower_id'] = $selectedUser['borrower_id'];
 
+audit_log($conn, 'switch_member_account', 'Member switched active dashboard account.', 'users', $selectedUser['id'], [
+    'borrower_id' => $selectedUser['borrower_id']
+]);
+
 header("Location: ../member_dashboard.php");
 exit;
 

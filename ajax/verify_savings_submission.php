@@ -62,6 +62,12 @@ try {
     $updateStmt->bind_param("i", $submissionId);
     $updateStmt->execute();
 
+    audit_log($conn, 'verify_savings_deposit', 'Admin verified savings deposit submission.', 'savings_submissions', $submissionId, [
+        'borrower_id' => $submission['borrower_id'],
+        'amount' => $submission['amount'],
+        'reference_number' => $submission['reference_number']
+    ]);
+
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();

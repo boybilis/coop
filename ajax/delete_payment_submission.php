@@ -27,5 +27,9 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'cancel_payment_submission', 'Member cancelled a pending payment submission.', 'payment_submissions', $submissionId, [
+    'borrower_id' => $borrowerId
+]);
+
 echo json_encode(["ok" => true]);
 

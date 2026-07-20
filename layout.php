@@ -4,11 +4,17 @@ function render_navbar($title = 'Cooperative Loan and Savings Management System'
     ?>
     <nav class="navbar navbar-expand-lg navbar-dark app-navbar sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold text-white" href="<?= current_user_status() === 'Admin' ? 'index.php' : 'member_dashboard.php' ?>">
+            <a class="navbar-brand fw-bold text-white" href="<?= is_admin_user() ? 'index.php' : 'member_dashboard.php' ?>">
                 <?= htmlspecialchars($title) ?>
             </a>
             <?php if (is_logged_in()): ?>
-                <div class="ms-auto">
+                <div class="ms-auto d-flex gap-2">
+                    <?php if (is_admin_user()): ?>
+                        <a href="admin_settings.php" class="btn btn-outline-light btn-sm">Admin Settings</a>
+                    <?php endif; ?>
+                    <?php if (is_superadmin_user()): ?>
+                        <a href="audit_trails.php" class="btn btn-outline-light btn-sm">Audit Trails</a>
+                    <?php endif; ?>
                     <a href="logout.php" class="btn btn-outline-light btn-sm">Logout</a>
                 </div>
             <?php endif; ?>

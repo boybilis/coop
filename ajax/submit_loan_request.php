@@ -54,6 +54,15 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("iddisss", $borrowerId, $amount, $months, $isGuarantor, $guestBorrowerName, $guestGcashName, $guestGcashNumber);
 $stmt->execute();
+$requestId = $stmt->insert_id;
+
+audit_log($conn, 'submit_loan_request', 'Member submitted a loan request.', 'loan_requests', $requestId, [
+    'borrower_id' => $borrowerId,
+    'requested_amount' => $amount,
+    'requested_months' => $months,
+    'is_guarantor' => $isGuarantor,
+    'guest_borrower_name' => $guestBorrowerName
+]);
 
 header("Location: ../member_dashboard.php?loan_requested=1");
 exit;

@@ -27,5 +27,9 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'delete_savings_deposit', 'Member deleted a pending savings deposit submission.', 'savings_submissions', $submissionId, [
+    'borrower_id' => $borrowerId
+]);
+
 echo json_encode(["ok" => true]);
 

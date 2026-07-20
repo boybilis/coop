@@ -169,6 +169,14 @@ try {
     $submissionStmt->bind_param("i", $submissionId);
     $submissionStmt->execute();
 
+    audit_log($conn, 'verify_payment', 'Admin verified member payment submission.', 'payment_submissions', $submissionId, [
+        'borrower_id' => $submission['borrower_id'],
+        'cutoff_date' => $submission['cutoff_date'],
+        'capital_contribution' => $submission['capital_contribution'],
+        'loan_payment' => $submission['loan_payment'],
+        'reference_number' => $submission['reference_number']
+    ]);
+
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();

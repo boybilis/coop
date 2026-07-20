@@ -32,6 +32,11 @@ if(isset($_POST['name'])){
     $userStmt->bind_param("si", $name, $id);
     $userStmt->execute();
 
+    audit_log($conn, 'save_member', 'Admin created a member account.', 'borrowers', $id, [
+        'name' => $name,
+        'user_id' => $userStmt->insert_id
+    ]);
+
     echo json_encode([
         "id" => $id,
         "name" => $name

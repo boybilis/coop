@@ -72,6 +72,15 @@ $stmt->bind_param(
     $proofPath
 );
 $stmt->execute();
+$submissionId = $stmt->insert_id;
+
+audit_log($conn, 'submit_payment', 'Member submitted payment for admin verification.', 'payment_submissions', $submissionId, [
+    'borrower_id' => $borrowerId,
+    'payment_date' => $paymentDate,
+    'capital_contribution' => $capitalContribution,
+    'loan_payment' => $loanPayment,
+    'reference_number' => $referenceNumber
+]);
 
 header("Location: ../member_dashboard.php?payment_submitted=1");
 exit;

@@ -57,6 +57,11 @@ $linkStmt->bind_param(
 );
 $linkStmt->execute();
 
+audit_log($conn, 'link_member_account', 'Member linked another member account.', 'users', $linkedUser['id'], [
+    'current_user_id' => $currentUserId,
+    'linked_username' => $linkedUser['username']
+]);
+
 echo json_encode([
     "ok" => true,
     "linked_user_id" => $linkedUser['id'],

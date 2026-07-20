@@ -45,6 +45,11 @@ if ($userStmt->affected_rows === 0) {
     $createUserStmt->execute();
 }
 
+audit_log($conn, 'update_member', 'Admin updated member details.', 'borrowers', $id, [
+    'name' => $name,
+    'status' => $status
+]);
+
 echo json_encode([
     "id" => $id,
     "name" => $name,

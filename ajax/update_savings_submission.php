@@ -90,5 +90,11 @@ $updateStmt = $conn->prepare("
 $updateStmt->bind_param("dssii", $amount, $referenceNumber, $proofPath, $submissionId, $borrowerId);
 $updateStmt->execute();
 
+audit_log($conn, 'update_savings_deposit', 'Member edited a pending savings deposit submission.', 'savings_submissions', $submissionId, [
+    'borrower_id' => $borrowerId,
+    'amount' => $amount,
+    'reference_number' => $referenceNumber
+]);
+
 echo json_encode(["ok" => true]);
 

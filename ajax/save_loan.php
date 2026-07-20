@@ -123,5 +123,14 @@ for($i = 1; $i <= $totalPayments; $i++){
     $payStmt->execute();
 }
 
+audit_log($conn, 'save_loan', 'Admin created a direct loan record.', 'loans', $loan_id, [
+    'borrower_id' => $borrower_id,
+    'amount' => $amount,
+    'interest' => $interest,
+    'months' => $months,
+    'total_payable' => $totalPayable,
+    'start_date' => $start
+]);
+
 echo "ok";
 

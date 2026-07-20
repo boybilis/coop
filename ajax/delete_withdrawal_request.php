@@ -27,5 +27,9 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'delete_savings_withdrawal', 'Member deleted a pending savings withdrawal request.', 'savings_withdrawal_requests', $requestId, [
+    'borrower_id' => $borrowerId
+]);
+
 echo json_encode(["ok" => true]);
 

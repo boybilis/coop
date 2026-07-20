@@ -69,6 +69,13 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("idss", $borrowerId, $amount, $referenceNumber, $proofPath);
 $stmt->execute();
+$submissionId = $stmt->insert_id;
+
+audit_log($conn, 'submit_savings_deposit', 'Member submitted savings deposit for admin verification.', 'savings_submissions', $submissionId, [
+    'borrower_id' => $borrowerId,
+    'amount' => $amount,
+    'reference_number' => $referenceNumber
+]);
 
 header("Location: ../member_dashboard.php?savings_submitted=1");
 exit;

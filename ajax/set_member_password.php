@@ -42,5 +42,10 @@ $_SESSION['borrower_id'] = $user['borrower_id'];
 $_SESSION['active_member_user_id'] = $user['id'];
 $_SESSION['active_borrower_id'] = $user['borrower_id'];
 
+audit_log($conn, 'set_member_password', 'Member completed first-time password setup.', 'users', $user['id'], [
+    'borrower_id' => $user['borrower_id'],
+    'username' => $user['username']
+]);
+
 echo json_encode(["ok" => true]);
 

@@ -13,6 +13,16 @@ function current_user_status()
     return $_SESSION['user_status'] ?? null;
 }
 
+function is_admin_user()
+{
+    return in_array(current_user_status(), ['Admin', 'SuperAdmin'], true);
+}
+
+function is_superadmin_user()
+{
+    return current_user_status() === 'SuperAdmin';
+}
+
 function require_login()
 {
     if (!is_logged_in()) {
@@ -25,7 +35,17 @@ function require_admin()
 {
     require_login();
 
-    if (current_user_status() !== 'Admin') {
+    if (!is_admin_user()) {
+        http_response_code(403);
+        exit("Access denied");
+    }
+}
+
+function require_superadmin()
+{
+    require_login();
+
+    if (!is_superadmin_user()) {
         http_response_code(403);
         exit("Access denied");
     }

@@ -99,6 +99,62 @@ if (!$conn->connect_error) {
         }
     }
 
+    $usersTableCheck = $conn->query("
+        SELECT 1
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'users'
+        LIMIT 1
+    ");
+
+    if ($usersTableCheck && $usersTableCheck->num_rows > 0) {
+        $conn->query("ALTER TABLE users MODIFY status ENUM('SuperAdmin','Admin','Member') NOT NULL DEFAULT 'Member'");
+
+        $superAdminCheck = $conn->query("SELECT id FROM users WHERE status = 'SuperAdmin' LIMIT 1");
+
+        if (!$superAdminCheck || $superAdminCheck->num_rows === 0) {
+            $conn->query("
+                UPDATE users
+                SET status = 'SuperAdmin'
+                WHERE username = 'admin'
+                AND (status = 'Admin' OR status = '' OR status IS NULL)
+                LIMIT 1
+            ");
+        }
+
+        $superAdminCheck = $conn->query("SELECT id FROM users WHERE status = 'SuperAdmin' LIMIT 1");
+
+        if (!$superAdminCheck || $superAdminCheck->num_rows === 0) {
+            $conn->query("
+                UPDATE users
+                SET status = 'SuperAdmin'
+                WHERE status = 'Admin'
+                ORDER BY id ASC
+                LIMIT 1
+            ");
+        }
+    }
+
+    $conn->query("
+        CREATE TABLE IF NOT EXISTS audit_trails (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NULL,
+            username VARCHAR(100) NULL,
+            user_status VARCHAR(30) NULL,
+            action VARCHAR(100) NOT NULL,
+            description TEXT NOT NULL,
+            entity_type VARCHAR(100) NULL,
+            entity_id INT UNSIGNED NULL,
+            metadata TEXT NULL,
+            ip_address VARCHAR(45) NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX audit_trails_user_id_index (user_id),
+            INDEX audit_trails_action_index (action),
+            INDEX audit_trails_entity_index (entity_type, entity_id),
+            INDEX audit_trails_created_at_index (created_at)
+        )
+    ");
+
 }
 
 function cooperative_current_cutoff_date()
@@ -161,5 +217,49 @@ function cooperative_loanable_amount_breakdown($conn)
         'approved_loan_principal' => $approvedLoanPrincipal,
         'available_amount' => $initialCapital + $cutoffCapitalToDate + $paidLoansThisCutoff - $approvedLoanPrincipal
     ];
+}
+
+function audit_log($conn, $action, $description, $entityType = null, $entityId = null, $metadata = [])
+{
+    if (!$conn || $conn->connect_error) {
+        return;
+    }
+
+    $tableCheck = $conn->query("
+        SELECT 1
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'audit_trails'
+        LIMIT 1
+    ");
+
+    if (!$tableCheck || $tableCheck->num_rows === 0) {
+        return;
+    }
+
+    $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+    $username = $_SESSION['username'] ?? null;
+    $userStatus = $_SESSION['user_status'] ?? null;
+    $metadataJson = $metadata ? json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
+    $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+
+    $stmt = $conn->prepare("
+        INSERT INTO audit_trails
+        (user_id, username, user_status, action, description, entity_type, entity_id, metadata, ip_address)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->bind_param(
+        "isssssiss",
+        $userId,
+        $username,
+        $userStatus,
+        $action,
+        $description,
+        $entityType,
+        $entityId,
+        $metadataJson,
+        $ipAddress
+    );
+    $stmt->execute();
 }
 

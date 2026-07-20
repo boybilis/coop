@@ -27,5 +27,9 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'delete_loan_request', 'Member deleted a pending loan request.', 'loan_requests', $requestId, [
+    'borrower_id' => $borrowerId
+]);
+
 echo json_encode(["ok" => true]);
 

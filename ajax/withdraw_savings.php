@@ -73,6 +73,15 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("idss", $borrowerId, $amount, $gcashName, $gcashNumber);
 $stmt->execute();
+$requestId = $stmt->insert_id;
+
+audit_log($conn, 'submit_savings_withdrawal', 'Member submitted savings withdrawal for admin approval.', 'savings_withdrawal_requests', $requestId, [
+    'borrower_id' => $borrowerId,
+    'amount' => $amount,
+    'gcash_name' => $gcashName,
+    'gcash_number' => $gcashNumber,
+    'full_withdrawal' => $isFullWithdrawal
+]);
 
 redirect_withdrawal_notice($isFullWithdrawal ? 'closing' : 'submitted');
 

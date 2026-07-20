@@ -55,5 +55,13 @@ if ($stmt->affected_rows === 0) {
     exit;
 }
 
+audit_log($conn, 'update_loan_request', 'Member edited a pending loan request.', 'loan_requests', $requestId, [
+    'borrower_id' => $borrowerId,
+    'requested_amount' => $amount,
+    'requested_months' => $months,
+    'is_guarantor' => $isGuarantor,
+    'guest_borrower_name' => $guestBorrowerName
+]);
+
 echo json_encode(["ok" => true]);
 

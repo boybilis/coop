@@ -100,5 +100,13 @@ $updateStmt->bind_param(
 );
 $updateStmt->execute();
 
+audit_log($conn, 'update_payment_submission', 'Member edited a pending payment submission.', 'payment_submissions', $submissionId, [
+    'borrower_id' => $borrowerId,
+    'payment_date' => $paymentDate,
+    'capital_contribution' => $capitalContribution,
+    'loan_payment' => $loanPayment,
+    'reference_number' => $referenceNumber
+]);
+
 echo json_encode(["ok" => true]);
 

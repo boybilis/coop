@@ -23,6 +23,14 @@ VALUES (?, ?, ?, ?)
 
 $stmt->bind_param("idss", $borrower_id, $amount, $type, $date);
 $stmt->execute();
+$capitalId = $stmt->insert_id;
+
+audit_log($conn, 'save_capital_contribution', 'Admin recorded a capital contribution.', 'capital_contributions', $capitalId, [
+    'borrower_id' => $borrower_id,
+    'amount' => $amount,
+    'type' => $type,
+    'date' => $date
+]);
 
 $summary = $conn->query("
     SELECT
