@@ -159,6 +159,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
 <link rel="stylesheet" href="assets/css/theme.css?v=20260720-ui">
+<style>
+.two-factor-modal {
+    border: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(145deg, #0b1220, #102a43);
+    color: #ffffff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .45);
+}
+
+.two-factor-modal .modal-header,
+.two-factor-modal .modal-footer {
+    border: 0;
+}
+
+.two-factor-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 14px;
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .24);
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: #67e8f9;
+}
+
+.two-factor-code-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(38px, 1fr));
+    gap: 10px;
+}
+
+.two-factor-digit {
+    height: 58px;
+    border-radius: 14px;
+    border: 1px solid rgba(103, 232, 249, .35);
+    background: rgba(255, 255, 255, .95);
+    color: #0f172a;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .04);
+}
+
+.two-factor-digit:focus {
+    outline: none;
+    border-color: #67e8f9;
+    box-shadow: 0 0 0 4px rgba(103, 232, 249, .25);
+}
+
+.two-factor-help {
+    color: rgba(255, 255, 255, .72);
+}
+
+@media (max-width: 420px) {
+    .two-factor-code-grid {
+        gap: 6px;
+    }
+
+    .two-factor-digit {
+        height: 50px;
+        border-radius: 12px;
+        font-size: 1.25rem;
+    }
+}
+</style>
 </head>
 <body class="login-page bg-light">
 <?php render_navbar(); ?>
@@ -197,20 +266,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="modal fade" id="twoFactorLoginModal" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST">
-        <div class="modal-header">
-          <h5>Authenticator Code Required</h5>
+    <div class="modal-content two-factor-modal">
+      <form method="POST" id="twoFactorLoginForm">
+        <div class="modal-header justify-content-center pt-4">
+          <div class="text-center">
+            <div class="two-factor-icon">2FA</div>
+            <h5 class="mb-0">Authenticator Code</h5>
+          </div>
         </div>
-        <div class="modal-body">
-          <p class="text-muted">
+        <div class="modal-body px-4">
+          <p class="two-factor-help text-center mb-4">
               Enter the 6-digit code from Microsoft Authenticator or Google Authenticator.
           </p>
           <input type="hidden" name="two_factor_login" value="1">
-          <input type="text" name="two_factor_code" class="form-control" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required autofocus>
+          <input type="hidden" name="two_factor_code" id="twoFactorCode" required>
+          <div class="two-factor-code-grid" id="twoFactorCodeGrid">
+            <input type="text" class="two-factor-digit" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1">
+            <input type="text" class="two-factor-digit" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2">
+            <input type="text" class="two-factor-digit" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+            <input type="text" class="two-factor-digit" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+            <input type="text" class="two-factor-digit" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+            <input type="text" class="two-factor-digit" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+          </div>
+          <div class="small text-warning text-center mt-3 d-none" id="twoFactorCodeError">
+            Enter the complete 6-digit authenticator code.
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary w-100">Verify Login</button>
+        <div class="modal-footer px-4 pb-4">
+          <button class="btn btn-info fw-bold w-100 text-dark">Verify Login</button>
         </div>
       </form>
     </div>
@@ -243,8 +326,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 new bootstrap.Modal(document.getElementById('passwordSetupModal')).show();
 <?php endif; ?>
 <?php if ($showTwoFactorSetup): ?>
-new bootstrap.Modal(document.getElementById('twoFactorLoginModal')).show();
+const twoFactorModalElement = document.getElementById('twoFactorLoginModal');
+new bootstrap.Modal(twoFactorModalElement).show();
+twoFactorModalElement.addEventListener('shown.bs.modal', function () {
+    const firstDigit = document.querySelector('.two-factor-digit');
+    if (firstDigit) {
+        firstDigit.focus();
+    }
+});
 <?php endif; ?>
+
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('twoFactorLoginForm');
+    const hiddenCode = document.getElementById('twoFactorCode');
+    const errorBox = document.getElementById('twoFactorCodeError');
+    const digits = Array.from(document.querySelectorAll('.two-factor-digit'));
+
+    if (!form || !hiddenCode || digits.length !== 6) {
+        return;
+    }
+
+    function syncCode() {
+        hiddenCode.value = digits.map(input => input.value).join('');
+        if (/^\d{6}$/.test(hiddenCode.value)) {
+            errorBox.classList.add('d-none');
+        }
+    }
+
+    function fillDigits(value) {
+        const cleanValue = value.replace(/\D/g, '').slice(0, 6);
+        digits.forEach((input, index) => {
+            input.value = cleanValue[index] || '';
+        });
+        syncCode();
+        const nextIndex = Math.min(cleanValue.length, digits.length - 1);
+        digits[nextIndex].focus();
+    }
+
+    digits.forEach((input, index) => {
+        input.addEventListener('input', function () {
+            const value = input.value.replace(/\D/g, '');
+
+            if (value.length > 1) {
+                fillDigits(value);
+                return;
+            }
+
+            input.value = value;
+            syncCode();
+
+            if (value && index < digits.length - 1) {
+                digits[index + 1].focus();
+            }
+        });
+
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Backspace' && !input.value && index > 0) {
+                digits[index - 1].focus();
+                digits[index - 1].value = '';
+                syncCode();
+            }
+        });
+
+        input.addEventListener('paste', function (event) {
+            event.preventDefault();
+            fillDigits((event.clipboardData || window.clipboardData).getData('text'));
+        });
+    });
+
+    form.addEventListener('submit', function (event) {
+        syncCode();
+
+        if (!/^\d{6}$/.test(hiddenCode.value)) {
+            event.preventDefault();
+            errorBox.classList.remove('d-none');
+            digits.find(input => !input.value)?.focus();
+        }
+    });
+});
 
 function setMemberPassword(){
     let password = document.getElementById('birthdayPassword').value.trim();
