@@ -268,7 +268,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="modal-dialog">
     <div class="modal-content two-factor-modal">
       <form method="POST" id="twoFactorLoginForm">
-        <div class="modal-header justify-content-center pt-4">
+        <div class="modal-header justify-content-center pt-4 position-relative">
+          <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
           <div class="text-center">
             <div class="two-factor-icon">2FA</div>
             <h5 class="mb-0">Authenticator Code</h5>
