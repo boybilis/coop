@@ -34,8 +34,6 @@ $approvedLoanPrincipal = $loanableBreakdown['approved_loan_principal'];
 $availableLoanCutoff = $loanableBreakdown['available_amount'];
 $currentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
 $nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentScheduleSetting)->format('Y-m-d');
-$expectedLoanableTriggerDate = (new DateTimeImmutable($currentCutoffDate))->modify('+10 days')->format('Y-m-d');
-$showExpectedNextCutoffLoanable = date('Y-m-d') >= $expectedLoanableTriggerDate && date('Y-m-d') < $nextCutoffDate;
 $expectedCapconPerMember = 500;
 $expectedNextCutoffCapcon = (float)$activeMembers * $expectedCapconPerMember;
 
@@ -159,6 +157,9 @@ function notification_badge($count)
             </div>
             <div class="card-footer">
                 <a href="members.php" class="btn btn-success w-100">Member Management</a>
+                <hr class="my-3">
+                <small class="text-muted d-block">Expected Loan Amount Next Cut-off <?= date('M d, Y', strtotime($nextCutoffDate)) ?></small>
+                <strong class="text-success d-block">&#8369;<?= number_format($expectedNextCutoffLoanable,2) ?></strong>
             </div>
         </div>
     </div>
@@ -225,15 +226,6 @@ function notification_badge($count)
                 <small class="text-muted d-block">Capcon to date: &#8369;<?= number_format($cutoffCapitalToDate,2) ?></small>
                 <small class="text-muted d-block">Paid loans this cutoff: &#8369;<?= number_format($paidLoanPrincipalToDate,2) ?></small>
                 <small class="text-muted d-block">Less approved principal loans: &#8369;<?= number_format($approvedLoanPrincipal,2) ?></small>
-                <?php if($showExpectedNextCutoffLoanable): ?>
-                    <div class="mt-3 p-2 rounded bg-light border">
-                        <small class="text-muted d-block">Expected Loanable Amount Next Cut-off</small>
-                        <strong class="text-success">&#8369;<?= number_format($expectedNextCutoffLoanable,2) ?></strong>
-                        <small class="text-muted d-block">Next cut-off: <?= date('M d, Y', strtotime($nextCutoffDate)) ?></small>
-                        <small class="text-muted d-block">Expected capcon: &#8369;<?= number_format($expectedNextCutoffCapcon,2) ?></small>
-                        <small class="text-muted d-block">Loan dues: &#8369;<?= number_format($expectedNextCutoffLoanDues,2) ?></small>
-                    </div>
-                <?php endif; ?>
             </div>
             <div class="card-footer">
                 <a href="capital.php" class="btn btn-warning w-100">Capital Contributions</a>
