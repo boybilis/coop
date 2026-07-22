@@ -519,44 +519,40 @@ body {
     justify-content: center;
 }
 
-.app-navbar-menu-icon {
-    line-height: 1;
-    font-size: 1.35rem;
-    font-weight: 700;
-}
-
 .app-navbar-menu-btn::after {
     display: none;
 }
 
-.app-navbar-collapse {
-    flex-basis: 100%;
+.app-navbar-dropdown {
+    position: relative;
 }
 
 .app-navbar-menu {
-    width: 100%;
-    margin-top: .75rem;
+    min-width: 220px;
+    max-width: calc(100vw - 1.5rem);
     padding: .5rem;
+    border: 0;
     border-radius: .875rem;
-    background: rgba(255, 255, 255, .10);
-    border: 1px solid rgba(255, 255, 255, .18);
+    background: #f8fafc;
+    overflow: hidden;
 }
 
-@media (min-width: 768px) {
-    .app-navbar-collapse {
-        max-width: 280px;
-        margin-left: auto;
-    }
+.app-navbar-menu.dropdown-menu-end {
+    right: 0;
+    left: auto;
 }
 
-.app-navbar-menu .nav-link {
+.app-navbar-menu .dropdown-item {
+    color: #0b1f3a;
     padding: .65rem .85rem;
     border-radius: .625rem;
+    font-weight: 600;
 }
 
-.app-navbar-menu .nav-link:hover,
-.app-navbar-menu .nav-link:focus {
-    background: rgba(255, 255, 255, .14);
+.app-navbar-menu .dropdown-item:hover,
+.app-navbar-menu .dropdown-item:focus {
+    color: #0b1f3a;
+    background: #e2e8f0;
 }
 
 @media (max-width: 767.98px) {

@@ -8,19 +8,22 @@ function render_navbar($title = 'Cooperative Loan and Savings Management System'
                 <?= htmlspecialchars($title) ?>
             </a>
             <?php if (is_logged_in()): ?>
-                <button class="navbar-toggler app-navbar-menu-btn" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbarMenu" aria-controls="appNavbarMenu" aria-expanded="false" aria-label="Open menu">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse app-navbar-collapse" id="appNavbarMenu">
-                    <ul class="navbar-nav ms-auto app-navbar-menu">
+                <div class="dropdown ms-auto app-navbar-dropdown">
+                    <button class="btn btn-outline-light btn-sm app-navbar-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open menu">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end app-navbar-menu shadow">
                     <?php if (is_admin_user()): ?>
-                        <li class="nav-item"><a href="admin_settings.php" class="nav-link text-white">Admin Settings</a></li>
+                        <li><a href="admin_settings.php" class="dropdown-item">Admin Settings</a></li>
                     <?php endif; ?>
                     <?php if (is_superadmin_user()): ?>
-                        <li class="nav-item"><a href="system_settings.php" class="nav-link text-white">System Settings</a></li>
-                        <li class="nav-item"><a href="audit_trails.php" class="nav-link text-white">Audit Trails</a></li>
+                        <li><a href="system_settings.php" class="dropdown-item">System Settings</a></li>
+                        <li><a href="audit_trails.php" class="dropdown-item">Audit Trails</a></li>
                     <?php endif; ?>
-                        <li class="nav-item"><a href="logout.php" class="nav-link text-warning">Logout</a></li>
+                        <?php if (is_admin_user() || is_superadmin_user()): ?>
+                            <li><hr class="dropdown-divider"></li>
+                        <?php endif; ?>
+                        <li><a href="logout.php" class="dropdown-item text-danger">Logout</a></li>
                     </ul>
                 </div>
             <?php endif; ?>
@@ -141,28 +144,34 @@ function render_footer()
     };
 
     document.addEventListener('DOMContentLoaded', function() {
-        if (!window.bootstrap || !window.bootstrap.Collapse) {
-            document.querySelectorAll('[data-bs-toggle="collapse"][data-bs-target]').forEach(function(button) {
+        if (!window.bootstrap || !window.bootstrap.Dropdown) {
+            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(button) {
                 button.addEventListener('click', function(event) {
                     event.preventDefault();
                     event.stopPropagation();
 
-                    const target = document.querySelector(button.dataset.bsTarget);
+                    const menu = button.closest('.dropdown')?.querySelector('.dropdown-menu');
 
-                    if (!target) {
+                    if (!menu) {
                         return;
                     }
 
-                    target.classList.toggle('show');
-                    button.setAttribute('aria-expanded', target.classList.contains('show') ? 'true' : 'false');
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(openMenu) {
+                        if (openMenu !== menu) {
+                            openMenu.classList.remove('show');
+                        }
+                    });
+
+                    menu.classList.toggle('show');
+                    button.setAttribute('aria-expanded', menu.classList.contains('show') ? 'true' : 'false');
                 });
             });
 
             document.addEventListener('click', function() {
-                document.querySelectorAll('.navbar-collapse.show').forEach(function(menu) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
                     menu.classList.remove('show');
                 });
-                document.querySelectorAll('[data-bs-toggle="collapse"][aria-expanded="true"]').forEach(function(button) {
+                document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(function(button) {
                     button.setAttribute('aria-expanded', 'false');
                 });
             });
