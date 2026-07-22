@@ -9,8 +9,8 @@ function render_navbar($title = 'Cooperative Loan and Savings Management System'
             </a>
             <?php if (is_logged_in()): ?>
                 <div class="dropdown ms-auto">
-                    <button class="btn btn-outline-light btn-sm dropdown-toggle app-navbar-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open menu">
-                        <span class="navbar-toggler-icon"></span>
+                    <button class="btn btn-outline-light btn-sm app-navbar-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open menu">
+                        <span class="app-navbar-menu-icon" aria-hidden="true">&#9776;</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow">
                     <?php if (is_admin_user()): ?>
@@ -144,6 +144,39 @@ function render_footer()
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+        if (!window.bootstrap || !window.bootstrap.Dropdown) {
+            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(button) {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const menu = button.closest('.dropdown')?.querySelector('.dropdown-menu');
+
+                    if (!menu) {
+                        return;
+                    }
+
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(openMenu) {
+                        if (openMenu !== menu) {
+                            openMenu.classList.remove('show');
+                        }
+                    });
+
+                    menu.classList.toggle('show');
+                    button.setAttribute('aria-expanded', menu.classList.contains('show') ? 'true' : 'false');
+                });
+            });
+
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                    menu.classList.remove('show');
+                });
+                document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(function(button) {
+                    button.setAttribute('aria-expanded', 'false');
+                });
+            });
+        }
+
         const sessionToastMessage = sessionStorage.getItem('appToastMessage');
         const sessionToastType = sessionStorage.getItem('appToastType') || 'info';
 
