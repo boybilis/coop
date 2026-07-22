@@ -512,6 +512,28 @@ body {
     overflow-x: hidden;
 }
 
+input::placeholder,
+textarea::placeholder {
+    color: #adb5bd !important;
+    opacity: 1;
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+    color: #adb5bd !important;
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+    color: #adb5bd !important;
+    opacity: 1;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+    color: #adb5bd !important;
+}
+
 .app-navbar-menu-btn {
     width: 42px;
     height: 34px;

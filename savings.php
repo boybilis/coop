@@ -26,7 +26,7 @@ $netSavings = $deposits - $withdrawals;
 <title>Member Savings</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
-<link rel="stylesheet" href="assets/css/theme.css?v=20260722-navbar">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260722-placeholders">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 </head>
 
@@ -44,7 +44,7 @@ $netSavings = $deposits - $withdrawals;
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card border-success shadow-sm">
             <div class="card-body">

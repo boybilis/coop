@@ -153,7 +153,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 <title>Member Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
-<link rel="stylesheet" href="assets/css/theme.css?v=20260722-navbar">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260722-placeholders">
 </head>
 
 <body class="bg-light">
@@ -164,7 +164,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     <div>
         <h3 class="mb-1">Member Dashboard</h3>
         <div class="text-muted">
-            <span id="memberDisplayName"><?= htmlspecialchars($member['name']) ?></span> â€¢ <?= $member['status'] ?> â€¢ Member since <?= date('M d, Y', strtotime($member['created_at'])) ?>
+            <span id="memberDisplayName"><?= htmlspecialchars($member['name']) ?></span> Ã¢â‚¬Â¢ <?= $member['status'] ?> Ã¢â‚¬Â¢ Member since <?= date('M d, Y', strtotime($member['created_at'])) ?>
         </div>
     </div>
     <div class="d-flex align-items-center gap-2">
