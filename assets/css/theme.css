@@ -529,15 +529,39 @@ body {
     display: none;
 }
 
-.app-navbar .dropdown-menu {
-    border: 0;
+.app-navbar-collapse {
+    flex-basis: 100%;
+}
+
+.app-navbar-menu {
+    width: 100%;
+    margin-top: .75rem;
+    padding: .5rem;
     border-radius: .875rem;
-    overflow: hidden;
+    background: rgba(255, 255, 255, .10);
+    border: 1px solid rgba(255, 255, 255, .18);
+}
+
+@media (min-width: 768px) {
+    .app-navbar-collapse {
+        max-width: 280px;
+        margin-left: auto;
+    }
+}
+
+.app-navbar-menu .nav-link {
+    padding: .65rem .85rem;
+    border-radius: .625rem;
+}
+
+.app-navbar-menu .nav-link:hover,
+.app-navbar-menu .nav-link:focus {
+    background: rgba(255, 255, 255, .14);
 }
 
 @media (max-width: 767.98px) {
     .app-navbar .container {
-        align-items: flex-start;
+        align-items: center;
         gap: .5rem;
     }
 
