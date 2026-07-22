@@ -216,6 +216,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     color: rgba(255, 255, 255, .72);
 }
 
+.two-factor-mobile-helper {
+    display: none;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(103, 232, 249, .12);
+    border: 1px solid rgba(103, 232, 249, .28);
+}
+
 @media (max-width: 420px) {
     .two-factor-code-grid {
         gap: 6px;
@@ -225,6 +233,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         height: 50px;
         border-radius: 12px;
         font-size: 1.25rem;
+    }
+
+    .two-factor-mobile-helper {
+        display: block;
     }
 }
 </style>
@@ -279,6 +291,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <p class="two-factor-help text-center mb-4">
               Enter the 6-digit code from Microsoft Authenticator or Google Authenticator.
           </p>
+          <div class="two-factor-mobile-helper mb-3">
+            <div class="small fw-bold text-info mb-1">Using a phone?</div>
+            <div class="small two-factor-help mb-2">
+              Open your Authenticator app, copy the 6-digit code, then return here. Pasting the code will fill all boxes automatically.
+            </div>
+            <button type="button" class="btn btn-outline-info btn-sm w-100" id="authenticatorMobileHelpBtn">
+              I’ll Open My Authenticator App
+            </button>
+          </div>
           <input type="hidden" name="two_factor_login" value="1">
           <input type="hidden" name="two_factor_code" id="twoFactorCode" required>
           <div class="two-factor-code-grid" id="twoFactorCodeGrid">
@@ -341,6 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('twoFactorLoginForm');
     const hiddenCode = document.getElementById('twoFactorCode');
     const errorBox = document.getElementById('twoFactorCodeError');
+    const mobileHelpButton = document.getElementById('authenticatorMobileHelpBtn');
     const digits = Array.from(document.querySelectorAll('.two-factor-digit'));
 
     if (!form || !hiddenCode || digits.length !== 6) {
@@ -404,6 +426,20 @@ document.addEventListener('DOMContentLoaded', function () {
             digits.find(input => !input.value)?.focus();
         }
     });
+
+    if (mobileHelpButton) {
+        mobileHelpButton.addEventListener('click', function () {
+            if (window.appShowToast) {
+                window.appShowToast('Open your Authenticator app, then return here and paste or type the 6-digit code.', 'info');
+            } else {
+                alert('Open your Authenticator app, then return here and paste or type the 6-digit code.');
+            }
+
+            setTimeout(function () {
+                digits[0].focus();
+            }, 300);
+        });
+    }
 });
 
 function setMemberPassword(){
