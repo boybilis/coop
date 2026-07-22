@@ -98,6 +98,26 @@ $capital = $capitalStmt->get_result()->fetch_assoc()['total'];
 
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanCutoff = $loanableBreakdown['available_amount'];
+$currentCutoffDate = $loanableBreakdown['cutoff_date'];
+$currentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
+$nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentScheduleSetting)->format('Y-m-d');
+$expectedLoanableTriggerDate = (new DateTimeImmutable($currentCutoffDate))->modify('+10 days')->format('Y-m-d');
+$showExpectedNextCutoffLoanable = date('Y-m-d') >= $expectedLoanableTriggerDate && date('Y-m-d') < $nextCutoffDate;
+$activeMembers = (int)$conn->query("
+    SELECT COUNT(*) AS total
+    FROM borrowers
+    WHERE status = 'Active'
+")->fetch_assoc()['total'];
+$expectedNextCutoffCapcon = (float)$activeMembers * 500;
+$nextCutoffLoanDuesStmt = $conn->prepare("
+    SELECT IFNULL(SUM(amount),0) AS total
+    FROM payments
+    WHERE due_date = ?
+");
+$nextCutoffLoanDuesStmt->bind_param("s", $nextCutoffDate);
+$nextCutoffLoanDuesStmt->execute();
+$expectedNextCutoffLoanDues = (float)$nextCutoffLoanDuesStmt->get_result()->fetch_assoc()['total'];
+$expectedNextCutoffLoanable = $expectedNextCutoffCapcon + $expectedNextCutoffLoanDues;
 
 $paymentSummaryStmt = $conn->prepare("
     SELECT
@@ -257,7 +277,12 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             </div>
             <div class="card-footer">
                 <small class="text-muted d-block">Total Available Loanable Amount</small>
-                <strong>&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
+                <strong class="d-block">&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
+                <?php if($showExpectedNextCutoffLoanable): ?>
+                    <small class="text-muted d-block mt-2">Expected Loanable Amount Next Cut-off</small>
+                    <strong class="text-success d-block">&#8369;<?= number_format($expectedNextCutoffLoanable,2) ?></strong>
+                    <small class="text-muted d-block"><?= date('M d, Y', strtotime($nextCutoffDate)) ?></small>
+                <?php endif; ?>
             </div>
         </div>
     </div>
