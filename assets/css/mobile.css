@@ -90,6 +90,22 @@ body {
         margin-bottom: .25rem;
     }
 
+    #borrowerTable td.member-actions-cell {
+        min-width: 120px;
+        white-space: normal;
+    }
+
+    #borrowerTable td.member-actions-cell .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: .35rem;
+        white-space: normal;
+    }
+
+    #borrowerTable td.member-actions-cell .btn:last-child {
+        margin-bottom: 0;
+    }
+
     .btn-sm {
         padding: .35rem .5rem;
     }

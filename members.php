@@ -103,7 +103,7 @@ $members = $conn->query("
                             <?= $row['status'] ?>
                         </span>
                     </td>
-                    <td>
+                    <td class="member-actions-cell">
                         <button
                             class="btn btn-warning btn-sm"
                             onclick="openEditMember(<?= $row['id'] ?>, '<?= htmlspecialchars($row['name'], ENT_QUOTES) ?>', '<?= $row['status'] ?>')">
@@ -222,7 +222,7 @@ function saveBorrower(){
                 <td class="text-warning fw-bold">&#8369;0.00</td>
                 <td><span class="text-success fw-bold">&#8369;0.00</span></td>
                 <td class="member-status"><span class="badge bg-success">Active</span></td>
-                <td>
+                <td class="member-actions-cell">
                     <button class="btn btn-warning btn-sm" onclick="openEditMember(${data.id}, '${data.name.replace(/'/g, "\\'")}', 'Active')">
                         Edit
                     </button>
@@ -338,6 +338,7 @@ function updateMemberStatus(id, status){
     }
 
     row.querySelector('.member-status').innerHTML = `<span class="badge bg-${statusClass}">${status}</span>`;
+    row.querySelector('td:last-child').classList.add('member-actions-cell');
     row.querySelector('td:last-child').innerHTML = actionHtml;
 
     if(borrowerDataTable){
@@ -373,6 +374,7 @@ function updateMemberRow(id, name, status){
         <small class="member-full-name d-block text-dark-emphasis">${escapeHtml(name)}</small>
     `;
     row.querySelector('.member-status').innerHTML = `<span class="badge bg-${statusClass}">${status}</span>`;
+    row.querySelector('td:last-child').classList.add('member-actions-cell');
     row.querySelector('td:last-child').innerHTML = actionHtml;
 
     if(borrowerDataTable){

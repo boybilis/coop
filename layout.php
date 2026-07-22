@@ -8,15 +8,23 @@ function render_navbar($title = 'Cooperative Loan and Savings Management System'
                 <?= htmlspecialchars($title) ?>
             </a>
             <?php if (is_logged_in()): ?>
-                <div class="ms-auto d-flex gap-2">
+                <div class="dropdown ms-auto">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle app-navbar-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open menu">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
                     <?php if (is_admin_user()): ?>
-                        <a href="admin_settings.php" class="btn btn-outline-light btn-sm">Admin Settings</a>
+                        <li><a href="admin_settings.php" class="dropdown-item">Admin Settings</a></li>
                     <?php endif; ?>
                     <?php if (is_superadmin_user()): ?>
-                        <a href="system_settings.php" class="btn btn-outline-light btn-sm">System Settings</a>
-                        <a href="audit_trails.php" class="btn btn-outline-light btn-sm">Audit Trails</a>
+                        <li><a href="system_settings.php" class="dropdown-item">System Settings</a></li>
+                        <li><a href="audit_trails.php" class="dropdown-item">Audit Trails</a></li>
                     <?php endif; ?>
-                    <a href="logout.php" class="btn btn-outline-light btn-sm">Logout</a>
+                        <?php if (is_admin_user() || is_superadmin_user()): ?>
+                            <li><hr class="dropdown-divider"></li>
+                        <?php endif; ?>
+                        <li><a href="logout.php" class="dropdown-item text-danger">Logout</a></li>
+                    </ul>
                 </div>
             <?php endif; ?>
         </div>

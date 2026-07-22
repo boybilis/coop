@@ -511,6 +511,24 @@ body {
     min-height: 100vh;
 }
 
+.app-navbar-menu-btn {
+    width: 42px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-navbar-menu-btn::after {
+    display: none;
+}
+
+.app-navbar .dropdown-menu {
+    border: 0;
+    border-radius: .875rem;
+    overflow: hidden;
+}
+
 @media (max-width: 767.98px) {
     .app-navbar .container {
         align-items: flex-start;
