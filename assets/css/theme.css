@@ -565,4 +565,15 @@ body {
         font-size: 1rem;
         max-width: calc(100% - 80px);
     }
+
+    .app-navbar-dropdown .app-navbar-menu.show {
+        position: fixed !important;
+        top: 3.75rem !important;
+        right: .75rem !important;
+        left: auto !important;
+        transform: none !important;
+        width: calc(100vw - 1.5rem);
+        min-width: 0;
+        max-width: 260px;
+    }
 }
