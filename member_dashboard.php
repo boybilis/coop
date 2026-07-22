@@ -456,10 +456,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                                 <th>Type</th>
                                 <th>Amount</th>
                                 <th>Period</th>
+                                <th>File</th>
                             </tr>
                         </thead>
-                        <tbody id="capitalHistoryTableBody" data-table="capital_history" data-columns="4">
-                            <tr><td colspan="4" class="text-center text-muted">Loading capital history...</td></tr>
+                        <tbody id="capitalHistoryTableBody" data-table="capital_history" data-columns="5">
+                            <tr><td colspan="5" class="text-center text-muted">Loading capital history...</td></tr>
                         </tbody>
                     </table>
                 </div>

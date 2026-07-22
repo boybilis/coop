@@ -335,7 +335,19 @@ if ($table === 'loans') {
     $totalRows = (int)$countStmt->get_result()->fetch_assoc()['total'];
 
     $stmt = $conn->prepare("
-        SELECT *
+        SELECT
+            capital_contributions.*,
+            (
+                SELECT payment_submissions.proof_image
+                FROM payment_submissions
+                WHERE payment_submissions.borrower_id = capital_contributions.borrower_id
+                AND payment_submissions.cutoff_date = capital_contributions.contribution_date
+                AND payment_submissions.capital_contribution = capital_contributions.amount
+                AND payment_submissions.status = 'Approved'
+                AND payment_submissions.proof_image <> ''
+                ORDER BY payment_submissions.id DESC
+                LIMIT 1
+            ) AS proof_image
         FROM capital_contributions
         WHERE borrower_id = ?
         ORDER BY contribution_date DESC, id DESC
@@ -346,7 +358,7 @@ if ($table === 'loans') {
     $rows = $stmt->get_result();
 
     if ($totalRows === 0) {
-        $html = dashboard_empty_row(4, 'No capital contributions yet.');
+        $html = dashboard_empty_row(5, 'No capital contributions yet.');
     }
 
     while ($row = $rows->fetch_assoc()) {
@@ -357,6 +369,11 @@ if ($table === 'loans') {
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($row['type']) . '</span></td>';
         $html .= '<td>&#8369;' . number_format($row['amount'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($row['period_label'] ?? '') . '</td>';
+        if (!empty($row['proof_image'])) {
+            $html .= '<td><a href="' . htmlspecialchars($row['proof_image']) . '" data-image-preview class="btn btn-outline-primary btn-sm">View File</a></td>';
+        } else {
+            $html .= '<td><span class="text-muted">&mdash;</span></td>';
+        }
         $html .= '</tr>';
     }
 } elseif ($table === 'payment_submissions') {
