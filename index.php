@@ -147,9 +147,9 @@ function notification_badge($count)
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-4 align-items-stretch">
     <div class="col-md-3 mb-3">
-        <div class="card glass-card glass-success">
+        <div class="card glass-card glass-success h-100">
             <div class="card-body">
                 <h6>Active Members</h6>
                 <h3 class="text-success"><?= number_format($activeMembers) ?></h3>
@@ -165,7 +165,7 @@ function notification_badge($count)
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card glass-card glass-primary position-relative">
+        <div class="card glass-card glass-primary position-relative h-100">
             <?= notification_badge($pendingLoanRequests) ?>
             <div class="card-body">
                 <h6>Total Outstanding Loans</h6>
@@ -185,7 +185,7 @@ function notification_badge($count)
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card glass-card glass-info position-relative">
+        <div class="card glass-card glass-info position-relative h-100">
             <?= notification_badge($pendingSavingsActions) ?>
             <div class="card-body">
                 <h6>Member Savings</h6>
@@ -217,7 +217,7 @@ function notification_badge($count)
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card glass-card glass-warning">
+        <div class="card glass-card glass-warning h-100">
             <div class="card-body">
                 <h6>Available Loanable Amount to Date</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($availableLoanCutoff,2) ?></h3>
@@ -234,9 +234,9 @@ function notification_badge($count)
     </div>
 </div>
 
-<div class="row">
+<div class="row align-items-stretch">
     <div class="col-md-4 mb-3">
-        <div class="card glass-card glass-midnight">
+        <div class="card glass-card glass-midnight h-100">
             <div class="card-body">
                 <h5>Capital Fund</h5>
                 <h2>&#8369;<?= number_format($capital,2) ?></h2>
@@ -246,7 +246,7 @@ function notification_badge($count)
     </div>
 
     <div class="col-md-4 mb-3">
-        <div class="card glass-card glass-warning">
+        <div class="card glass-card glass-warning h-100">
             <div class="card-body">
                 <h5>Service Fees</h5>
                 <h2>&#8369;<?= number_format($serviceFees,2) ?></h2>
@@ -256,7 +256,7 @@ function notification_badge($count)
     </div>
 
     <div class="col-md-4 mb-3">
-        <div class="card glass-card glass-success position-relative">
+        <div class="card glass-card glass-success position-relative h-100">
             <?= notification_badge($pendingReceivedPayments) ?>
             <div class="card-body">
                 <h5>Received Payments</h5>
