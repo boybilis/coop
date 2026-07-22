@@ -297,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               Open your Authenticator app, copy the 6-digit code, then return here. Pasting the code will fill all boxes automatically.
             </div>
             <button type="button" class="btn btn-outline-info btn-sm w-100" id="authenticatorMobileHelpBtn">
-              IÃ¢â‚¬â„¢ll Open My Authenticator App
+              Open My Authenticator App
             </button>
           </div>
           <input type="hidden" name="two_factor_login" value="1">
