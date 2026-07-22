@@ -149,6 +149,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Member Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -164,7 +165,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
     <div>
         <h3 class="mb-1">Member Dashboard</h3>
         <div class="text-muted">
-            <span id="memberDisplayName"><?= htmlspecialchars($member['name']) ?></span> Ã¢â‚¬Â¢ <?= $member['status'] ?> Ã¢â‚¬Â¢ Member since <?= date('M d, Y', strtotime($member['created_at'])) ?>
+            <span id="memberDisplayName"><?= htmlspecialchars($member['name']) ?></span> &bull; <?= htmlspecialchars($member['status']) ?> &bull; Member since <?= date('M d, Y', strtotime($member['created_at'])) ?>
         </div>
     </div>
     <div class="d-flex align-items-center gap-2">

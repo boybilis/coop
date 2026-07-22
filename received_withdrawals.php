@@ -35,6 +35,7 @@ if ($statusFilter === 'All') {
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Received Withdrawals</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -117,17 +118,17 @@ if ($statusFilter === 'All') {
                         <td>&#8369;<?= number_format($row['amount'],2) ?></td>
                         <td><?= htmlspecialchars($row['gcash_name']) ?></td>
                         <td><?= htmlspecialchars($row['gcash_number']) ?></td>
-                        <td><?= htmlspecialchars($row['admin_reference_number'] ?? 'Ã¢â‚¬â€') ?></td>
+                        <td><?= htmlspecialchars($row['admin_reference_number'] ?? '—') ?></td>
                         <td>
                             <?php if($row['admin_proof_image']): ?>
                                 <a href="<?= htmlspecialchars($row['admin_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                                     View Image
                                 </a>
                             <?php else: ?>
-                                <span class="text-muted">Ã¢â‚¬â€</span>
+                                <span class="text-muted">&mdash;</span>
                             <?php endif; ?>
                         </td>
-                        <td><?= $row['approved_at'] ?: 'Ã¢â‚¬â€' ?></td>
+                        <td><?= $row['approved_at'] ?: '&mdash;' ?></td>
                         <td>
                             <span class="badge bg-<?= $row['status'] === 'Approved' ? 'success' : ($row['status'] === 'Rejected' ? 'danger' : 'warning text-dark') ?>">
                                 <?= $row['status'] ?>

@@ -66,6 +66,7 @@ $payments = $paymentsStmt->get_result();
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Loan Details</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -136,7 +137,7 @@ $payments = $paymentsStmt->get_result();
                 </div>
                 <div class="col-md-6">
                     <small class="text-muted">Disbursement Reference</small>
-                    <h5><?= $loanInfo['disbursement_reference_number'] ? htmlspecialchars($loanInfo['disbursement_reference_number']) : 'Ã¢â‚¬â€' ?></h5>
+                    <h5><?= $loanInfo['disbursement_reference_number'] ? htmlspecialchars($loanInfo['disbursement_reference_number']) : '&mdash;' ?></h5>
                 </div>
                 <div class="col-md-6">
                     <small class="text-muted">Disbursement Proof</small><br>
@@ -145,7 +146,7 @@ $payments = $paymentsStmt->get_result();
                             View Image
                         </a>
                     <?php else: ?>
-                        <span class="text-muted">Ã¢â‚¬â€</span>
+                        <span class="text-muted">&mdash;</span>
                     <?php endif; ?>
                 </div>
                 <div class="col-12">
@@ -196,11 +197,11 @@ $payments = $paymentsStmt->get_result();
                                             Date: <?= htmlspecialchars($payment['payment_date']) ?>
                                         </small>
                                     <?php else: ?>
-                                        <span class="text-muted">Ã¢â‚¬â€</span>
+                                        <span class="text-muted">&mdash;</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?= $payment['reference_number'] ? htmlspecialchars($payment['reference_number']) : '<span class="text-muted">Ã¢â‚¬â€</span>' ?>
+                                    <?= $payment['reference_number'] ? htmlspecialchars($payment['reference_number']) : '<span class="text-muted">&mdash;</span>' ?>
                                 </td>
                                 <td>
                                     <?php if($payment['proof_image']): ?>
@@ -208,7 +209,7 @@ $payments = $paymentsStmt->get_result();
                                             View Image
                                         </a>
                                     <?php else: ?>
-                                        <span class="text-muted">Ã¢â‚¬â€</span>
+                                        <span class="text-muted">&mdash;</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -217,7 +218,7 @@ $payments = $paymentsStmt->get_result();
                                             <?= htmlspecialchars($payment['submission_status']) ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="text-muted">Ã¢â‚¬â€</span>
+                                        <span class="text-muted">&mdash;</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>

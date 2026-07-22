@@ -10,6 +10,7 @@ $userFilter = trim($_GET['user'] ?? '');
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Audit Trails</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -112,7 +113,7 @@ function loadAuditTrails(page = 1){
             auditCurrentPage = data.page;
             auditTotalPages = data.total_pages;
             body.innerHTML = data.html;
-            summary.innerText = 'Page ' + data.page + ' of ' + data.total_pages + ' Ã‚Â· ' + data.total_rows + ' records';
+            summary.innerText = 'Page ' + data.page + ' of ' + data.total_pages + ' · ' + data.total_rows + ' records';
             prev.disabled = data.page <= 1;
             next.disabled = data.page >= data.total_pages;
         })
