@@ -509,6 +509,7 @@
 
 body {
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 .app-navbar-menu-btn {
@@ -555,15 +556,18 @@ body {
     background: #e2e8f0;
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 991.98px) {
     .app-navbar .container {
         align-items: center;
         gap: .5rem;
+        max-width: 100%;
+        overflow: visible;
     }
 
     .app-navbar .navbar-brand {
         font-size: 1rem;
         max-width: calc(100% - 80px);
+        overflow-wrap: anywhere;
     }
 
     .app-navbar-dropdown .app-navbar-menu.show {
@@ -574,6 +578,6 @@ body {
         transform: none !important;
         width: calc(100vw - 1.5rem);
         min-width: 0;
-        max-width: 260px;
+        max-width: min(320px, calc(100vw - 1.5rem));
     }
 }

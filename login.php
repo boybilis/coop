@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>Login</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/mobile.css">
-<link rel="stylesheet" href="assets/css/theme.css?v=20260720-ui">
+<link rel="stylesheet" href="assets/css/theme.css?v=20260722-navbar">
 <style>
 .two-factor-modal {
     border: 0;
@@ -297,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               Open your Authenticator app, copy the 6-digit code, then return here. Pasting the code will fill all boxes automatically.
             </div>
             <button type="button" class="btn btn-outline-info btn-sm w-100" id="authenticatorMobileHelpBtn">
-              I’ll Open My Authenticator App
+              Iâ€™ll Open My Authenticator App
             </button>
           </div>
           <input type="hidden" name="two_factor_login" value="1">
