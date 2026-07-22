@@ -826,9 +826,6 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <label>Amount of Loan</label>
                 <input type="number" step="0.01" min="1" name="amount" id="loanRequestAmount" class="form-control" required>
                 <small class="text-muted">Available Loanable Amount to date: &#8369;<?= number_format($availableLoanCutoff, 2) ?></small>
-                <div class="text-danger small d-none" id="loanRequestAmountWarning">
-                    Loan request amount cannot exceed the Available Loanable Amount to date.
-                </div>
             </div>
 
             <div class="mb-3">
@@ -882,9 +879,6 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <label>Amount of Loan</label>
                 <input type="number" step="0.01" min="1" id="editLoanRequestAmount" class="form-control" required>
                 <small class="text-muted">Available Loanable Amount to date: &#8369;<?= number_format($availableLoanCutoff, 2) ?></small>
-                <div class="text-danger small d-none" id="editLoanRequestAmountWarning">
-                    Loan request amount cannot exceed the Available Loanable Amount to date.
-                </div>
             </div>
 
             <div class="mb-3">
@@ -977,7 +971,6 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 <script>
 const cutoffAmounts = <?= json_encode($cutoffAmounts) ?>;
 const currentSavingsBalance = <?= json_encode((float)$netSavings) ?>;
-const availableLoanAmount = <?= json_encode((float)$availableLoanCutoff) ?>;
 const dashboardTables = [
     { bodyId: 'loansTableBody', paginationId: 'loansPagination' },
     { bodyId: 'loanRequestsTableBody', paginationId: 'loanRequestsPagination' },
@@ -1120,47 +1113,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    let loanRequestAmount = document.getElementById('loanRequestAmount');
-    let loanRequestForm = document.querySelector('#loanRequestModal form');
-    let editLoanRequestAmount = document.getElementById('editLoanRequestAmount');
-
-    if(loanRequestAmount){
-        loanRequestAmount.addEventListener('input', () => {
-            validateLoanRequestAmount('loanRequestAmount', 'loanRequestAmountWarning', 'loanRequestSubmitButton');
-        });
-    }
-
-    if(loanRequestForm){
-        loanRequestForm.addEventListener('submit', event => {
-            if(!validateLoanRequestAmount('loanRequestAmount', 'loanRequestAmountWarning', 'loanRequestSubmitButton')){
-                event.preventDefault();
-                appShowToast('Loan request amount cannot exceed the Available Loanable Amount to date.', 'error');
-            }
-        });
-    }
-
-    if(editLoanRequestAmount){
-        editLoanRequestAmount.addEventListener('input', () => {
-            validateLoanRequestAmount('editLoanRequestAmount', 'editLoanRequestAmountWarning', 'editLoanRequestSaveButton');
-        });
-    }
 });
 
 function loanRequestsConfig(){
     return dashboardTables.find(config => config.bodyId === 'loanRequestsTableBody');
-}
-
-function validateLoanRequestAmount(inputId, warningId, buttonId){
-    let input = document.getElementById(inputId);
-    let warning = document.getElementById(warningId);
-    let button = document.getElementById(buttonId);
-    let amount = parseFloat(input.value || '0');
-    let isTooHigh = amount > availableLoanAmount;
-
-    warning.classList.toggle('d-none', !isTooHigh);
-    button.disabled = isTooHigh;
-
-    return !isTooHigh;
 }
 
 function toggleGuestBorrowerInput(){
@@ -1207,7 +1163,6 @@ function openLoanRequestEdit(id, amount, months, isGuarantor, guestBorrowerName,
     document.getElementById('editGuestGcashNumber').value = guestGcashNumber || '';
     toggleEditGuestBorrowerInput();
     document.getElementById('loanRequestEditError').classList.add('d-none');
-    validateLoanRequestAmount('editLoanRequestAmount', 'editLoanRequestAmountWarning', 'editLoanRequestSaveButton');
 
     new bootstrap.Modal(document.getElementById('editLoanRequestModal')).show();
 }
@@ -1223,11 +1178,6 @@ function saveLoanRequestEdit(){
     let errorBox = document.getElementById('loanRequestEditError');
 
     errorBox.classList.add('d-none');
-
-    if(!validateLoanRequestAmount('editLoanRequestAmount', 'editLoanRequestAmountWarning', 'editLoanRequestSaveButton')){
-        appShowToast('Loan request amount cannot exceed the Available Loanable Amount to date.', 'error');
-        return;
-    }
 
     fetch('ajax/update_loan_request.php', {
         method: 'POST',
