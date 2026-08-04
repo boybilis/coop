@@ -543,6 +543,33 @@ function cooperative_loanable_amount_breakdown($conn)
     ];
 }
 
+function cooperative_member_payment_cutoff_options($conn, $borrowerId)
+{
+    $cutoffs = [cooperative_current_cutoff_date()];
+
+    $stmt = $conn->prepare("
+        SELECT payments.due_date
+        FROM payments
+        JOIN loans ON loans.id = payments.loan_id
+        WHERE loans.borrower_id = ?
+        AND payments.paid = 0
+        GROUP BY payments.due_date
+        ORDER BY payments.due_date ASC
+    ");
+    $stmt->bind_param("i", $borrowerId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $cutoffs[] = $row['due_date'];
+    }
+
+    $cutoffs = array_values(array_unique(array_filter($cutoffs)));
+    sort($cutoffs);
+
+    return $cutoffs;
+}
+
 function cooperative_effective_interest_rate($conn, $loanDate)
 {
     $stmt = $conn->prepare("

@@ -14,6 +14,10 @@ if (!$borrowerId || !$paymentDate) {
     exit("Missing payment details");
 }
 
+if (!in_array($paymentDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
+    exit("Please select a valid payment cut-off date");
+}
+
 if ($referenceNumber === '') {
     exit("Reference payment number is required");
 }

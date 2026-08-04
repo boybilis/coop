@@ -77,11 +77,6 @@ while($b = $res->fetch_assoc()):
 </div>
 </div>
 
-<div class="col-md-12">
-<a href="admin/generate_capital.php" class="btn btn-warning mb-3">
-    Generate Capital Cutoffs
-</a>
-</div>
 <!-- ================= SUMMARY ================= -->
 <div class="card mb-4">
 <div class="card-body">

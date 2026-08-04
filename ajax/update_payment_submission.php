@@ -17,6 +17,11 @@ if (!$submissionId || !$paymentDate || $referenceNumber === '') {
     exit;
 }
 
+if (!in_array($paymentDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
+    echo json_encode(["error" => "Please select a valid payment cut-off date"]);
+    exit;
+}
+
 if ($capitalContribution <= 0 && $loanPayment <= 0) {
     echo json_encode(["error" => "Enter a capital contribution or loan payment amount"]);
     exit;

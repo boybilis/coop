@@ -15,11 +15,6 @@ $totalMembers = $conn->query("
     FROM borrowers
 ")->fetch_assoc()['total'];
 
-$capital = $conn->query("
-    SELECT IFNULL(SUM(amount),0) AS total
-    FROM capital_contributions
-")->fetch_assoc()['total'];
-
 $serviceFees = $conn->query("
     SELECT IFNULL(SUM(service_fee),0) AS total
     FROM loans
@@ -32,6 +27,7 @@ $cutoffCapitalToDate = $loanableBreakdown['cutoff_capital_to_date'];
 $paidLoanPrincipalToDate = $loanableBreakdown['paid_loans_this_cutoff'];
 $approvedLoanPrincipal = $loanableBreakdown['approved_loan_principal'];
 $availableLoanCutoff = $loanableBreakdown['available_amount'];
+$capital = $initialCapital + $cutoffCapitalToDate;
 $currentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
 $nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentScheduleSetting)->format('Y-m-d');
 $expectedCapconPerMember = 500;

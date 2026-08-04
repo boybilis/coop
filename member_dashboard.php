@@ -149,6 +149,8 @@ while ($cutoff = $cutoffs->fetch_assoc()) {
     $cutoffAmounts[$cutoff['due_date']] = (float)$cutoff['amount_due'];
 }
 
+$paymentCutoffOptions = cooperative_member_payment_cutoff_options($conn, $borrowerId);
+
 $linkedAccountsStmt = $conn->prepare("
     SELECT users.id, users.username, borrowers.name
     FROM users
@@ -567,7 +569,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="fw-bold">Payment Cut-Off Date</label>
-                    <input type="date" name="payment_date" id="paymentDate" class="form-control" value="<?= date('Y-m-d') ?>" required onchange="updateDueAmount()">
+                    <select name="payment_date" id="paymentDate" class="form-control" required onchange="updateDueAmount()">
+                        <option value="">Select payment cut-off date</option>
+                        <?php foreach($paymentCutoffOptions as $paymentCutoffOption): ?>
+                            <option value="<?= htmlspecialchars($paymentCutoffOption) ?>">
+                                <?= date('M d, Y', strtotime($paymentCutoffOption)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                     <small class="text-muted" id="dueAmountText">Amount due: &#8369;0.00</small>
                 </div>
 
@@ -706,7 +715,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 
             <div class="mb-3">
                 <label>Payment Cut-Off Date</label>
-                <input type="date" id="editPaymentDate" class="form-control" required>
+                <select id="editPaymentDate" class="form-control" required>
+                    <option value="">Select payment cut-off date</option>
+                    <?php foreach($paymentCutoffOptions as $paymentCutoffOption): ?>
+                        <option value="<?= htmlspecialchars($paymentCutoffOption) ?>">
+                            <?= date('M d, Y', strtotime($paymentCutoffOption)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="mb-3">
