@@ -82,9 +82,16 @@ if ($selectedCutoff !== '') {
 
 <div class="card shadow">
     <div class="card-header">
-        <h5 class="mb-0">
-            Payments <?= $selectedCutoff ? 'for ' . htmlspecialchars($selectedCutoff) : '' ?>
-        </h5>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h5 class="mb-0">
+                Payments <?= $selectedCutoff ? 'for ' . htmlspecialchars($selectedCutoff) : '' ?>
+            </h5>
+            <?php if($selectedCutoff): ?>
+                <a href="ajax/download_received_payments_pdf.php?cutoff_date=<?= urlencode($selectedCutoff) ?>" class="btn btn-outline-danger btn-sm">
+                    Download PDF Report
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div class="card-body">
@@ -119,7 +126,12 @@ if ($selectedCutoff !== '') {
                             <td>&#8369;<?= number_format($row['capital_contribution'],2) ?></td>
                             <td>&#8369;<?= number_format($row['loan_payment'],2) ?></td>
                             <td><strong>&#8369;<?= number_format($totalAmount,2) ?></strong></td>
-                            <td><?= htmlspecialchars($row['reference_number']) ?></td>
+                            <td>
+                                <?= htmlspecialchars($row['reference_number']) ?>
+                                <small class="d-block text-muted">
+                                    Payment Date: <?= date('M d, Y', strtotime($row['payment_date'])) ?>
+                                </small>
+                            </td>
                             <td>
                                 <a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
                                     View Image

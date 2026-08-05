@@ -7,17 +7,17 @@ header('Content-Type: application/json');
 
 $borrowerId = active_borrower_id();
 $submissionId = (int)($_POST['submission_id'] ?? 0);
-$paymentDate = $_POST['payment_date'] ?? '';
+$cutoffDate = $_POST['payment_date'] ?? '';
 $capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
 $loanPayment = (float)($_POST['loan_payment'] ?? 0);
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
-if (!$submissionId || !$paymentDate || $referenceNumber === '') {
-    echo json_encode(["error" => "Payment date and reference number are required"]);
+if (!$submissionId || !$cutoffDate || $referenceNumber === '') {
+    echo json_encode(["error" => "Payment cut-off date and reference number are required"]);
     exit;
 }
 
-if (!in_array($paymentDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
+if (!in_array($cutoffDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
     echo json_encode(["error" => "Please select a valid payment cut-off date"]);
     exit;
 }
@@ -82,8 +82,7 @@ if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_
 
 $updateStmt = $conn->prepare("
     UPDATE payment_submissions
-    SET payment_date = ?,
-        cutoff_date = ?,
+    SET cutoff_date = ?,
         capital_contribution = ?,
         loan_payment = ?,
         reference_number = ?,
@@ -93,9 +92,8 @@ $updateStmt = $conn->prepare("
     AND status = 'Pending'
 ");
 $updateStmt->bind_param(
-    "ssddssii",
-    $paymentDate,
-    $paymentDate,
+    "sddssii",
+    $cutoffDate,
     $capitalContribution,
     $loanPayment,
     $referenceNumber,
@@ -107,7 +105,7 @@ $updateStmt->execute();
 
 audit_log($conn, 'update_payment_submission', 'Member edited a pending payment submission.', 'payment_submissions', $submissionId, [
     'borrower_id' => $borrowerId,
-    'payment_date' => $paymentDate,
+    'cutoff_date' => $cutoffDate,
     'capital_contribution' => $capitalContribution,
     'loan_payment' => $loanPayment,
     'reference_number' => $referenceNumber

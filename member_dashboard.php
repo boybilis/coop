@@ -568,6 +568,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
         <div class="modal-body">
             <div class="row g-3">
                 <div class="col-md-6">
+                    <div class="small text-muted mb-1">Date Today: <?= date('M d, Y') ?></div>
                     <label class="fw-bold">Payment Cut-Off Date</label>
                     <select name="payment_date" id="paymentDate" class="form-control" required onchange="updateDueAmount()">
                         <option value="">Select payment cut-off date</option>

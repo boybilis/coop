@@ -4,17 +4,17 @@ include '../auth.php';
 require_member();
 
 $borrowerId = active_borrower_id();
-$paymentDate = $_POST['payment_date'] ?? '';
-$cutoffDate = $paymentDate;
+$cutoffDate = $_POST['payment_date'] ?? '';
+$paymentDate = date('Y-m-d');
 $capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
 $loanPayment = (float)($_POST['loan_payment'] ?? 0);
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
-if (!$borrowerId || !$paymentDate) {
+if (!$borrowerId || !$cutoffDate) {
     exit("Missing payment details");
 }
 
-if (!in_array($paymentDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
+if (!in_array($cutoffDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
     exit("Please select a valid payment cut-off date");
 }
 
@@ -81,6 +81,7 @@ $submissionId = $stmt->insert_id;
 audit_log($conn, 'submit_payment', 'Member submitted payment for admin verification.', 'payment_submissions', $submissionId, [
     'borrower_id' => $borrowerId,
     'payment_date' => $paymentDate,
+    'cutoff_date' => $cutoffDate,
     'capital_contribution' => $capitalContribution,
     'loan_payment' => $loanPayment,
     'reference_number' => $referenceNumber
