@@ -87,8 +87,8 @@ if ($selectedCutoff !== '') {
                 Payments <?= $selectedCutoff ? 'for ' . htmlspecialchars($selectedCutoff) : '' ?>
             </h5>
             <?php if($selectedCutoff): ?>
-                <a href="ajax/download_received_payments_pdf.php?cutoff_date=<?= urlencode($selectedCutoff) ?>" class="btn btn-outline-danger btn-sm">
-                    Download PDF Report
+                <a href="received_payments_pdf_preview.php?cutoff_date=<?= urlencode($selectedCutoff) ?>" target="_blank" rel="noopener" class="btn btn-outline-danger btn-sm">
+                    Preview PDF Report
                 </a>
             <?php endif; ?>
         </div>

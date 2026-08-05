@@ -312,9 +312,10 @@ function build_received_payments_pdf($cutoffDate, array $rows, $totalCapital, $t
 
 $pdf = build_received_payments_pdf($cutoffDate, $rows, $totalCapital, $totalLoan, $totalAmount, $capconUnpaidRows, $loanUnpaidRows);
 $fileName = 'received-payments-' . preg_replace('/[^0-9-]/', '', $cutoffDate) . '.pdf';
+$disposition = ($_GET['download'] ?? '') === '1' ? 'attachment' : 'inline';
 
 header('Content-Type: application/pdf');
-header('Content-Disposition: attachment; filename="' . $fileName . '"');
+header('Content-Disposition: ' . $disposition . '; filename="' . $fileName . '"');
 header('Content-Length: ' . strlen($pdf));
 echo $pdf;
 exit;
