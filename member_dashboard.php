@@ -278,10 +278,10 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <small class="text-muted d-block">Total posted capital</small>
             </div>
             <div class="card-footer">
-                <small class="text-muted d-block">Total Available Loanable Amount</small>
+                <small class="text-muted d-block">Available Loanable Amount to Date</small>
                 <strong class="d-block">&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
                 <?php if($showExpectedNextCutoffLoanable): ?>
-                    <small class="text-muted d-block mt-2">Expected Loanable Amount Next Cut-off</small>
+                    <small class="text-muted d-block mt-2">Expected Collectible Next Cut-off</small>
                     <strong class="text-success d-block">&#8369;<?= number_format($expectedNextCutoffLoanable,2) ?></strong>
                     <small class="text-muted d-block"><?= date('M d, Y', strtotime($nextCutoffDate)) ?></small>
                 <?php endif; ?>

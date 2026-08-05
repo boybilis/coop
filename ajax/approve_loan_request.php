@@ -45,7 +45,7 @@ if (!$request) {
 }
 
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
-$availableLoanAmount = (float)$loanableBreakdown['available_amount'];
+$availableLoanAmount = (float)($loanableBreakdown['approval_available_amount'] ?? $loanableBreakdown['available_amount']);
 
 if ($amount > $availableLoanAmount) {
     audit_log($conn, 'block_loan_approval_over_loanable', 'Admin attempted to approve a loan above the available loanable amount.', 'loan_requests', $requestId, [
@@ -54,7 +54,7 @@ if ($amount > $availableLoanAmount) {
         'available_loanable_amount' => $availableLoanAmount
     ]);
 
-    header("Location: ../loan_requests.php?error=" . urlencode("Approved loan amount cannot exceed the Available Loanable Amount to date. Available: " . number_format($availableLoanAmount, 2) . "."));
+    header("Location: ../loan_requests.php?error=" . urlencode("Approved loan amount cannot exceed the remaining approvable loanable amount. Available: " . number_format($availableLoanAmount, 2) . "."));
     exit;
 }
 

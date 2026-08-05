@@ -24,7 +24,7 @@ $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $currentCutoffDate = $loanableBreakdown['cutoff_date'];
 $initialCapital = $loanableBreakdown['initial_capital'];
 $cutoffCapitalToDate = $loanableBreakdown['cutoff_capital_to_date'];
-$paidLoanPrincipalToDate = $loanableBreakdown['paid_loans_this_cutoff'];
+$paidLoansThisCutoff = $loanableBreakdown['paid_loans_this_cutoff'];
 $approvedLoanPrincipal = $loanableBreakdown['approved_loan_principal'];
 $availableLoanCutoff = $loanableBreakdown['available_amount'];
 $capital = $initialCapital + $cutoffCapitalToDate;
@@ -154,7 +154,7 @@ function notification_badge($count)
             <div class="card-footer">
                 <a href="members.php" class="btn btn-success w-100">Member Management</a>
                 <hr class="my-3">
-                <small class="text-muted d-block">Expected Loan Amount Next Cut-off <?= date('M d, Y', strtotime($nextCutoffDate)) ?></small>
+                <small class="text-muted d-block">Expected Collectible Next Cut-off <?= date('M d, Y', strtotime($nextCutoffDate)) ?></small>
                 <strong class="text-success d-block">&#8369;<?= number_format($expectedNextCutoffLoanable,2) ?></strong>
             </div>
         </div>
@@ -217,11 +217,9 @@ function notification_badge($count)
             <div class="card-body">
                 <h6>Available Loanable Amount to Date</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($availableLoanCutoff,2) ?></h3>
-                <small class="text-muted d-block">As of <?= date('M d, Y', strtotime($currentCutoffDate)) ?></small>
-                <small class="text-muted d-block">Initial contribution: &#8369;<?= number_format($initialCapital,2) ?></small>
-                <small class="text-muted d-block">Capcon to date: &#8369;<?= number_format($cutoffCapitalToDate,2) ?></small>
-                <small class="text-muted d-block">Paid loans this cutoff: &#8369;<?= number_format($paidLoanPrincipalToDate,2) ?></small>
-                <small class="text-muted d-block">Less approved principal loans: &#8369;<?= number_format($approvedLoanPrincipal,2) ?></small>
+                <small class="text-muted d-block">Current cut-off: <?= date('M d, Y', strtotime($currentCutoffDate)) ?></small>
+                <small class="text-muted d-block">Collected capcon: &#8369;<?= number_format($cutoffCapitalToDate,2) ?></small>
+                <small class="text-muted d-block">Collected loan payments: &#8369;<?= number_format($paidLoansThisCutoff,2) ?></small>
             </div>
             <div class="card-footer">
                 <a href="capital.php" class="btn btn-warning w-100">Capital Contributions</a>

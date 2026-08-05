@@ -501,6 +501,8 @@ function cooperative_generate_loan_due_dates($startDate, $months, array $setting
 function cooperative_loanable_amount_breakdown($conn)
 {
     $currentCutoffDate = cooperative_current_cutoff_date();
+    $currentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $currentCutoffDate);
+    $nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentScheduleSetting)->format('Y-m-d');
 
     $initialCapital = (float)$conn->query("
         SELECT IFNULL(SUM(amount),0) AS total
@@ -512,11 +514,11 @@ function cooperative_loanable_amount_breakdown($conn)
         SELECT IFNULL(SUM(amount),0) AS total
         FROM capital_contributions
         WHERE type = 'CUTOFF'
-        AND contribution_date <= ?
+        AND contribution_date = ?
     ");
     $cutoffCapitalStmt->bind_param("s", $currentCutoffDate);
     $cutoffCapitalStmt->execute();
-    $cutoffCapitalToDate = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
+    $cutoffCapitalCollected = (float)$cutoffCapitalStmt->get_result()->fetch_assoc()['total'];
 
     $cutoffPaidLoansStmt = $conn->prepare("
         SELECT IFNULL(SUM(payments.amount),0) AS total
@@ -528,18 +530,27 @@ function cooperative_loanable_amount_breakdown($conn)
     $cutoffPaidLoansStmt->execute();
     $paidLoansThisCutoff = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
 
-    $approvedLoanPrincipal = (float)$conn->query("
+    $approvedLoanPrincipalStmt = $conn->prepare("
         SELECT IFNULL(SUM(amount),0) AS total
         FROM loans
-    ")->fetch_assoc()['total'];
+        WHERE start_date >= ?
+        AND start_date < ?
+    ");
+    $approvedLoanPrincipalStmt->bind_param("ss", $currentCutoffDate, $nextCutoffDate);
+    $approvedLoanPrincipalStmt->execute();
+    $approvedLoanPrincipal = (float)$approvedLoanPrincipalStmt->get_result()->fetch_assoc()['total'];
 
     return [
         'cutoff_date' => $currentCutoffDate,
+        'next_cutoff_date' => $nextCutoffDate,
         'initial_capital' => $initialCapital,
-        'cutoff_capital_to_date' => $cutoffCapitalToDate,
+        'cutoff_capital_to_date' => $cutoffCapitalCollected,
+        'cutoff_capital_collected' => $cutoffCapitalCollected,
         'paid_loans_this_cutoff' => $paidLoansThisCutoff,
+        'paid_loan_principal_to_date' => $paidLoansThisCutoff,
         'approved_loan_principal' => $approvedLoanPrincipal,
-        'available_amount' => $initialCapital + $cutoffCapitalToDate + $paidLoansThisCutoff - $approvedLoanPrincipal
+        'available_amount' => $cutoffCapitalCollected + $paidLoansThisCutoff,
+        'approval_available_amount' => max(0, $cutoffCapitalCollected + $paidLoansThisCutoff - $approvedLoanPrincipal)
     ];
 }
 
