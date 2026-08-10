@@ -34,7 +34,7 @@ require_admin();
 
 <h5>Add Capital Contribution</h5>
 
-<form method="POST" action="ajax/save_capital.php" class="row g-2" id="capitalForm">
+<form method="POST" action="ajax/save_capital.php" enctype="multipart/form-data" class="row g-2" id="capitalForm">
 
 <div class="col-md-4">
 <select name="borrower_id" class="form-control" required>
@@ -66,6 +66,15 @@ while($b = $res->fetch_assoc()):
 
 <div class="col-md-3">
 <input type="date" name="date" class="form-control" required>
+</div>
+
+<div class="col-md-6">
+<input type="text" name="reference_number" class="form-control" maxlength="100" placeholder="Reference Number (Optional)">
+</div>
+
+<div class="col-md-6">
+<input type="file" name="proof_image" class="form-control" accept="image/jpeg,image/png,image/webp">
+<div class="form-text">Optional. JPG, PNG, or WEBP; maximum 5 MB.</div>
 </div>
 
 <div class="col-md-12">
@@ -104,6 +113,8 @@ $average = $count > 0 ? $total / $count : 0;
 <th>Member</th>
 <th>Amount</th>
 <th>Type</th>
+<th>Reference Number</th>
+<th>Proof</th>
 <th>Date</th>
 </tr>
 </thead>
@@ -129,6 +140,14 @@ while($row = $res->fetch_assoc()):
 <span class="badge bg-<?= $row['type']=='INITIAL'?'primary':'success' ?>">
 <?= $row['type'] ?>
 </span>
+</td>
+<td><?= ($row['reference_number'] ?? '') !== '' ? htmlspecialchars($row['reference_number']) : '<span class="text-muted">—</span>' ?></td>
+<td>
+<?php if(!empty($row['proof_image'])): ?>
+<a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">View</a>
+<?php else: ?>
+<span class="text-muted">—</span>
+<?php endif; ?>
 </td>
 <td><?= $row['contribution_date'] ?></td>
 </tr>
@@ -165,7 +184,7 @@ while($row = $res->fetch_assoc()):
 $(document).ready(function () {
     let capitalTable = $('#capitalTable').DataTable({
         pageLength: 10,
-        order: [[3, 'desc']] // sort by date
+        order: [[5, 'desc']] // sort by date
     });
 
     function money(amount){
@@ -193,7 +212,9 @@ $(document).ready(function () {
         $.ajax({
             url: form.action,
             method: 'POST',
-            data: $(form).serialize(),
+            data: new FormData(form),
+            processData: false,
+            contentType: false,
             dataType: 'json'
         }).done(function(response){
             if(response.error){
@@ -207,6 +228,12 @@ $(document).ready(function () {
                 '<strong>' + escapeHtml(memberDisplayName) + '</strong><small class="d-block text-dark-emphasis">' + escapeHtml(response.row.name) + '</small>',
                 money(response.row.amount),
                 '<span class="badge bg-' + badgeClass + '">' + response.row.type + '</span>',
+                response.row.reference_number
+                    ? escapeHtml(response.row.reference_number)
+                    : '<span class="text-muted">—</span>',
+                response.row.proof_image
+                    ? '<a href="' + escapeHtml(response.row.proof_image) + '" data-image-preview class="btn btn-outline-primary btn-sm">View</a>'
+                    : '<span class="text-muted">—</span>',
                 response.row.date
             ]).draw(false);
 

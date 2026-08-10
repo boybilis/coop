@@ -9,27 +9,94 @@ $borrower_id = (int)($_POST['borrower_id'] ?? 0);
 $amount = (float)($_POST['amount'] ?? 0);
 $type = $_POST['type'] ?? '';
 $date = $_POST['date'] ?? '';
+$referenceNumber = trim($_POST['reference_number'] ?? '');
+$referenceNumberValue = $referenceNumber !== '' ? $referenceNumber : null;
 
 if (!$borrower_id || $amount <= 0 || !in_array($type, ['INITIAL', 'CUTOFF'], true) || !$date) {
     echo json_encode(["error" => "Please complete all capital contribution fields."]);
     exit;
 }
 
+if (strlen($referenceNumber) > 100) {
+    echo json_encode(["error" => "Reference number must not exceed 100 characters."]);
+    exit;
+}
+
+$proofPath = null;
+$targetPath = null;
+$uploadError = $_FILES['proof_image']['error'] ?? UPLOAD_ERR_NO_FILE;
+
+if ($uploadError !== UPLOAD_ERR_NO_FILE) {
+    if ($uploadError !== UPLOAD_ERR_OK) {
+        echo json_encode(["error" => "Unable to process uploaded image."]);
+        exit;
+    }
+
+    if ((int)$_FILES['proof_image']['size'] > 5 * 1024 * 1024) {
+        echo json_encode(["error" => "Image must not exceed 5 MB."]);
+        exit;
+    }
+
+    $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($fileInfo, $_FILES['proof_image']['tmp_name']);
+    finfo_close($fileInfo);
+
+    $allowedTypes = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp'
+    ];
+
+    if (!isset($allowedTypes[$mimeType])) {
+        echo json_encode(["error" => "Only JPG, PNG, or WEBP images are allowed."]);
+        exit;
+    }
+
+    $uploadDir = realpath(__DIR__ . '/../uploads/capital_proofs');
+
+    if (!$uploadDir) {
+        echo json_encode(["error" => "Capital proof upload directory is missing."]);
+        exit;
+    }
+
+    $fileName = 'capital_' . $borrower_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $allowedTypes[$mimeType];
+    $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
+
+    if (!move_uploaded_file($_FILES['proof_image']['tmp_name'], $targetPath)) {
+        echo json_encode(["error" => "Unable to save uploaded image."]);
+        exit;
+    }
+
+    $proofPath = 'uploads/capital_proofs/' . $fileName;
+}
+
 $stmt = $conn->prepare("
 INSERT INTO capital_contributions 
-(borrower_id, amount, type, contribution_date)
-VALUES (?, ?, ?, ?)
+(borrower_id, amount, type, contribution_date, reference_number, proof_image)
+VALUES (?, ?, ?, ?, ?, ?)
 ");
 
-$stmt->bind_param("idss", $borrower_id, $amount, $type, $date);
-$stmt->execute();
+$stmt->bind_param("idssss", $borrower_id, $amount, $type, $date, $referenceNumberValue, $proofPath);
+
+try {
+    $stmt->execute();
+} catch (mysqli_sql_exception $exception) {
+    if ($targetPath) {
+        @unlink($targetPath);
+    }
+    error_log('Unable to save capital contribution: ' . $exception->getMessage());
+    echo json_encode(["error" => "Unable to save capital contribution."]);
+    exit;
+}
 $capitalId = $stmt->insert_id;
 
 audit_log($conn, 'save_capital_contribution', 'Admin recorded a capital contribution.', 'capital_contributions', $capitalId, [
     'borrower_id' => $borrower_id,
     'amount' => $amount,
     'type' => $type,
-    'date' => $date
+    'date' => $date,
+    'reference_number' => $referenceNumber,
+    'proof_image' => $proofPath
 ]);
 
 $summary = $conn->query("
@@ -62,7 +129,9 @@ echo json_encode([
         "username" => $member['username'] ?? '',
         "amount" => $amount,
         "type" => $type,
-        "date" => $date
+        "date" => $date,
+        "reference_number" => $referenceNumber,
+        "proof_image" => $proofPath
     ],
     "summary" => [
         "total" => $total,
