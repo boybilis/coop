@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             && !empty($pendingUser['two_factor_secret'])
             && totp_verify($pendingUser['two_factor_secret'], $code)
         ) {
+            session_regenerate_id(true);
             unset(
                 $_SESSION['pending_2fa_user_id'],
                 $_SESSION['pending_2fa_username'],
@@ -125,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['pending_2fa_borrower_id'] = $user['borrower_id'];
             $showTwoFactorSetup = true;
         } else {
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['user_status'] = $user['status'];

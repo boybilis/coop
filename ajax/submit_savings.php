@@ -33,6 +33,10 @@ if (!isset($_FILES['proof_image']) || $_FILES['proof_image']['error'] !== UPLOAD
     exit("Reference image is required");
 }
 
+if ((int)$_FILES['proof_image']['size'] > 5 * 1024 * 1024) {
+    exit("Image must not exceed 5 MB");
+}
+
 $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
 $mimeType = finfo_file($fileInfo, $_FILES['proof_image']['tmp_name']);
 finfo_close($fileInfo);

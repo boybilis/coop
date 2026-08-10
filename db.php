@@ -17,7 +17,13 @@ if (file_exists($localConfig)) {
     $dbName = $config['database'] ?? $dbName;
 }
 
-$conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
+try {
+    $conn = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
+} catch (mysqli_sql_exception $exception) {
+    error_log('Database connection failed: ' . $exception->getMessage());
+    http_response_code(503);
+    exit('The service is temporarily unavailable. Please try again later.');
+}
 
 if (!$conn->connect_error) {
     $conn->query("SET time_zone = '+08:00'");

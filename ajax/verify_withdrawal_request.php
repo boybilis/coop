@@ -16,6 +16,11 @@ if (!isset($_FILES['admin_proof_image']) || $_FILES['admin_proof_image']['error'
     exit;
 }
 
+if ((int)$_FILES['admin_proof_image']['size'] > 5 * 1024 * 1024) {
+    header("Location: ../received_withdrawals.php?error=" . urlencode("Image must not exceed 5 MB"));
+    exit;
+}
+
 $stmt = $conn->prepare("
     SELECT *
     FROM savings_withdrawal_requests

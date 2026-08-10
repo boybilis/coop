@@ -35,6 +35,7 @@ if (!$user) {
 
 unset($_SESSION['pending_member_user_id'], $_SESSION['pending_member_username']);
 
+session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['username'] = $user['username'];
 $_SESSION['user_status'] = $user['status'];

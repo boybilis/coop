@@ -26,6 +26,10 @@ if (!isset($_FILES['proof_image']) || $_FILES['proof_image']['error'] !== UPLOAD
     exit("GCash reference image is required");
 }
 
+if ((int)$_FILES['proof_image']['size'] > 5 * 1024 * 1024) {
+    exit("Image must not exceed 5 MB");
+}
+
 if ($capitalContribution <= 0 && $loanPayment <= 0) {
     exit("Enter a capital contribution or loan payment amount");
 }

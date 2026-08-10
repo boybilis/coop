@@ -8,8 +8,8 @@ $currentPassword = $_POST['current_password'] ?? '';
 $newPassword = $_POST['new_password'] ?? '';
 $confirmPassword = $_POST['confirm_password'] ?? '';
 
-if ($newPassword === '' || strlen($newPassword) < 6) {
-    header("Location: ../admin_settings.php?error=" . urlencode("New password must be at least 6 characters."));
+if ($newPassword === '' || strlen($newPassword) < 12) {
+    header("Location: ../admin_settings.php?error=" . urlencode("New password must be at least 12 characters."));
     exit;
 }
 

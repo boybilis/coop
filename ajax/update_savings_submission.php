@@ -45,6 +45,11 @@ if (!$submission) {
 $proofPath = $submission['proof_image'];
 
 if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_ERR_OK) {
+    if ((int)$_FILES['proof_image']['size'] > 5 * 1024 * 1024) {
+        echo json_encode(["error" => "Image must not exceed 5 MB"]);
+        exit;
+    }
+
     $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($fileInfo, $_FILES['proof_image']['tmp_name']);
     finfo_close($fileInfo);

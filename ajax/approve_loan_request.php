@@ -28,6 +28,11 @@ if (!isset($_FILES['disbursement_proof_image']) || $_FILES['disbursement_proof_i
     exit;
 }
 
+if ((int)$_FILES['disbursement_proof_image']['size'] > 5 * 1024 * 1024) {
+    header("Location: ../loan_requests.php?error=" . urlencode("Image must not exceed 5 MB"));
+    exit;
+}
+
 $requestStmt = $conn->prepare("
     SELECT *
     FROM loan_requests

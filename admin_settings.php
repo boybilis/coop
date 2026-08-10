@@ -97,11 +97,11 @@ if (is_superadmin_user()) {
                         </div>
                         <div class="mb-3">
                             <label class="form-label">New Password</label>
-                            <input type="password" name="new_password" class="form-control" minlength="6" required>
+                            <input type="password" name="new_password" class="form-control" minlength="12" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Confirm New Password</label>
-                            <input type="password" name="confirm_password" class="form-control" minlength="6" required>
+                            <input type="password" name="confirm_password" class="form-control" minlength="12" required>
                         </div>
                         <button class="btn btn-primary">Update Password</button>
                     </form>
@@ -192,11 +192,11 @@ if (is_superadmin_user()) {
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" minlength="6" required>
+                                <input type="password" name="password" class="form-control" minlength="12" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Confirm Password</label>
-                                <input type="password" name="confirm_password" class="form-control" minlength="6" required>
+                                <input type="password" name="confirm_password" class="form-control" minlength="12" required>
                             </div>
                             <div class="col-12">
                                 <button class="btn btn-success">Create Admin</button>

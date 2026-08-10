@@ -7,8 +7,8 @@ $username = trim($_POST['username'] ?? '');
 $password = $_POST['password'] ?? '';
 $confirmPassword = $_POST['confirm_password'] ?? '';
 
-if ($username === '' || strlen($password) < 6) {
-    header("Location: ../admin_settings.php?error=" . urlencode("Username and a password of at least 6 characters are required."));
+if ($username === '' || strlen($password) < 12) {
+    header("Location: ../admin_settings.php?error=" . urlencode("Username and a password of at least 12 characters are required."));
     exit;
 }
 
