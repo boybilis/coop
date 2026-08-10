@@ -123,7 +123,35 @@ $average = $count > 0 ? $total / $count : 0;
 
 <?php
 $res = $conn->query("
-SELECT capital_contributions.*, borrowers.name, users.username
+SELECT capital_contributions.*, borrowers.name, users.username,
+    COALESCE(
+        NULLIF(capital_contributions.reference_number, ''),
+        (
+            SELECT payment_submissions.reference_number
+            FROM payment_submissions
+            WHERE payment_submissions.borrower_id = capital_contributions.borrower_id
+            AND payment_submissions.cutoff_date = capital_contributions.contribution_date
+            AND payment_submissions.capital_contribution = capital_contributions.amount
+            AND payment_submissions.status = 'Approved'
+            AND capital_contributions.period_label = CONCAT('GCash Ref: ', payment_submissions.reference_number)
+            ORDER BY payment_submissions.id DESC
+            LIMIT 1
+        )
+    ) AS display_reference_number,
+    COALESCE(
+        NULLIF(capital_contributions.proof_image, ''),
+        (
+            SELECT payment_submissions.proof_image
+            FROM payment_submissions
+            WHERE payment_submissions.borrower_id = capital_contributions.borrower_id
+            AND payment_submissions.cutoff_date = capital_contributions.contribution_date
+            AND payment_submissions.capital_contribution = capital_contributions.amount
+            AND payment_submissions.status = 'Approved'
+            AND capital_contributions.period_label = CONCAT('GCash Ref: ', payment_submissions.reference_number)
+            ORDER BY payment_submissions.id DESC
+            LIMIT 1
+        )
+    ) AS display_proof_image
 FROM capital_contributions
 JOIN borrowers ON borrowers.id = capital_contributions.borrower_id
 LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
@@ -141,10 +169,10 @@ while($row = $res->fetch_assoc()):
 <?= $row['type'] ?>
 </span>
 </td>
-<td><?= ($row['reference_number'] ?? '') !== '' ? htmlspecialchars($row['reference_number']) : '<span class="text-muted">—</span>' ?></td>
+<td><?= ($row['display_reference_number'] ?? '') !== '' ? htmlspecialchars($row['display_reference_number']) : '<span class="text-muted">—</span>' ?></td>
 <td>
-<?php if(!empty($row['proof_image'])): ?>
-<a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">View</a>
+<?php if(!empty($row['display_proof_image'])): ?>
+<a href="<?= htmlspecialchars($row['display_proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">View</a>
 <?php else: ?>
 <span class="text-muted">—</span>
 <?php endif; ?>

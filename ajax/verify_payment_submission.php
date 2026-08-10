@@ -40,15 +40,17 @@ try {
 
         $capitalStmt = $conn->prepare("
             INSERT INTO capital_contributions
-            (borrower_id, amount, type, contribution_date, period_label)
-            VALUES (?, ?, 'CUTOFF', ?, ?)
+            (borrower_id, amount, type, contribution_date, period_label, reference_number, proof_image)
+            VALUES (?, ?, 'CUTOFF', ?, ?, ?, ?)
         ");
         $capitalStmt->bind_param(
-            "idss",
+            "idssss",
             $submission['borrower_id'],
             $submission['capital_contribution'],
             $submission['cutoff_date'],
-            $periodLabel
+            $periodLabel,
+            $submission['reference_number'],
+            $submission['proof_image']
         );
         $capitalStmt->execute();
     }
