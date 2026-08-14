@@ -562,7 +562,10 @@ function cooperative_loanable_amount_breakdown($conn)
 
 function cooperative_member_payment_cutoff_options($conn, $borrowerId)
 {
-    $cutoffs = [cooperative_current_cutoff_date()];
+    $currentCutoffDate = cooperative_current_cutoff_date();
+    $currentSetting = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
+    $nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentSetting)->format('Y-m-d');
+    $cutoffs = [$currentCutoffDate, $nextCutoffDate];
 
     $stmt = $conn->prepare("
         SELECT payments.due_date
