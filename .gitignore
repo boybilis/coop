@@ -5,7 +5,9 @@ uploads/payment_proofs/*
 uploads/savings_proofs/*
 uploads/withdrawal_proofs/*
 uploads/capital_proofs/*
+uploads/loan_disbursements/*
 !uploads/payment_proofs/.gitkeep
 !uploads/savings_proofs/.gitkeep
 !uploads/withdrawal_proofs/.gitkeep
 !uploads/capital_proofs/.gitkeep
+!uploads/loan_disbursements/.gitkeep
