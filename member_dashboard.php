@@ -132,21 +132,40 @@ $paymentSummaryStmt->execute();
 $payments = $paymentSummaryStmt->get_result()->fetch_assoc();
 
 $cutoffStmt = $conn->prepare("
-    SELECT payments.due_date, IFNULL(SUM(payments.amount),0) AS amount_due
+    SELECT
+        payments.loan_id,
+        payments.due_date,
+        IFNULL(SUM(payments.amount),0) AS amount_due,
+        loans.is_guarantor,
+        loans.guest_borrower_name
     FROM payments
     JOIN loans ON loans.id = payments.loan_id
     WHERE loans.borrower_id = ?
     AND payments.paid = 0
-    GROUP BY payments.due_date
-    ORDER BY payments.due_date ASC
+    GROUP BY payments.loan_id, payments.due_date, loans.is_guarantor, loans.guest_borrower_name
+    ORDER BY payments.due_date ASC, payments.loan_id ASC
 ");
 $cutoffStmt->bind_param("i", $borrowerId);
 $cutoffStmt->execute();
 $cutoffs = $cutoffStmt->get_result();
 $cutoffAmounts = [];
+$loanPaymentOptionsByCutoff = [];
 
 while ($cutoff = $cutoffs->fetch_assoc()) {
-    $cutoffAmounts[$cutoff['due_date']] = (float)$cutoff['amount_due'];
+    $cutoffDate = $cutoff['due_date'];
+    $amountDue = (float)$cutoff['amount_due'];
+    $cutoffAmounts[$cutoffDate] = ($cutoffAmounts[$cutoffDate] ?? 0) + $amountDue;
+    $loanLabel = 'Loan #' . (int)$cutoff['loan_id'];
+
+    if ((int)($cutoff['is_guarantor'] ?? 0) === 1 && !empty($cutoff['guest_borrower_name'])) {
+        $loanLabel .= ' – ' . $cutoff['guest_borrower_name'];
+    }
+
+    $loanPaymentOptionsByCutoff[$cutoffDate][] = [
+        'id' => (int)$cutoff['loan_id'],
+        'label' => $loanLabel,
+        'amount' => $amountDue,
+    ];
 }
 
 $paymentCutoffOptions = cooperative_member_payment_cutoff_options($conn, $borrowerId);
@@ -496,14 +515,15 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                                 <th>Date</th>
                                 <th>Cutoff</th>
                                 <th>Capital</th>
+                                <th>Loan Target</th>
                                 <th>Loan Payment</th>
                                 <th>Reference</th>
                                 <th>Status</th>
                                 <th width="160">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="paymentSubmissionsTableBody" data-table="payment_submissions" data-columns="7">
-                            <tr><td colspan="7" class="text-center text-muted">Loading payment submissions...</td></tr>
+                        <tbody id="paymentSubmissionsTableBody" data-table="payment_submissions" data-columns="8">
+                            <tr><td colspan="8" class="text-center text-muted">Loading payment submissions...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -587,9 +607,12 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 </div>
 
                 <div class="col-md-6">
-                    <label>Loan Payment</label>
-                    <input type="number" step="0.01" min="0" name="loan_payment" id="loanPaymentInput" class="form-control" value="0" oninput="updatePaymentTotal()">
-                    <small class="text-muted">Loan amount due is based on the selected payment cut-off date.</small>
+                    <label>Loan to Pay</label>
+                    <select name="selected_loan_id" id="loanTargetSelect" class="form-control" onchange="updateSelectedLoanAmount()">
+                        <option value="">No loan payment</option>
+                    </select>
+                    <small class="text-muted">Select one loan or the total for all loans due on this cut-off.</small>
+                    <input type="hidden" name="loan_payment" id="loanPaymentInput" value="0">
                 </div>
 
                 <div class="col-md-6">
@@ -716,7 +739,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 
             <div class="mb-3">
                 <label>Payment Cut-Off Date</label>
-                <select id="editPaymentDate" class="form-control" required>
+                <select id="editPaymentDate" class="form-control" required onchange="populateLoanTargetSelect('editPaymentLoanTarget', this.value, ''); updateEditSelectedLoanAmount();">
                     <option value="">Select payment cut-off date</option>
                     <?php foreach($paymentCutoffOptions as $paymentCutoffOption): ?>
                         <option value="<?= htmlspecialchars($paymentCutoffOption) ?>">
@@ -732,8 +755,11 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             </div>
 
             <div class="mb-3">
-                <label>Loan Payment</label>
-                <input type="number" step="0.01" min="0" id="editPaymentLoan" class="form-control" required>
+                <label>Loan to Pay</label>
+                <select id="editPaymentLoanTarget" class="form-control" onchange="updateEditSelectedLoanAmount()">
+                    <option value="">No loan payment</option>
+                </select>
+                <input type="hidden" id="editPaymentLoan" value="0">
             </div>
 
             <div class="mb-3">
@@ -987,6 +1013,7 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const cutoffAmounts = <?= json_encode($cutoffAmounts) ?>;
+const loanPaymentOptionsByCutoff = <?= json_encode($loanPaymentOptionsByCutoff, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 const currentSavingsBalance = <?= json_encode((float)$netSavings) ?>;
 const dashboardTables = [
     { bodyId: 'loansTableBody', paginationId: 'loansPagination' },
@@ -1008,11 +1035,51 @@ function updateDueAmount(){
         maximumFractionDigits: 2
     });
 
-    if(amount > 0){
-        document.getElementById('loanPaymentInput').value = amount.toFixed(2);
+    populateLoanTargetSelect('loanTargetSelect', paymentDate, '');
+    updateSelectedLoanAmount();
+}
+
+function populateLoanTargetSelect(selectId, paymentDate, selectedValue){
+    const select = document.getElementById(selectId);
+    const loans = loanPaymentOptionsByCutoff[paymentDate] || [];
+    select.innerHTML = '<option value="">No loan payment</option>';
+
+    loans.forEach(loan => {
+        const option = document.createElement('option');
+        option.value = String(loan.id);
+        option.dataset.amount = String(loan.amount);
+        option.textContent = loan.label + ' — ' + formatPaymentAmount(loan.amount);
+        select.appendChild(option);
+    });
+
+    if(loans.length > 0){
+        const total = loans.reduce((sum, loan) => sum + Number(loan.amount), 0);
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.dataset.amount = String(total);
+        allOption.textContent = 'All loans total — ' + formatPaymentAmount(total);
+        select.appendChild(allOption);
     }
 
+    select.value = selectedValue === null ? '' : String(selectedValue || '');
+}
+
+function formatPaymentAmount(amount){
+    return '\u20B1' + Number(amount).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function updateSelectedLoanAmount(){
+    const selected = document.getElementById('loanTargetSelect').selectedOptions[0];
+    document.getElementById('loanPaymentInput').value = selected?.dataset.amount || '0';
     updatePaymentTotal();
+}
+
+function updateEditSelectedLoanAmount(){
+    const selected = document.getElementById('editPaymentLoanTarget').selectedOptions[0];
+    document.getElementById('editPaymentLoan').value = selected?.dataset.amount || '0';
 }
 
 function updatePaymentTotal(){
@@ -1259,11 +1326,15 @@ function withdrawalRequestsConfig(){
     return dashboardTables.find(config => config.bodyId === 'withdrawalRequestsTableBody');
 }
 
-function openPaymentSubmissionEdit(id, paymentDate, capitalContribution, loanPayment, referenceNumber){
+function openPaymentSubmissionEdit(id, paymentDate, capitalContribution, loanPayment, referenceNumber, selectedLoanId){
     document.getElementById('editPaymentSubmissionId').value = id;
     document.getElementById('editPaymentDate').value = paymentDate;
     document.getElementById('editPaymentCapital').value = capitalContribution;
-    document.getElementById('editPaymentLoan').value = loanPayment;
+    const selectedTarget = Number(loanPayment) > 0
+        ? (selectedLoanId ? String(selectedLoanId) : 'all')
+        : '';
+    populateLoanTargetSelect('editPaymentLoanTarget', paymentDate, selectedTarget);
+    updateEditSelectedLoanAmount();
     document.getElementById('editPaymentReference').value = referenceNumber;
     document.getElementById('editPaymentImage').value = '';
 
@@ -1278,6 +1349,7 @@ function savePaymentSubmissionEdit(){
     formData.append('payment_date', document.getElementById('editPaymentDate').value);
     formData.append('capital_contribution', document.getElementById('editPaymentCapital').value);
     formData.append('loan_payment', document.getElementById('editPaymentLoan').value);
+    formData.append('selected_loan_id', document.getElementById('editPaymentLoanTarget').value);
     formData.append('reference_number', document.getElementById('editPaymentReference').value);
 
     if(image){

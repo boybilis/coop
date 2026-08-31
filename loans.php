@@ -12,6 +12,11 @@ $loans = $conn->query("
         SELECT COUNT(*)
         FROM payment_submissions
         WHERE payment_submissions.borrower_id = loans.borrower_id
+        AND payment_submissions.loan_payment > 0
+        AND (
+            payment_submissions.selected_loan_id IS NULL
+            OR payment_submissions.selected_loan_id = loans.id
+        )
         AND payment_submissions.cutoff_date IN (
             SELECT payments.due_date
             FROM payments

@@ -590,6 +590,59 @@ function cooperative_member_payment_cutoff_options($conn, $borrowerId)
     return $cutoffs;
 }
 
+function cooperative_member_loan_payment_target($conn, $borrowerId, $cutoffDate, $selectedLoanValue)
+{
+    $selectedLoanValue = trim((string)$selectedLoanValue);
+
+    if ($selectedLoanValue === '') {
+        return ['selected_loan_id' => null, 'amount' => 0.0];
+    }
+
+    if ($selectedLoanValue === 'all') {
+        $stmt = $conn->prepare("
+            SELECT IFNULL(SUM(payments.amount),0) AS amount_due
+            FROM payments
+            JOIN loans ON loans.id = payments.loan_id
+            WHERE loans.borrower_id = ?
+            AND payments.due_date = ?
+            AND payments.paid = 0
+        ");
+        $stmt->bind_param("is", $borrowerId, $cutoffDate);
+        $stmt->execute();
+        $amount = (float)$stmt->get_result()->fetch_assoc()['amount_due'];
+
+        if ($amount <= 0) {
+            throw new InvalidArgumentException('No unpaid loans are due for the selected cut-off date.');
+        }
+
+        return ['selected_loan_id' => null, 'amount' => $amount];
+    }
+
+    if (!ctype_digit($selectedLoanValue) || (int)$selectedLoanValue <= 0) {
+        throw new InvalidArgumentException('Please select a valid loan payment.');
+    }
+
+    $selectedLoanId = (int)$selectedLoanValue;
+    $stmt = $conn->prepare("
+        SELECT IFNULL(SUM(payments.amount),0) AS amount_due
+        FROM payments
+        JOIN loans ON loans.id = payments.loan_id
+        WHERE loans.borrower_id = ?
+        AND loans.id = ?
+        AND payments.due_date = ?
+        AND payments.paid = 0
+    ");
+    $stmt->bind_param("iis", $borrowerId, $selectedLoanId, $cutoffDate);
+    $stmt->execute();
+    $amount = (float)$stmt->get_result()->fetch_assoc()['amount_due'];
+
+    if ($amount <= 0) {
+        throw new InvalidArgumentException('The selected loan has no unpaid amount for this cut-off date.');
+    }
+
+    return ['selected_loan_id' => $selectedLoanId, 'amount' => $amount];
+}
+
 function cooperative_effective_interest_rate($conn, $loanDate)
 {
     $stmt = $conn->prepare("

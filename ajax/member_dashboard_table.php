@@ -383,10 +383,14 @@ if ($table === 'loans') {
     $totalRows = (int)$countStmt->get_result()->fetch_assoc()['total'];
 
     $stmt = $conn->prepare("
-        SELECT *
+        SELECT
+            payment_submissions.*,
+            loans.is_guarantor AS selected_loan_is_guarantor,
+            loans.guest_borrower_name AS selected_loan_guest_name
         FROM payment_submissions
-        WHERE borrower_id = ?
-        ORDER BY created_at DESC
+        LEFT JOIN loans ON loans.id = payment_submissions.selected_loan_id
+        WHERE payment_submissions.borrower_id = ?
+        ORDER BY payment_submissions.created_at DESC
         LIMIT ? OFFSET ?
     ");
     $stmt->bind_param("iii", $borrowerId, $perPage, $offset);
@@ -394,7 +398,7 @@ if ($table === 'loans') {
     $rows = $stmt->get_result();
 
     if ($totalRows === 0) {
-        $html = dashboard_empty_row(7, 'No payment submissions yet.');
+        $html = dashboard_empty_row(8, 'No payment submissions yet.');
     }
 
     while ($submission = $rows->fetch_assoc()) {
@@ -403,9 +407,11 @@ if ($table === 'loans') {
 
         if ($submission['status'] === 'Pending') {
             $paymentDateArg = htmlspecialchars(json_encode($submission['payment_date']), ENT_QUOTES, 'UTF-8');
+            $cutoffDateArg = htmlspecialchars(json_encode($submission['cutoff_date']), ENT_QUOTES, 'UTF-8');
             $referenceArg = htmlspecialchars(json_encode($submission['reference_number']), ENT_QUOTES, 'UTF-8');
+            $selectedLoanIdArg = !empty($submission['selected_loan_id']) ? (int)$submission['selected_loan_id'] : 'null';
             $action = '
-                <button class="btn btn-warning btn-sm" onclick="openPaymentSubmissionEdit(' . (int)$submission['id'] . ', ' . $paymentDateArg . ', ' . (float)$submission['capital_contribution'] . ', ' . (float)$submission['loan_payment'] . ', ' . $referenceArg . ')">Edit</button>
+                <button class="btn btn-warning btn-sm" onclick="openPaymentSubmissionEdit(' . (int)$submission['id'] . ', ' . $cutoffDateArg . ', ' . (float)$submission['capital_contribution'] . ', ' . (float)$submission['loan_payment'] . ', ' . $referenceArg . ', ' . $selectedLoanIdArg . ')">Edit</button>
                 <button class="btn btn-outline-danger btn-sm" onclick="cancelPaymentSubmission(' . (int)$submission['id'] . ')">Cancel</button>
             ';
         } elseif ($submission['status'] === 'Approved' && !empty($submission['proof_image'])) {
@@ -416,6 +422,17 @@ if ($table === 'loans') {
         $html .= '<td>' . htmlspecialchars($submission['payment_date']) . '</td>';
         $html .= '<td>' . htmlspecialchars($submission['cutoff_date']) . '</td>';
         $html .= '<td>&#8369;' . number_format($submission['capital_contribution'], 2) . '</td>';
+        if ((float)$submission['loan_payment'] <= 0) {
+            $loanTarget = '<span class="text-muted">No loan</span>';
+        } elseif (!empty($submission['selected_loan_id'])) {
+            $loanTarget = 'Loan #' . (int)$submission['selected_loan_id'];
+            if ((int)($submission['selected_loan_is_guarantor'] ?? 0) === 1 && !empty($submission['selected_loan_guest_name'])) {
+                $loanTarget .= ' – ' . htmlspecialchars($submission['selected_loan_guest_name']);
+            }
+        } else {
+            $loanTarget = 'All loans';
+        }
+        $html .= '<td>' . $loanTarget . '</td>';
         $html .= '<td>&#8369;' . number_format($submission['loan_payment'], 2) . '</td>';
         $html .= '<td>' . htmlspecialchars($submission['reference_number']) . '</td>';
         $html .= '<td><span class="badge bg-' . $badgeClass . '">' . htmlspecialchars($submission['status']) . '</span></td>';

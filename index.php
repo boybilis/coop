@@ -2,6 +2,13 @@
 include 'db.php';
 include 'auth.php';
 include 'layout.php';
+require_login();
+
+if (current_user_status() === 'Member') {
+    header('Location: member_dashboard.php');
+    exit;
+}
+
 require_admin();
 
 $activeMembers = $conn->query("

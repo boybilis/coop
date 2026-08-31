@@ -15,10 +15,16 @@ $submissions = null;
 
 if ($selectedCutoff !== '') {
     $stmt = $conn->prepare("
-        SELECT payment_submissions.*, borrowers.name, users.username
+        SELECT
+            payment_submissions.*,
+            borrowers.name,
+            users.username,
+            selected_loan.is_guarantor AS selected_loan_is_guarantor,
+            selected_loan.guest_borrower_name AS selected_loan_guest_name
         FROM payment_submissions
         JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
         LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+        LEFT JOIN loans selected_loan ON selected_loan.id = payment_submissions.selected_loan_id
         WHERE payment_submissions.cutoff_date = ?
         ORDER BY users.username ASC, borrowers.name ASC, payment_submissions.id DESC
     ");
@@ -101,6 +107,7 @@ if ($selectedCutoff !== '') {
                     <tr>
                         <th>Borrower</th>
                         <th>Cap Con</th>
+                        <th>Loan Target</th>
                         <th>Loan</th>
                         <th>Total Amount</th>
                         <th>Reference</th>
@@ -112,11 +119,11 @@ if ($selectedCutoff !== '') {
                 <tbody>
                     <?php if(!$submissions): ?>
                         <tr>
-                            <td colspan="8" class="text-center text-muted">Select a cutoff date to view payments.</td>
+                            <td colspan="9" class="text-center text-muted">Select a cutoff date to view payments.</td>
                         </tr>
                     <?php elseif($submissions->num_rows === 0): ?>
                         <tr>
-                            <td colspan="8" class="text-center text-muted">No payments submitted for this cutoff.</td>
+                            <td colspan="9" class="text-center text-muted">No payments submitted for this cutoff.</td>
                         </tr>
                     <?php else: ?>
                         <?php while($row = $submissions->fetch_assoc()): ?>
@@ -124,6 +131,18 @@ if ($selectedCutoff !== '') {
                         <tr>
                             <td><?php render_member_identity($row['username'] ?? '', $row['name']); ?></td>
                             <td>&#8369;<?= number_format($row['capital_contribution'],2) ?></td>
+                            <td>
+                                <?php if((float)$row['loan_payment'] <= 0): ?>
+                                    <span class="text-muted">No loan</span>
+                                <?php elseif(!empty($row['selected_loan_id'])): ?>
+                                    Loan #<?= (int)$row['selected_loan_id'] ?>
+                                    <?php if((int)($row['selected_loan_is_guarantor'] ?? 0) === 1 && !empty($row['selected_loan_guest_name'])): ?>
+                                        <small class="d-block text-muted"><?= htmlspecialchars($row['selected_loan_guest_name']) ?></small>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <strong>All loans</strong>
+                                <?php endif; ?>
+                            </td>
                             <td>&#8369;<?= number_format($row['loan_payment'],2) ?></td>
                             <td><strong>&#8369;<?= number_format($totalAmount,2) ?></strong></td>
                             <td>

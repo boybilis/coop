@@ -26,6 +26,7 @@ if (!$submission) {
 }
 
 $redirectCutoff = urlencode($submission['cutoff_date']);
+$selectedLoanId = (int)($submission['selected_loan_id'] ?? 0);
 
 if ($submission['status'] !== 'Pending') {
     header("Location: ../received_payments.php?cutoff_date={$redirectCutoff}&error=Payment submission already processed");
@@ -63,10 +64,20 @@ try {
             WHERE loans.borrower_id = ?
             AND payments.due_date = ?
             AND payments.paid = 0
+            AND (? = 0 OR loans.id = ?)
         ");
-        $dueStmt->bind_param("is", $submission['borrower_id'], $submission['cutoff_date']);
+        $dueStmt->bind_param("isii", $submission['borrower_id'], $submission['cutoff_date'], $selectedLoanId, $selectedLoanId);
         $dueStmt->execute();
         $totalDue = (float)$dueStmt->get_result()->fetch_assoc()['total_due'];
+
+        if ($totalDue <= 0) {
+            throw new LogicException('The selected loan payment is no longer due.');
+        }
+
+        if ((float)$submission['loan_payment'] + 0.009 < $totalDue) {
+            throw new LogicException('The submitted loan amount is less than the selected amount due.');
+        }
+
         $overpayment = max(0, round((float)$submission['loan_payment'] - $totalDue, 2));
 
         $paymentStmt = $conn->prepare("
@@ -77,8 +88,9 @@ try {
             WHERE loans.borrower_id = ?
             AND payments.due_date = ?
             AND payments.paid = 0
+            AND (? = 0 OR loans.id = ?)
         ");
-        $paymentStmt->bind_param("is", $submission['borrower_id'], $submission['cutoff_date']);
+        $paymentStmt->bind_param("isii", $submission['borrower_id'], $submission['cutoff_date'], $selectedLoanId, $selectedLoanId);
         $paymentStmt->execute();
 
         if ($overpayment > 0) {
@@ -89,10 +101,11 @@ try {
                 WHERE loans.borrower_id = ?
                 AND payments.due_date = ?
                 AND payments.paid = 1
+                AND (? = 0 OR loans.id = ?)
                 ORDER BY payments.payment_no DESC, payments.id DESC
                 LIMIT 1
             ");
-            $currentPaymentStmt->bind_param("is", $submission['borrower_id'], $submission['cutoff_date']);
+            $currentPaymentStmt->bind_param("isii", $submission['borrower_id'], $submission['cutoff_date'], $selectedLoanId, $selectedLoanId);
             $currentPaymentStmt->execute();
             $currentPayment = $currentPaymentStmt->get_result()->fetch_assoc();
 
@@ -113,9 +126,10 @@ try {
                 JOIN loans ON loans.id = payments.loan_id
                 WHERE loans.borrower_id = ?
                 AND payments.paid = 0
+                AND (? = 0 OR loans.id = ?)
                 ORDER BY payments.due_date DESC, payments.payment_no DESC, payments.id DESC
             ");
-            $lastPaymentsStmt->bind_param("i", $submission['borrower_id']);
+            $lastPaymentsStmt->bind_param("iii", $submission['borrower_id'], $selectedLoanId, $selectedLoanId);
             $lastPaymentsStmt->execute();
             $lastPayments = $lastPaymentsStmt->get_result();
 
@@ -176,13 +190,15 @@ try {
         'cutoff_date' => $submission['cutoff_date'],
         'capital_contribution' => $submission['capital_contribution'],
         'loan_payment' => $submission['loan_payment'],
+        'selected_loan_id' => $selectedLoanId ?: null,
         'reference_number' => $submission['reference_number']
     ]);
 
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();
-    header("Location: ../received_payments.php?cutoff_date={$redirectCutoff}&error=" . urlencode("Unable to verify payment"));
+    $errorMessage = $e instanceof LogicException ? $e->getMessage() : 'Unable to verify payment';
+    header("Location: ../received_payments.php?cutoff_date={$redirectCutoff}&error=" . urlencode($errorMessage));
     exit;
 }
 

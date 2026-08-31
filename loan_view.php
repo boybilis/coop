@@ -52,6 +52,11 @@ $stmt = $conn->prepare("
             FROM payment_submissions latest_submission
             WHERE latest_submission.borrower_id = ?
             AND latest_submission.cutoff_date = payments.due_date
+            AND latest_submission.loan_payment > 0
+            AND (
+                latest_submission.selected_loan_id IS NULL
+                OR latest_submission.selected_loan_id = payments.loan_id
+            )
             ORDER BY latest_submission.id DESC
             LIMIT 1
         )

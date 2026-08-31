@@ -7,7 +7,7 @@ $borrowerId = active_borrower_id();
 $cutoffDate = $_POST['payment_date'] ?? '';
 $paymentDate = date('Y-m-d');
 $capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
-$loanPayment = (float)($_POST['loan_payment'] ?? 0);
+$selectedLoanValue = $_POST['selected_loan_id'] ?? '';
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
 if (!$borrowerId || !$cutoffDate) {
@@ -17,6 +17,15 @@ if (!$borrowerId || !$cutoffDate) {
 if (!in_array($cutoffDate, cooperative_member_payment_cutoff_options($conn, $borrowerId), true)) {
     exit("Please select a valid payment cut-off date");
 }
+
+try {
+    $loanTarget = cooperative_member_loan_payment_target($conn, $borrowerId, $cutoffDate, $selectedLoanValue);
+} catch (InvalidArgumentException $exception) {
+    exit($exception->getMessage());
+}
+
+$selectedLoanId = $loanTarget['selected_loan_id'];
+$loanPayment = $loanTarget['amount'];
 
 if ($referenceNumber === '') {
     exit("Reference payment number is required");
@@ -65,17 +74,18 @@ $proofPath = 'uploads/payment_proofs/' . $fileName;
 
 $stmt = $conn->prepare("
     INSERT INTO payment_submissions
-    (borrower_id, payment_date, cutoff_date, capital_contribution, loan_payment, reference_number, proof_image)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (borrower_id, payment_date, cutoff_date, capital_contribution, loan_payment, selected_loan_id, reference_number, proof_image)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ");
 
 $stmt->bind_param(
-    "issddss",
+    "issddiss",
     $borrowerId,
     $paymentDate,
     $cutoffDate,
     $capitalContribution,
     $loanPayment,
+    $selectedLoanId,
     $referenceNumber,
     $proofPath
 );
@@ -88,6 +98,7 @@ audit_log($conn, 'submit_payment', 'Member submitted payment for admin verificat
     'cutoff_date' => $cutoffDate,
     'capital_contribution' => $capitalContribution,
     'loan_payment' => $loanPayment,
+    'selected_loan_id' => $selectedLoanId,
     'reference_number' => $referenceNumber
 ]);
 

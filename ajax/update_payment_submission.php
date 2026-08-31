@@ -9,7 +9,7 @@ $borrowerId = active_borrower_id();
 $submissionId = (int)($_POST['submission_id'] ?? 0);
 $cutoffDate = $_POST['payment_date'] ?? '';
 $capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
-$loanPayment = (float)($_POST['loan_payment'] ?? 0);
+$selectedLoanValue = $_POST['selected_loan_id'] ?? '';
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
 if (!$submissionId || !$cutoffDate || $referenceNumber === '') {
@@ -21,6 +21,16 @@ if (!in_array($cutoffDate, cooperative_member_payment_cutoff_options($conn, $bor
     echo json_encode(["error" => "Please select a valid payment cut-off date"]);
     exit;
 }
+
+try {
+    $loanTarget = cooperative_member_loan_payment_target($conn, $borrowerId, $cutoffDate, $selectedLoanValue);
+} catch (InvalidArgumentException $exception) {
+    echo json_encode(["error" => $exception->getMessage()]);
+    exit;
+}
+
+$selectedLoanId = $loanTarget['selected_loan_id'];
+$loanPayment = $loanTarget['amount'];
 
 if ($capitalContribution <= 0 && $loanPayment <= 0) {
     echo json_encode(["error" => "Enter a capital contribution or loan payment amount"]);
@@ -90,6 +100,7 @@ $updateStmt = $conn->prepare("
     SET cutoff_date = ?,
         capital_contribution = ?,
         loan_payment = ?,
+        selected_loan_id = ?,
         reference_number = ?,
         proof_image = ?
     WHERE id = ?
@@ -97,10 +108,11 @@ $updateStmt = $conn->prepare("
     AND status = 'Pending'
 ");
 $updateStmt->bind_param(
-    "sddssii",
+    "sddissii",
     $cutoffDate,
     $capitalContribution,
     $loanPayment,
+    $selectedLoanId,
     $referenceNumber,
     $proofPath,
     $submissionId,
@@ -113,6 +125,7 @@ audit_log($conn, 'update_payment_submission', 'Member edited a pending payment s
     'cutoff_date' => $cutoffDate,
     'capital_contribution' => $capitalContribution,
     'loan_payment' => $loanPayment,
+    'selected_loan_id' => $selectedLoanId,
     'reference_number' => $referenceNumber
 ]);
 
