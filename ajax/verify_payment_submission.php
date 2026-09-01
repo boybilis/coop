@@ -1,6 +1,6 @@
 <?php
-include '../db.php';
-include '../auth.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../auth.php';
 require_admin();
 
 $submissionId = (int)($_POST['submission_id'] ?? 0);
@@ -37,7 +37,9 @@ $conn->begin_transaction();
 
 try {
     if ((float)$submission['capital_contribution'] > 0) {
-        $periodLabel = 'GCash Ref: ' . $submission['reference_number'];
+        $periodLabel = (($GLOBALS['admin_direct_submission_id'] ?? 0) === $submissionId)
+            ? 'Admin Payment - Verified'
+            : 'GCash Ref: ' . $submission['reference_number'];
 
         $capitalStmt = $conn->prepare("
             INSERT INTO capital_contributions
@@ -191,12 +193,25 @@ try {
         'capital_contribution' => $submission['capital_contribution'],
         'loan_payment' => $submission['loan_payment'],
         'selected_loan_id' => $selectedLoanId ?: null,
+        'source' => (($GLOBALS['admin_direct_submission_id'] ?? 0) === $submissionId) ? 'admin_direct' : 'member_submission',
         'reference_number' => $submission['reference_number']
     ]);
 
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();
+
+    if (($GLOBALS['admin_direct_submission_id'] ?? 0) === $submissionId) {
+        $cleanupStmt = $conn->prepare("DELETE FROM payment_submissions WHERE id = ? AND status = 'Pending'");
+        $cleanupStmt->bind_param('i', $submissionId);
+        $cleanupStmt->execute();
+
+        $adminProofPath = $GLOBALS['admin_direct_proof_file'] ?? '';
+        if ($adminProofPath !== '' && is_file($adminProofPath)) {
+            @unlink($adminProofPath);
+        }
+    }
+
     $errorMessage = $e instanceof LogicException ? $e->getMessage() : 'Unable to verify payment';
     header("Location: ../received_payments.php?cutoff_date={$redirectCutoff}&error=" . urlencode($errorMessage));
     exit;

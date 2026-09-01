@@ -5,9 +5,26 @@ include 'layout.php';
 require_admin();
 
 $cutoffDates = $conn->query("
-    SELECT DISTINCT cutoff_date
-    FROM payment_submissions
+    SELECT cutoff_date
+    FROM (
+        SELECT DISTINCT payment_submissions.cutoff_date
+        FROM payment_submissions
+
+        UNION
+
+        SELECT DISTINCT capital_contributions.contribution_date AS cutoff_date
+        FROM capital_contributions
+        WHERE capital_contributions.period_label = 'Admin Entry - Verified'
+    ) AS available_cutoffs
     ORDER BY cutoff_date DESC
+");
+
+$adminPaymentMembers = $conn->query("
+    SELECT borrowers.id, borrowers.name, users.username
+    FROM borrowers
+    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+    WHERE borrowers.status = 'Active'
+    ORDER BY users.username ASC, borrowers.name ASC
 ");
 
 $selectedCutoff = $_GET['cutoff_date'] ?? '';
@@ -88,6 +105,9 @@ if ($selectedCutoff !== '') {
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0">Received Payments</h3>
     <div>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#adminPaymentModal">
+            Add Verified Payment
+        </button>
         <a href="index.php" class="btn btn-outline-secondary">Dashboard</a>
     </div>
 </div>
@@ -228,7 +248,173 @@ if ($selectedCutoff !== '') {
     </div>
 </div>
 
+<div class="modal fade" id="adminPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="ajax/save_admin_payment.php" enctype="multipart/form-data" id="adminPaymentForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Verified Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        Payments entered here are verified immediately. Select one loan or all loans due for the chosen cut-off.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Member</label>
+                            <select name="borrower_id" id="adminPaymentBorrower" class="form-control" required>
+                                <option value="">Select member</option>
+                                <?php while($memberOption = $adminPaymentMembers->fetch_assoc()): ?>
+                                    <option value="<?= (int)$memberOption['id'] ?>">
+                                        <?= htmlspecialchars(($memberOption['username'] ?: $memberOption['name']) . ' - ' . $memberOption['name']) ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Cut-Off Date</label>
+                            <select name="cutoff_date" id="adminPaymentCutoff" class="form-control" required disabled>
+                                <option value="">Select member first</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Capital Contribution</label>
+                            <input type="number" step="0.01" min="0" name="capital_contribution" id="adminPaymentCapital" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Loan to Pay</label>
+                            <select name="selected_loan_id" id="adminPaymentLoanTarget" class="form-control" disabled>
+                                <option value="">No loan payment</option>
+                            </select>
+                            <small class="text-muted">Loan amount: <strong id="adminPaymentLoanAmount">&#8369;0.00</strong></small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Reference Number <span class="text-muted">(Optional)</span></label>
+                            <input type="text" name="reference_number" class="form-control" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Proof Image <span class="text-muted">(Optional)</span></label>
+                            <input type="file" name="proof_image" class="form-control" accept="image/jpeg,image/png,image/webp">
+                            <small class="text-muted">JPG, PNG, or WEBP; maximum 5 MB.</small>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-success mb-0">
+                                <strong>Total Verified Payment:</strong>
+                                <span id="adminPaymentTotal">&#8369;0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save and Verify</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const adminPaymentPreferredCutoff = <?= json_encode($selectedCutoff) ?>;
+let adminPaymentLoansByCutoff = {};
+
+function adminPaymentMoney(amount){
+    return '\u20B1' + Number(amount || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function updateAdminPaymentTotal(){
+    const capital = Number(document.getElementById('adminPaymentCapital').value || 0);
+    const selected = document.getElementById('adminPaymentLoanTarget').selectedOptions[0];
+    const loan = Number(selected?.dataset.amount || 0);
+    document.getElementById('adminPaymentLoanAmount').textContent = adminPaymentMoney(loan);
+    document.getElementById('adminPaymentTotal').textContent = adminPaymentMoney(capital + loan);
+}
+
+function populateAdminPaymentLoans(){
+    const cutoff = document.getElementById('adminPaymentCutoff').value;
+    const select = document.getElementById('adminPaymentLoanTarget');
+    const loans = adminPaymentLoansByCutoff[cutoff] || [];
+    select.innerHTML = '<option value="">No loan payment</option>';
+
+    loans.forEach(loan => {
+        const option = document.createElement('option');
+        option.value = String(loan.id);
+        option.dataset.amount = String(loan.amount);
+        option.textContent = loan.label + ' — ' + adminPaymentMoney(loan.amount);
+        select.appendChild(option);
+    });
+
+    if(loans.length > 0){
+        const total = loans.reduce((sum, loan) => sum + Number(loan.amount), 0);
+        const option = document.createElement('option');
+        option.value = 'all';
+        option.dataset.amount = String(total);
+        option.textContent = 'All loans total — ' + adminPaymentMoney(total);
+        select.appendChild(option);
+    }
+
+    select.disabled = false;
+    updateAdminPaymentTotal();
+}
+
+document.getElementById('adminPaymentBorrower').addEventListener('change', function(){
+    const borrowerId = this.value;
+    const cutoffSelect = document.getElementById('adminPaymentCutoff');
+    const loanSelect = document.getElementById('adminPaymentLoanTarget');
+    cutoffSelect.disabled = true;
+    loanSelect.disabled = true;
+    cutoffSelect.innerHTML = '<option value="">Loading cut-offs...</option>';
+    loanSelect.innerHTML = '<option value="">No loan payment</option>';
+    adminPaymentLoansByCutoff = {};
+    updateAdminPaymentTotal();
+
+    if(!borrowerId){
+        cutoffSelect.innerHTML = '<option value="">Select member first</option>';
+        return;
+    }
+
+    fetch('ajax/admin_member_payment_options.php?borrower_id=' + encodeURIComponent(borrowerId), {cache: 'no-store'})
+        .then(response => response.json())
+        .then(data => {
+            if(data.error){
+                window.appShowToast(data.error, 'error');
+                cutoffSelect.innerHTML = '<option value="">Unable to load cut-offs</option>';
+                return;
+            }
+
+            adminPaymentLoansByCutoff = data.loans_by_cutoff || {};
+            cutoffSelect.innerHTML = '<option value="">Select payment cut-off date</option>';
+            (data.cutoffs || []).forEach(cutoff => {
+                const option = document.createElement('option');
+                option.value = cutoff;
+                option.textContent = new Date(cutoff + 'T00:00:00').toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: '2-digit'
+                });
+                cutoffSelect.appendChild(option);
+            });
+            cutoffSelect.disabled = false;
+
+            if(adminPaymentPreferredCutoff && (data.cutoffs || []).includes(adminPaymentPreferredCutoff)){
+                cutoffSelect.value = adminPaymentPreferredCutoff;
+                populateAdminPaymentLoans();
+            }
+        })
+        .catch(() => {
+            cutoffSelect.innerHTML = '<option value="">Unable to load cut-offs</option>';
+            window.appShowToast('Unable to load member payment options.', 'error');
+        });
+});
+
+document.getElementById('adminPaymentCutoff').addEventListener('change', populateAdminPaymentLoans);
+document.getElementById('adminPaymentLoanTarget').addEventListener('change', updateAdminPaymentTotal);
+document.getElementById('adminPaymentCapital').addEventListener('input', updateAdminPaymentTotal);
+</script>
 <?php render_footer(); ?>
 </body>
 </html>
