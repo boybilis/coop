@@ -73,12 +73,19 @@ while ($member = $capconUnpaidResult->fetch_assoc()) {
 }
 
 $loanUnpaidStmt = $conn->prepare("
-    SELECT borrowers.name, users.username, IFNULL(SUM(payments.amount),0) AS amount_due
+    SELECT
+        borrowers.name,
+        users.username,
+        loans.id AS loan_id,
+        loans.is_guarantor,
+        loans.guest_borrower_name,
+        IFNULL(SUM(payments.amount),0) AS amount_due
     FROM payments
     JOIN loans ON loans.id = payments.loan_id
     JOIN borrowers ON borrowers.id = loans.borrower_id
     LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
     WHERE payments.due_date = ?
+    AND payments.paid = 0
     AND NOT EXISTS (
         SELECT 1
         FROM payment_submissions
@@ -86,9 +93,13 @@ $loanUnpaidStmt = $conn->prepare("
         AND payment_submissions.cutoff_date = ?
         AND payment_submissions.loan_payment > 0
         AND payment_submissions.status <> 'Rejected'
+        AND (
+            payment_submissions.selected_loan_id IS NULL
+            OR payment_submissions.selected_loan_id = loans.id
+        )
     )
-    GROUP BY borrowers.id, borrowers.name, users.username
-    ORDER BY users.username ASC, borrowers.name ASC
+    GROUP BY borrowers.id, borrowers.name, users.username, loans.id, loans.is_guarantor, loans.guest_borrower_name
+    ORDER BY users.username ASC, borrowers.name ASC, loans.id ASC
 ");
 $loanUnpaidStmt->bind_param("ss", $cutoffDate, $cutoffDate);
 $loanUnpaidStmt->execute();
@@ -96,8 +107,20 @@ $loanUnpaidResult = $loanUnpaidStmt->get_result();
 $loanUnpaidRows = [];
 
 while ($member = $loanUnpaidResult->fetch_assoc()) {
+    $loanLabel = 'Loan #' . (int)$member['loan_id'];
+
+    if ((int)($member['is_guarantor'] ?? 0) === 1) {
+        $loanLabel .= ' - Co-maker';
+        if (!empty($member['guest_borrower_name'])) {
+            $loanLabel .= ' for ' . $member['guest_borrower_name'];
+        }
+    } else {
+        $loanLabel .= ' - Personal loan';
+    }
+
     $loanUnpaidRows[] = [
         'member' => trim(($member['username'] ?: $member['name']) . ' / ' . $member['name']),
+        'loan' => $loanLabel,
         'amount_due' => (float)$member['amount_due']
     ];
 }
@@ -142,9 +165,11 @@ function append_non_payment_section_pages(array &$pages, $cutoffDate, array $cap
         ],
         [
             'title' => 'MEMBERS WITHOUT LOAN PAYMENT SUBMISSION',
-            'headers' => pdf_fit('Member', 72) . pdf_fit('Loan Due', 20),
+            'headers' => pdf_fit('Member', 38) . pdf_fit('Loan', 38) . pdf_fit('Loan Due', 20),
             'rows' => array_map(function ($row) {
-                return pdf_fit($row['member'], 72) . pdf_fit(pdf_money($row['amount_due']), 20);
+                return pdf_fit($row['member'], 38)
+                    . pdf_fit($row['loan'], 38)
+                    . pdf_fit(pdf_money($row['amount_due']), 20);
             }, $loanUnpaidRows),
             'empty' => 'No unpaid loan payment submissions for this cutoff.'
         ]
