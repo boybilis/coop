@@ -136,8 +136,12 @@ if ($selectedCutoff !== '') {
                                     <span class="text-muted">No loan</span>
                                 <?php elseif(!empty($row['selected_loan_id'])): ?>
                                     Loan #<?= (int)$row['selected_loan_id'] ?>
-                                    <?php if((int)($row['selected_loan_is_guarantor'] ?? 0) === 1 && !empty($row['selected_loan_guest_name'])): ?>
-                                        <small class="d-block text-muted"><?= htmlspecialchars($row['selected_loan_guest_name']) ?></small>
+                                    <?php if((int)($row['selected_loan_is_guarantor'] ?? 0) === 1): ?>
+                                        <small class="d-block text-muted">
+                                            Co-maker<?= !empty($row['selected_loan_guest_name']) ? ' for ' . htmlspecialchars($row['selected_loan_guest_name']) : '' ?>
+                                        </small>
+                                    <?php else: ?>
+                                        <small class="d-block text-muted">Personal loan</small>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <strong>All loans</strong>

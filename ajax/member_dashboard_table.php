@@ -426,8 +426,13 @@ if ($table === 'loans') {
             $loanTarget = '<span class="text-muted">No loan</span>';
         } elseif (!empty($submission['selected_loan_id'])) {
             $loanTarget = 'Loan #' . (int)$submission['selected_loan_id'];
-            if ((int)($submission['selected_loan_is_guarantor'] ?? 0) === 1 && !empty($submission['selected_loan_guest_name'])) {
-                $loanTarget .= ' – ' . htmlspecialchars($submission['selected_loan_guest_name']);
+            if ((int)($submission['selected_loan_is_guarantor'] ?? 0) === 1) {
+                $loanTarget .= ' - Co-maker';
+                if (!empty($submission['selected_loan_guest_name'])) {
+                    $loanTarget .= ' for ' . htmlspecialchars($submission['selected_loan_guest_name']);
+                }
+            } else {
+                $loanTarget .= ' - Personal loan';
             }
         } else {
             $loanTarget = 'All loans';

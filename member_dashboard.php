@@ -157,8 +157,13 @@ while ($cutoff = $cutoffs->fetch_assoc()) {
     $cutoffAmounts[$cutoffDate] = ($cutoffAmounts[$cutoffDate] ?? 0) + $amountDue;
     $loanLabel = 'Loan #' . (int)$cutoff['loan_id'];
 
-    if ((int)($cutoff['is_guarantor'] ?? 0) === 1 && !empty($cutoff['guest_borrower_name'])) {
-        $loanLabel .= ' – ' . $cutoff['guest_borrower_name'];
+    if ((int)($cutoff['is_guarantor'] ?? 0) === 1) {
+        $loanLabel .= ' - Co-maker';
+        if (!empty($cutoff['guest_borrower_name'])) {
+            $loanLabel .= ' for ' . $cutoff['guest_borrower_name'];
+        }
+    } else {
+        $loanLabel .= ' - Personal loan';
     }
 
     $loanPaymentOptionsByCutoff[$cutoffDate][] = [
