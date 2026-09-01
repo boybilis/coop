@@ -11,6 +11,7 @@ $type = $_POST['type'] ?? '';
 $date = $_POST['date'] ?? '';
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 $referenceNumberValue = $referenceNumber !== '' ? $referenceNumber : null;
+$periodLabel = 'Admin Entry - Verified';
 
 if (!$borrower_id || $amount <= 0 || !in_array($type, ['INITIAL', 'CUTOFF'], true) || !$date) {
     echo json_encode(["error" => "Please complete all capital contribution fields."]);
@@ -72,11 +73,11 @@ if ($uploadError !== UPLOAD_ERR_NO_FILE) {
 
 $stmt = $conn->prepare("
 INSERT INTO capital_contributions 
-(borrower_id, amount, type, contribution_date, reference_number, proof_image)
-VALUES (?, ?, ?, ?, ?, ?)
+(borrower_id, amount, type, contribution_date, period_label, reference_number, proof_image)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 ");
 
-$stmt->bind_param("idssss", $borrower_id, $amount, $type, $date, $referenceNumberValue, $proofPath);
+$stmt->bind_param("idsssss", $borrower_id, $amount, $type, $date, $periodLabel, $referenceNumberValue, $proofPath);
 
 try {
     $stmt->execute();
@@ -95,6 +96,7 @@ audit_log($conn, 'save_capital_contribution', 'Admin recorded a capital contribu
     'amount' => $amount,
     'type' => $type,
     'date' => $date,
+    'period_label' => $periodLabel,
     'reference_number' => $referenceNumber,
     'proof_image' => $proofPath
 ]);
@@ -130,6 +132,7 @@ echo json_encode([
         "amount" => $amount,
         "type" => $type,
         "date" => $date,
+        "period_label" => $periodLabel,
         "reference_number" => $referenceNumber,
         "proof_image" => $proofPath
     ],

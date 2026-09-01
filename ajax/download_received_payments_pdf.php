@@ -11,14 +11,48 @@ if ($cutoffDate === '') {
 }
 
 $stmt = $conn->prepare("
-    SELECT payment_submissions.*, borrowers.name, users.username
-    FROM payment_submissions
-    JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
-    LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
-    WHERE payment_submissions.cutoff_date = ?
-    ORDER BY users.username ASC, borrowers.name ASC, payment_submissions.id DESC
+    SELECT received_payments.*
+    FROM (
+        SELECT
+            payment_submissions.id,
+            payment_submissions.borrower_id,
+            payment_submissions.payment_date,
+            payment_submissions.cutoff_date,
+            payment_submissions.capital_contribution,
+            payment_submissions.loan_payment,
+            payment_submissions.reference_number,
+            payment_submissions.status,
+            borrowers.name,
+            users.username,
+            'member_submission' AS source_type
+        FROM payment_submissions
+        JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+        WHERE payment_submissions.cutoff_date = ?
+
+        UNION ALL
+
+        SELECT
+            capital_contributions.id,
+            capital_contributions.borrower_id,
+            capital_contributions.contribution_date AS payment_date,
+            capital_contributions.contribution_date AS cutoff_date,
+            capital_contributions.amount AS capital_contribution,
+            0.00 AS loan_payment,
+            COALESCE(capital_contributions.reference_number, '') AS reference_number,
+            'Approved' AS status,
+            borrowers.name,
+            users.username,
+            'admin_manual' AS source_type
+        FROM capital_contributions
+        JOIN borrowers ON borrowers.id = capital_contributions.borrower_id
+        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+        WHERE capital_contributions.contribution_date = ?
+        AND capital_contributions.period_label = 'Admin Entry - Verified'
+    ) AS received_payments
+    ORDER BY received_payments.username ASC, received_payments.name ASC, received_payments.id DESC
 ");
-$stmt->bind_param("s", $cutoffDate);
+$stmt->bind_param("ss", $cutoffDate, $cutoffDate);
 $stmt->execute();
 $payments = $stmt->get_result();
 
@@ -36,7 +70,8 @@ while ($payment = $payments->fetch_assoc()) {
     $totalAmount += $total;
 
     $rows[] = [
-        'borrower' => trim(($payment['username'] ?: $payment['name']) . ' / ' . $payment['name']),
+        'borrower' => trim(($payment['username'] ?: $payment['name']) . ' / ' . $payment['name'])
+            . (($payment['source_type'] ?? '') === 'admin_manual' ? ' [Admin Manual]' : ''),
         'capital' => $capital,
         'loan' => $loan,
         'total' => $total,
@@ -59,9 +94,17 @@ $capconUnpaidStmt = $conn->prepare("
         AND payment_submissions.capital_contribution > 0
         AND payment_submissions.status <> 'Rejected'
     )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM capital_contributions
+        WHERE capital_contributions.borrower_id = borrowers.id
+        AND capital_contributions.contribution_date = ?
+        AND capital_contributions.amount > 0
+        AND capital_contributions.period_label = 'Admin Entry - Verified'
+    )
     ORDER BY users.username ASC, borrowers.name ASC
 ");
-$capconUnpaidStmt->bind_param("s", $cutoffDate);
+$capconUnpaidStmt->bind_param("ss", $cutoffDate, $cutoffDate);
 $capconUnpaidStmt->execute();
 $capconUnpaidResult = $capconUnpaidStmt->get_result();
 $capconUnpaidRows = [];

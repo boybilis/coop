@@ -15,20 +15,57 @@ $submissions = null;
 
 if ($selectedCutoff !== '') {
     $stmt = $conn->prepare("
-        SELECT
-            payment_submissions.*,
-            borrowers.name,
-            users.username,
-            selected_loan.is_guarantor AS selected_loan_is_guarantor,
-            selected_loan.guest_borrower_name AS selected_loan_guest_name
-        FROM payment_submissions
-        JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
-        LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
-        LEFT JOIN loans selected_loan ON selected_loan.id = payment_submissions.selected_loan_id
-        WHERE payment_submissions.cutoff_date = ?
-        ORDER BY users.username ASC, borrowers.name ASC, payment_submissions.id DESC
+        SELECT received_payments.*
+        FROM (
+            SELECT
+                payment_submissions.id,
+                payment_submissions.borrower_id,
+                payment_submissions.payment_date,
+                payment_submissions.cutoff_date,
+                payment_submissions.capital_contribution,
+                payment_submissions.loan_payment,
+                payment_submissions.selected_loan_id,
+                payment_submissions.reference_number,
+                payment_submissions.proof_image,
+                payment_submissions.status,
+                borrowers.name,
+                users.username,
+                selected_loan.is_guarantor AS selected_loan_is_guarantor,
+                selected_loan.guest_borrower_name AS selected_loan_guest_name,
+                'member_submission' AS source_type
+            FROM payment_submissions
+            JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
+            LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+            LEFT JOIN loans selected_loan ON selected_loan.id = payment_submissions.selected_loan_id
+            WHERE payment_submissions.cutoff_date = ?
+
+            UNION ALL
+
+            SELECT
+                capital_contributions.id,
+                capital_contributions.borrower_id,
+                capital_contributions.contribution_date AS payment_date,
+                capital_contributions.contribution_date AS cutoff_date,
+                capital_contributions.amount AS capital_contribution,
+                0.00 AS loan_payment,
+                NULL AS selected_loan_id,
+                COALESCE(capital_contributions.reference_number, '') AS reference_number,
+                COALESCE(capital_contributions.proof_image, '') AS proof_image,
+                'Approved' AS status,
+                borrowers.name,
+                users.username,
+                NULL AS selected_loan_is_guarantor,
+                NULL AS selected_loan_guest_name,
+                'admin_manual' AS source_type
+            FROM capital_contributions
+            JOIN borrowers ON borrowers.id = capital_contributions.borrower_id
+            LEFT JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+            WHERE capital_contributions.contribution_date = ?
+            AND capital_contributions.period_label = 'Admin Entry - Verified'
+        ) AS received_payments
+        ORDER BY received_payments.username ASC, received_payments.name ASC, received_payments.id DESC
     ");
-    $stmt->bind_param("s", $selectedCutoff);
+    $stmt->bind_param("ss", $selectedCutoff, $selectedCutoff);
     $stmt->execute();
     $submissions = $stmt->get_result();
 }
@@ -150,15 +187,22 @@ if ($selectedCutoff !== '') {
                             <td>&#8369;<?= number_format($row['loan_payment'],2) ?></td>
                             <td><strong>&#8369;<?= number_format($totalAmount,2) ?></strong></td>
                             <td>
-                                <?= htmlspecialchars($row['reference_number']) ?>
+                                <?= ($row['reference_number'] ?? '') !== '' ? htmlspecialchars($row['reference_number']) : '&mdash;' ?>
                                 <small class="d-block text-muted">
                                     Payment Date: <?= date('M d, Y', strtotime($row['payment_date'])) ?>
                                 </small>
+                                <?php if(($row['source_type'] ?? '') === 'admin_manual'): ?>
+                                    <small class="d-block text-success">Manual admin entry</small>
+                                <?php endif; ?>
                             </td>
                             <td>
-                                <a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
-                                    View Image
-                                </a>
+                                <?php if(!empty($row['proof_image'])): ?>
+                                    <a href="<?= htmlspecialchars($row['proof_image']) ?>" data-image-preview class="btn btn-outline-primary btn-sm">
+                                        View Image
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted">&mdash;</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span class="badge bg-<?= $row['status'] === 'Approved' ? 'success' : ($row['status'] === 'Rejected' ? 'danger' : 'warning text-dark') ?>">
