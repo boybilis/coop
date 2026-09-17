@@ -4,6 +4,10 @@ include 'auth.php';
 include 'layout.php';
 require_admin();
 
+if (empty($_SESSION['admin_loan_request_edit_token'])) {
+    $_SESSION['admin_loan_request_edit_token'] = bin2hex(random_bytes(32));
+}
+
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanAmount = (float)($loanableBreakdown['approval_available_amount'] ?? $loanableBreakdown['available_amount']);
 
@@ -64,6 +68,10 @@ $requests = $conn->query("
 
 <?php if(isset($_GET['rejected'])): ?>
     <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'warning', message:'Loan request rejected.'});</script>
+<?php endif; ?>
+
+<?php if(isset($_GET['updated'])): ?>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan request updated.'});</script>
 <?php endif; ?>
 
 <?php if(isset($_GET['error'])): ?>
@@ -129,6 +137,14 @@ $requests = $conn->query("
                         <td class="loan-approval-cell">
                             <?php if($row['status'] === 'Pending'): ?>
                                 <div class="loan-action-group">
+                                    <button type="button" class="btn btn-warning btn-sm edit-loan-request-button"
+                                        data-request-id="<?= (int)$row['id'] ?>"
+                                        data-amount="<?= htmlspecialchars((string)$row['requested_amount'], ENT_QUOTES, 'UTF-8') ?>"
+                                        data-months="<?= htmlspecialchars((string)$row['requested_months'], ENT_QUOTES, 'UTF-8') ?>"
+                                        data-is-guarantor="<?= (int)($row['is_guarantor'] ?? 0) ?>"
+                                        data-guest-borrower-name="<?= htmlspecialchars((string)($row['guest_borrower_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                        data-guest-gcash-name="<?= htmlspecialchars((string)($row['guest_gcash_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                        data-guest-gcash-number="<?= htmlspecialchars((string)($row['guest_gcash_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">Edit</button>
                                     <button type="button" class="btn btn-success btn-sm"
                                         onclick="openApproveLoanRequestModal(<?= (int)$row['id'] ?>, <?= (float)$row['requested_amount'] ?>, <?= (float)$row['requested_months'] ?>)">
                                         Approve
@@ -158,6 +174,53 @@ $requests = $conn->query("
     </div>
 </div>
 
+</div>
+
+<div class="modal fade" id="editLoanRequestModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="ajax/admin_update_loan_request.php">
+        <div class="modal-header">
+            <h5 class="modal-title">Edit Pending Loan Request</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="request_id" id="editRequestId">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_loan_request_edit_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <div class="mb-3">
+                <label for="editRequestAmount" class="form-label">Requested Amount</label>
+                <input type="number" step="0.01" min="0.01" name="amount" id="editRequestAmount" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="editRequestMonths" class="form-label">Requested Months</label>
+                <input type="number" step="0.1" min="0.1" max="6" name="months" id="editRequestMonths" class="form-control" required>
+            </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" name="is_guarantor" value="1" id="editRequestGuarantor">
+                <label class="form-check-label" for="editRequestGuarantor">Member acts as co-maker for a guest borrower</label>
+            </div>
+            <div id="editRequestGuestFields" class="d-none">
+                <div class="mb-3">
+                    <label for="editRequestGuestName" class="form-label">Guest Borrower Name</label>
+                    <input type="text" name="guest_borrower_name" id="editRequestGuestName" class="form-control" maxlength="150">
+                </div>
+                <div class="mb-3">
+                    <label for="editRequestGcashName" class="form-label">Guest GCash Name</label>
+                    <input type="text" name="guest_gcash_name" id="editRequestGcashName" class="form-control" maxlength="150">
+                </div>
+                <div class="mb-3">
+                    <label for="editRequestGcashNumber" class="form-label">Guest GCash Number</label>
+                    <input type="text" name="guest_gcash_number" id="editRequestGcashNumber" class="form-control" maxlength="50">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <div class="modal fade" id="approveLoanRequestModal" tabindex="-1">
@@ -208,6 +271,29 @@ $requests = $conn->query("
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const availableLoanAmount = <?= json_encode($availableLoanAmount) ?>;
+
+function toggleAdminLoanRequestGuestFields(){
+    const isGuarantor = document.getElementById('editRequestGuarantor').checked;
+    document.getElementById('editRequestGuestFields').classList.toggle('d-none', !isGuarantor);
+    ['editRequestGuestName', 'editRequestGcashName', 'editRequestGcashNumber'].forEach(id => {
+        document.getElementById(id).required = isGuarantor;
+    });
+}
+
+document.querySelectorAll('.edit-loan-request-button').forEach(button => {
+    button.addEventListener('click', () => {
+        document.getElementById('editRequestId').value = button.dataset.requestId;
+        document.getElementById('editRequestAmount').value = button.dataset.amount;
+        document.getElementById('editRequestMonths').value = button.dataset.months;
+        document.getElementById('editRequestGuarantor').checked = button.dataset.isGuarantor === '1';
+        document.getElementById('editRequestGuestName').value = button.dataset.guestBorrowerName || '';
+        document.getElementById('editRequestGcashName').value = button.dataset.guestGcashName || '';
+        document.getElementById('editRequestGcashNumber').value = button.dataset.guestGcashNumber || '';
+        toggleAdminLoanRequestGuestFields();
+        new bootstrap.Modal(document.getElementById('editLoanRequestModal')).show();
+    });
+});
+document.getElementById('editRequestGuarantor').addEventListener('change', toggleAdminLoanRequestGuestFields);
 
 function validateApproveAmount(){
     const amountInput = document.getElementById('approveAmount');
