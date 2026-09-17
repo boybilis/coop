@@ -590,6 +590,34 @@ function cooperative_member_payment_cutoff_options($conn, $borrowerId)
     return $cutoffs;
 }
 
+function cooperative_upcoming_loan_cutoffs($conn, $startDate, $count = 30)
+{
+    $setting = cooperative_effective_payment_schedule_setting($conn, $startDate);
+    $cursor = cooperative_next_cutoff_after($startDate, $setting);
+    $dates = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        $dates[] = $cursor->format('Y-m-d');
+        $cursor = cooperative_next_cutoff_after_cursor($cursor, $setting);
+    }
+
+    return $dates;
+}
+
+function cooperative_generate_loan_due_dates_from_cutoff($firstCutoff, $months, array $setting)
+{
+    $dates = [$firstCutoff];
+    $cursor = new DateTimeImmutable($firstCutoff);
+    $totalPayments = cooperative_payment_count_for_term($months, $setting);
+
+    for ($i = 1; $i < $totalPayments; $i++) {
+        $cursor = cooperative_next_cutoff_after_cursor($cursor, $setting);
+        $dates[] = $cursor->format('Y-m-d');
+    }
+
+    return $dates;
+}
+
 function cooperative_member_loan_payment_target($conn, $borrowerId, $cutoffDate, $selectedLoanValue)
 {
     $selectedLoanValue = trim((string)$selectedLoanValue);

@@ -10,6 +10,16 @@ if (empty($_SESSION['admin_loan_request_edit_token'])) {
 
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanAmount = (float)($loanableBreakdown['approval_available_amount'] ?? $loanableBreakdown['available_amount']);
+$cutoffColumnCheck = $conn->query("SHOW COLUMNS FROM loan_requests LIKE 'first_payment_cutoff'");
+$hasFirstPaymentCutoff = $cutoffColumnCheck && $cutoffColumnCheck->num_rows > 0;
+$upcomingLoanCutoffs = cooperative_upcoming_loan_cutoffs($conn, date('Y-m-d'));
+$memberOptions = $conn->query("
+    SELECT borrowers.id, borrowers.name, users.username
+    FROM borrowers
+    JOIN users ON users.borrower_id = borrowers.id AND users.status = 'Member'
+    WHERE borrowers.status = 'Active'
+    ORDER BY users.username, borrowers.name
+");
 
 $requests = $conn->query("
     SELECT loan_requests.*, borrowers.name, borrowers.gcash_name, borrowers.gcash_number, users.username
@@ -57,6 +67,9 @@ $requests = $conn->query("
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0">Loan Requests</h3>
     <div>
+        <?php if ($hasFirstPaymentCutoff): ?>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLoanRequestModal">Add Loan Request</button>
+        <?php endif; ?>
         <a href="index.php" class="btn btn-outline-secondary">Dashboard</a>
         <a href="loans.php" class="btn btn-outline-primary">Loan Management</a>
     </div>
@@ -74,8 +87,16 @@ $requests = $conn->query("
     <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan request updated.'});</script>
 <?php endif; ?>
 
+<?php if(isset($_GET['added'])): ?>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Loan request added to the pending queue.'});</script>
+<?php endif; ?>
+
 <?php if(isset($_GET['error'])): ?>
     <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
+<?php endif; ?>
+
+<?php if (!$hasFirstPaymentCutoff): ?>
+    <div class="alert alert-warning">The first-payment-cutoff database migration must be applied before new admin loan requests can be added.</div>
 <?php endif; ?>
 
 <div class="card shadow">
@@ -93,6 +114,7 @@ $requests = $conn->query("
                         <th>Borrower For</th>
                         <th>Requested Amount</th>
                         <th>Requested Months</th>
+                        <th>First Payment Cutoff</th>
                         <th>Date Requested</th>
                         <th>Status</th>
                         <th class="loan-approval-cell">Approval</th>
@@ -101,7 +123,7 @@ $requests = $conn->query("
                 <tbody>
                     <?php if($requests->num_rows === 0): ?>
                         <tr>
-                            <td colspan="8" class="text-center text-muted">No loan requests yet.</td>
+                            <td colspan="9" class="text-center text-muted">No loan requests yet.</td>
                         </tr>
                     <?php endif; ?>
 
@@ -128,6 +150,7 @@ $requests = $conn->query("
                         </td>
                         <td>&#8369;<?= number_format($row['requested_amount'],2) ?></td>
                         <td><?= $row['requested_months'] ?></td>
+                        <td><?= !empty($row['first_payment_cutoff']) ? htmlspecialchars($row['first_payment_cutoff']) : '<span class="text-muted">Automatic</span>' ?></td>
                         <td><?= $row['created_at'] ?></td>
                         <td>
                             <span class="badge bg-<?= $row['status'] === 'Approved' ? 'success' : ($row['status'] === 'Rejected' ? 'danger' : 'warning text-dark') ?>">
@@ -141,6 +164,7 @@ $requests = $conn->query("
                                         data-request-id="<?= (int)$row['id'] ?>"
                                         data-amount="<?= htmlspecialchars((string)$row['requested_amount'], ENT_QUOTES, 'UTF-8') ?>"
                                         data-months="<?= htmlspecialchars((string)$row['requested_months'], ENT_QUOTES, 'UTF-8') ?>"
+                                        data-first-payment-cutoff="<?= htmlspecialchars((string)($row['first_payment_cutoff'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                         data-is-guarantor="<?= (int)($row['is_guarantor'] ?? 0) ?>"
                                         data-guest-borrower-name="<?= htmlspecialchars((string)($row['guest_borrower_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                         data-guest-gcash-name="<?= htmlspecialchars((string)($row['guest_gcash_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
@@ -176,6 +200,71 @@ $requests = $conn->query("
 
 </div>
 
+<div class="modal fade" id="addLoanRequestModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="ajax/admin_add_loan_request.php">
+        <div class="modal-header">
+            <h5 class="modal-title">Add Loan Request</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_loan_request_edit_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <div class="mb-3">
+                <label for="addRequestMember" class="form-label">Member Requesting the Loan</label>
+                <select name="borrower_id" id="addRequestMember" class="form-select" required>
+                    <option value="">Select member</option>
+                    <?php while ($member = $memberOptions->fetch_assoc()): ?>
+                        <option value="<?= (int)$member['id'] ?>"><?= htmlspecialchars(($member['username'] ?: $member['name']) . ' - ' . $member['name']) ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="addRequestAmount" class="form-label">Requested Amount</label>
+                <input type="number" step="0.01" min="0.01" name="amount" id="addRequestAmount" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="addRequestMonths" class="form-label">Requested Months</label>
+                <input type="number" step="0.1" min="0.1" max="6" name="months" id="addRequestMonths" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="addRequestCutoff" class="form-label">First Payment Cutoff</label>
+                <select name="first_payment_cutoff" id="addRequestCutoff" class="form-select" required>
+                    <option value="">Select first payment cutoff</option>
+                    <?php foreach ($upcomingLoanCutoffs as $cutoff): ?>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <small class="text-muted">The first installment will be due on this date; later installments follow the payment schedule.</small>
+            </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" name="is_guarantor" value="1" id="addRequestGuarantor">
+                <label class="form-check-label" for="addRequestGuarantor">Member acts as co-maker for a guest borrower</label>
+            </div>
+            <div id="addRequestGuestFields" class="d-none">
+                <div class="mb-3">
+                    <label for="addRequestGuestName" class="form-label">Guest Borrower Name</label>
+                    <input type="text" name="guest_borrower_name" id="addRequestGuestName" class="form-control" maxlength="150">
+                </div>
+                <div class="mb-3">
+                    <label for="addRequestGcashName" class="form-label">Guest GCash Name</label>
+                    <input type="text" name="guest_gcash_name" id="addRequestGcashName" class="form-control" maxlength="150">
+                </div>
+                <div class="mb-3">
+                    <label for="addRequestGcashNumber" class="form-label">Guest GCash Number</label>
+                    <input type="text" name="guest_gcash_number" id="addRequestGcashNumber" class="form-control" maxlength="50">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success">Add Pending Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="editLoanRequestModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -194,6 +283,15 @@ $requests = $conn->query("
             <div class="mb-3">
                 <label for="editRequestMonths" class="form-label">Requested Months</label>
                 <input type="number" step="0.1" min="0.1" max="6" name="months" id="editRequestMonths" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="editRequestCutoff" class="form-label">First Payment Cutoff</label>
+                <select name="first_payment_cutoff" id="editRequestCutoff" class="form-select">
+                    <option value="">Automatic next cutoff (member request)</option>
+                    <?php foreach ($upcomingLoanCutoffs as $cutoff): ?>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" class="form-check-input" name="is_guarantor" value="1" id="editRequestGuarantor">
@@ -272,12 +370,18 @@ $requests = $conn->query("
 <script>
 const availableLoanAmount = <?= json_encode($availableLoanAmount) ?>;
 
-function toggleAdminLoanRequestGuestFields(){
-    const isGuarantor = document.getElementById('editRequestGuarantor').checked;
-    document.getElementById('editRequestGuestFields').classList.toggle('d-none', !isGuarantor);
-    ['editRequestGuestName', 'editRequestGcashName', 'editRequestGcashNumber'].forEach(id => {
+function toggleLoanRequestGuestFields(prefix){
+    const isGuarantor = document.getElementById(prefix + 'RequestGuarantor').checked;
+    document.getElementById(prefix + 'RequestGuestFields').classList.toggle('d-none', !isGuarantor);
+    [prefix + 'RequestGuestName', prefix + 'RequestGcashName', prefix + 'RequestGcashNumber'].forEach(id => {
         document.getElementById(id).required = isGuarantor;
     });
+}
+
+document.getElementById('addRequestGuarantor').addEventListener('change', () => toggleLoanRequestGuestFields('add'));
+
+function toggleAdminLoanRequestGuestFields(){
+    toggleLoanRequestGuestFields('edit');
 }
 
 document.querySelectorAll('.edit-loan-request-button').forEach(button => {
@@ -285,6 +389,16 @@ document.querySelectorAll('.edit-loan-request-button').forEach(button => {
         document.getElementById('editRequestId').value = button.dataset.requestId;
         document.getElementById('editRequestAmount').value = button.dataset.amount;
         document.getElementById('editRequestMonths').value = button.dataset.months;
+        const cutoffSelect = document.getElementById('editRequestCutoff');
+        const previousCutoff = cutoffSelect.querySelector('[data-previous-cutoff]');
+        if (previousCutoff) previousCutoff.remove();
+        const cutoff = button.dataset.firstPaymentCutoff || '';
+        if (cutoff && !Array.from(cutoffSelect.options).some(option => option.value === cutoff)) {
+            const option = new Option(cutoff + ' (past cutoff; select a new one)', cutoff);
+            option.dataset.previousCutoff = '1';
+            cutoffSelect.add(option);
+        }
+        cutoffSelect.value = cutoff;
         document.getElementById('editRequestGuarantor').checked = button.dataset.isGuarantor === '1';
         document.getElementById('editRequestGuestName').value = button.dataset.guestBorrowerName || '';
         document.getElementById('editRequestGcashName').value = button.dataset.guestGcashName || '';

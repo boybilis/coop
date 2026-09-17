@@ -49,6 +49,18 @@ if (!$request) {
     exit;
 }
 
+$start = date('Y-m-d');
+$paymentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start);
+$firstPaymentCutoff = $request['first_payment_cutoff'] ?? null;
+
+if ($firstPaymentCutoff !== null && $firstPaymentCutoff !== ''
+    && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $firstPaymentCutoff)
+        || $firstPaymentCutoff <= $start
+        || cooperative_previous_or_current_cutoff_date($firstPaymentCutoff, $paymentScheduleSetting) !== $firstPaymentCutoff)) {
+    header('Location: ../loan_requests.php?error=' . urlencode('The selected first payment cutoff is no longer upcoming or valid. Edit the request before approving it.'));
+    exit;
+}
+
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanAmount = (float)($loanableBreakdown['approval_available_amount'] ?? $loanableBreakdown['available_amount']);
 
@@ -97,16 +109,16 @@ if (!move_uploaded_file($_FILES['disbursement_proof_image']['tmp_name'], $target
 
 $proofPath = 'uploads/loan_disbursements/' . $fileName;
 
-$start = date('Y-m-d');
 $effectiveRate = cooperative_effective_interest_rate($conn, $start);
 $rate = ((float)$effectiveRate['monthly_rate']) / 100;
 $effectiveServiceFeeRate = cooperative_effective_service_fee_rate($conn, $start);
 $serviceFeeRate = ((float)$effectiveServiceFeeRate['service_fee_rate']) / 100;
-$paymentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start);
 $interest = (int) ceil($amount * $rate * $months);
 $serviceFee = (int) ceil($amount * $serviceFeeRate);
 $totalPayable = (int) ceil($amount + $interest + $serviceFee);
-$dueDates = cooperative_generate_loan_due_dates($start, $months, $paymentScheduleSetting);
+$dueDates = $firstPaymentCutoff
+    ? cooperative_generate_loan_due_dates_from_cutoff($firstPaymentCutoff, $months, $paymentScheduleSetting)
+    : cooperative_generate_loan_due_dates($start, $months, $paymentScheduleSetting);
 $totalPayments = count($dueDates);
 $basePayment = floor($totalPayable / $totalPayments);
 $remainder = $totalPayable - ($basePayment * $totalPayments);
@@ -179,6 +191,7 @@ try {
         'service_fee_rate' => $effectiveServiceFeeRate['service_fee_rate'],
         'service_fee_implementation_date' => $effectiveServiceFeeRate['implementation_date'],
         'payment_schedule' => $paymentScheduleSetting,
+        'first_payment_cutoff' => $dueDates[0],
         'service_fee' => $serviceFee,
         'disbursement_reference_number' => $disbursementReferenceNumber
     ]);

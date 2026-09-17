@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST'
 $requestId = filter_var($_POST['request_id'] ?? null, FILTER_VALIDATE_INT);
 $amount = filter_var($_POST['amount'] ?? null, FILTER_VALIDATE_FLOAT);
 $months = filter_var($_POST['months'] ?? null, FILTER_VALIDATE_FLOAT);
+$firstPaymentCutoff = trim((string)($_POST['first_payment_cutoff'] ?? ''));
 $isGuarantor = isset($_POST['is_guarantor']) ? 1 : 0;
 $guestBorrowerName = trim((string)($_POST['guest_borrower_name'] ?? ''));
 $guestGcashName = trim((string)($_POST['guest_gcash_name'] ?? ''));
@@ -25,6 +26,20 @@ $guestGcashNumber = trim((string)($_POST['guest_gcash_number'] ?? ''));
 
 if (!$requestId || $amount === false || $amount <= 0 || $months === false || $months <= 0 || $months > 6) {
     admin_loan_edit_error('Enter a valid amount and a payment term of up to 6 months.');
+}
+
+if ($firstPaymentCutoff !== '' && !in_array($firstPaymentCutoff, cooperative_upcoming_loan_cutoffs($conn, date('Y-m-d')), true)) {
+    admin_loan_edit_error('Select an upcoming first payment cutoff.');
+}
+
+if ($firstPaymentCutoff === '') {
+    $firstPaymentCutoff = null;
+}
+
+$cutoffColumnCheck = $conn->query("SHOW COLUMNS FROM loan_requests LIKE 'first_payment_cutoff'");
+$hasFirstPaymentCutoff = $cutoffColumnCheck && $cutoffColumnCheck->num_rows > 0;
+if (!$hasFirstPaymentCutoff && $firstPaymentCutoff !== null) {
+    admin_loan_edit_error('The first-payment-cutoff database migration has not been applied yet.');
 }
 
 if ($isGuarantor && ($guestBorrowerName === '' || $guestGcashName === '' || $guestGcashNumber === '')) {
@@ -54,13 +69,23 @@ try {
         throw new LogicException('Only pending loan requests can be edited.');
     }
 
-    $updateStmt = $conn->prepare('
-        UPDATE loan_requests
-        SET requested_amount = ?, requested_months = ?, is_guarantor = ?,
-            guest_borrower_name = ?, guest_gcash_name = ?, guest_gcash_number = ?
-        WHERE id = ? AND status = ?
-    ');
-    $updateStmt->bind_param('ddisssis', $amount, $months, $isGuarantor, $guestBorrowerName, $guestGcashName, $guestGcashNumber, $requestId, $pending);
+    if ($hasFirstPaymentCutoff) {
+        $updateStmt = $conn->prepare('
+            UPDATE loan_requests
+            SET requested_amount = ?, requested_months = ?, first_payment_cutoff = ?, is_guarantor = ?,
+                guest_borrower_name = ?, guest_gcash_name = ?, guest_gcash_number = ?
+            WHERE id = ? AND status = ?
+        ');
+        $updateStmt->bind_param('ddsisssis', $amount, $months, $firstPaymentCutoff, $isGuarantor, $guestBorrowerName, $guestGcashName, $guestGcashNumber, $requestId, $pending);
+    } else {
+        $updateStmt = $conn->prepare('
+            UPDATE loan_requests
+            SET requested_amount = ?, requested_months = ?, is_guarantor = ?,
+                guest_borrower_name = ?, guest_gcash_name = ?, guest_gcash_number = ?
+            WHERE id = ? AND status = ?
+        ');
+        $updateStmt->bind_param('ddisssis', $amount, $months, $isGuarantor, $guestBorrowerName, $guestGcashName, $guestGcashNumber, $requestId, $pending);
+    }
     $updateStmt->execute();
 
     if ($updateStmt->affected_rows > 0) {
@@ -69,6 +94,7 @@ try {
             'before' => [
                 'requested_amount' => $previous['requested_amount'],
                 'requested_months' => $previous['requested_months'],
+                'first_payment_cutoff' => $previous['first_payment_cutoff'] ?? null,
                 'is_guarantor' => $previous['is_guarantor'],
                 'guest_borrower_name' => $previous['guest_borrower_name'],
                 'guest_gcash_name' => $previous['guest_gcash_name'],
@@ -77,6 +103,7 @@ try {
             'after' => [
                 'requested_amount' => $amount,
                 'requested_months' => $months,
+                'first_payment_cutoff' => $firstPaymentCutoff,
                 'is_guarantor' => $isGuarantor,
                 'guest_borrower_name' => $guestBorrowerName,
                 'guest_gcash_name' => $guestGcashName,
