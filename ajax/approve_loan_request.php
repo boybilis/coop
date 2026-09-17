@@ -70,8 +70,9 @@ if ($firstPaymentCutoff !== null && $firstPaymentCutoff !== '') {
 
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanAmount = (float)($loanableBreakdown['approval_available_amount'] ?? $loanableBreakdown['available_amount']);
+$usesSuperAdminAmountOverride = is_superadmin_user() && $amount > $availableLoanAmount;
 
-if ($amount > $availableLoanAmount) {
+if ($amount > $availableLoanAmount && !$usesSuperAdminAmountOverride) {
     audit_log($conn, 'block_loan_approval_over_loanable', 'Admin attempted to approve a loan above the available loanable amount.', 'loan_requests', $requestId, [
         'borrower_id' => $request['borrower_id'],
         'requested_approval_amount' => $amount,
@@ -200,8 +201,21 @@ try {
         'payment_schedule' => $paymentScheduleSetting,
         'first_payment_cutoff' => $dueDates[0],
         'service_fee' => $serviceFee,
-        'disbursement_reference_number' => $disbursementReferenceNumber
+        'disbursement_reference_number' => $disbursementReferenceNumber,
+        'superadmin_amount_override' => $usesSuperAdminAmountOverride,
+        'available_loanable_amount_at_approval' => $availableLoanAmount
     ]);
+
+    if ($usesSuperAdminAmountOverride) {
+        audit_log($conn, 'superadmin_loan_amount_override', 'SuperAdmin approved a loan above the available loanable amount with disbursement evidence.', 'loan_requests', $requestId, [
+            'borrower_id' => $request['borrower_id'],
+            'loan_id' => $loanId,
+            'approved_amount' => $amount,
+            'available_loanable_amount_at_approval' => $availableLoanAmount,
+            'disbursement_reference_number' => $disbursementReferenceNumber,
+            'disbursement_proof_image' => $proofPath
+        ]);
+    }
 
     $conn->commit();
 } catch (Throwable $e) {

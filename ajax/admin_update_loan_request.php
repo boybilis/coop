@@ -29,7 +29,7 @@ if (!$requestId || $amount === false || $amount <= 0 || $months === false || $mo
 }
 
 if ($firstPaymentCutoff !== '' && !in_array($firstPaymentCutoff, cooperative_admin_loan_cutoff_options($conn, date('Y-m-d')), true)) {
-    admin_loan_edit_error('Select a valid first payment cutoff from the previous month or upcoming dates.');
+    admin_loan_edit_error('Select a valid first payment cutoff from the previous month, current month, or upcoming dates.');
 }
 
 if ($firstPaymentCutoff === '') {

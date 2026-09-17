@@ -606,26 +606,34 @@ function cooperative_upcoming_loan_cutoffs($conn, $startDate, $count = 30)
 
 function cooperative_admin_loan_cutoff_options($conn, $startDate, $upcomingCount = 30)
 {
-    $previousMonth = (new DateTimeImmutable($startDate))->modify('first day of previous month');
-    $monthKey = $previousMonth->format('Y-m');
-    $cursor = $previousMonth->modify('last day of this month');
-    $previousCutoffs = [];
+    $firstDayOfCurrentMonth = (new DateTimeImmutable($startDate))->modify('first day of this month');
+    $recentCutoffs = [];
 
-    // Weekly schedules can have five cutoffs in a month; six iterations is sufficient.
-    for ($i = 0; $i < 6 && $cursor->format('Y-m') === $monthKey; $i++) {
-        $setting = cooperative_effective_payment_schedule_setting($conn, $cursor->format('Y-m-d'));
-        $cutoff = cooperative_previous_or_current_cutoff_date($cursor->format('Y-m-d'), $setting);
+    foreach ([$firstDayOfCurrentMonth->modify('-1 month'), $firstDayOfCurrentMonth] as $month) {
+        $monthKey = $month->format('Y-m');
+        $cursor = $month->modify('last day of this month');
 
-        if (substr($cutoff, 0, 7) !== $monthKey) {
-            break;
+        // Weekly schedules can have five cutoffs in a month; six iterations is sufficient.
+        for ($i = 0; $i < 6 && $cursor->format('Y-m') === $monthKey; $i++) {
+            $setting = cooperative_effective_payment_schedule_setting($conn, $cursor->format('Y-m-d'));
+            $cutoff = cooperative_previous_or_current_cutoff_date($cursor->format('Y-m-d'), $setting);
+
+            if (substr($cutoff, 0, 7) !== $monthKey) {
+                break;
+            }
+
+            $recentCutoffs[] = $cutoff;
+            $cursor = (new DateTimeImmutable($cutoff))->modify('-1 day');
         }
-
-        $previousCutoffs[] = $cutoff;
-        $cursor = (new DateTimeImmutable($cutoff))->modify('-1 day');
     }
 
-    return array_merge(array_reverse(array_unique($previousCutoffs)),
-        cooperative_upcoming_loan_cutoffs($conn, $startDate, $upcomingCount));
+    $cutoffs = array_values(array_unique(array_merge(
+        $recentCutoffs,
+        cooperative_upcoming_loan_cutoffs($conn, $startDate, $upcomingCount)
+    )));
+    sort($cutoffs);
+
+    return $cutoffs;
 }
 
 function cooperative_generate_loan_due_dates_from_cutoff($firstCutoff, $months, array $setting)

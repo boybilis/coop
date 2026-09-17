@@ -14,6 +14,7 @@ $cutoffColumnCheck = $conn->query("SHOW COLUMNS FROM loan_requests LIKE 'first_p
 $hasFirstPaymentCutoff = $cutoffColumnCheck && $cutoffColumnCheck->num_rows > 0;
 $adminLoanCutoffs = cooperative_admin_loan_cutoff_options($conn, date('Y-m-d'));
 $currentMonthStart = date('Y-m-01');
+$todayDate = date('Y-m-d');
 $memberOptions = $conn->query("
     SELECT borrowers.id, borrowers.name, users.username
     FROM borrowers
@@ -233,10 +234,10 @@ $requests = $conn->query("
                 <select name="first_payment_cutoff" id="addRequestCutoff" class="form-select" required>
                     <option value="">Select first payment cutoff</option>
                     <?php foreach ($adminLoanCutoffs as $cutoff): ?>
-                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : '' ?></option>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : ($cutoff < $todayDate ? ' (current month correction)' : '') ?></option>
                     <?php endforeach; ?>
                 </select>
-                <small class="text-muted">For corrections, choose a cutoff from the previous month. The first installment uses this date; later installments follow the payment schedule.</small>
+                <small class="text-muted">For corrections, choose a cutoff from the previous or current month. The first installment uses this date; later installments follow the payment schedule.</small>
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" class="form-check-input" name="is_guarantor" value="1" id="addRequestGuarantor">
@@ -290,7 +291,7 @@ $requests = $conn->query("
                 <select name="first_payment_cutoff" id="editRequestCutoff" class="form-select">
                     <option value="">Automatic next cutoff (member request)</option>
                     <?php foreach ($adminLoanCutoffs as $cutoff): ?>
-                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : '' ?></option>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : ($cutoff < $todayDate ? ' (current month correction)' : '') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -337,6 +338,9 @@ $requests = $conn->query("
                 <label class="form-label">Approved Amount</label>
                 <input type="number" step="0.01" min="1" name="amount" id="approveAmount" class="form-control" required>
                 <small class="text-muted">Remaining approvable loanable amount: &#8369;<?= number_format($availableLoanAmount, 2) ?></small>
+                <?php if (is_superadmin_user()): ?>
+                    <small class="text-warning d-block">SuperAdmin may approve above this amount; disbursement reference and proof are still required.</small>
+                <?php endif; ?>
                 <div class="text-danger small d-none" id="approveAmountWarning">
                     Approved amount cannot exceed the remaining approvable loanable amount.
                 </div>
@@ -370,6 +374,7 @@ $requests = $conn->query("
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const availableLoanAmount = <?= json_encode($availableLoanAmount) ?>;
+const canOverrideLoanableAmount = <?= is_superadmin_user() ? 'true' : 'false' ?>;
 
 function toggleLoanRequestGuestFields(prefix){
     const isGuarantor = document.getElementById(prefix + 'RequestGuarantor').checked;
@@ -415,7 +420,7 @@ function validateApproveAmount(){
     const warning = document.getElementById('approveAmountWarning');
     const approveButton = document.getElementById('approveLoanButton');
     const amount = parseFloat(amountInput.value || '0');
-    const isTooHigh = amount > availableLoanAmount;
+    const isTooHigh = !canOverrideLoanableAmount && amount > availableLoanAmount;
 
     warning.classList.toggle('d-none', !isTooHigh);
     approveButton.disabled = isTooHigh;
@@ -433,7 +438,7 @@ document.getElementById('approveAmount').addEventListener('input', validateAppro
 document.getElementById('approveLoanRequestForm').addEventListener('submit', function(event){
     const amount = parseFloat(document.getElementById('approveAmount').value || '0');
 
-    if (amount > availableLoanAmount) {
+    if (!canOverrideLoanableAmount && amount > availableLoanAmount) {
         event.preventDefault();
         event.stopImmediatePropagation();
         validateApproveAmount();
