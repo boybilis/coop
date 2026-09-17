@@ -12,7 +12,8 @@ $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanAmount = (float)($loanableBreakdown['approval_available_amount'] ?? $loanableBreakdown['available_amount']);
 $cutoffColumnCheck = $conn->query("SHOW COLUMNS FROM loan_requests LIKE 'first_payment_cutoff'");
 $hasFirstPaymentCutoff = $cutoffColumnCheck && $cutoffColumnCheck->num_rows > 0;
-$upcomingLoanCutoffs = cooperative_upcoming_loan_cutoffs($conn, date('Y-m-d'));
+$adminLoanCutoffs = cooperative_admin_loan_cutoff_options($conn, date('Y-m-d'));
+$currentMonthStart = date('Y-m-01');
 $memberOptions = $conn->query("
     SELECT borrowers.id, borrowers.name, users.username
     FROM borrowers
@@ -231,11 +232,11 @@ $requests = $conn->query("
                 <label for="addRequestCutoff" class="form-label">First Payment Cutoff</label>
                 <select name="first_payment_cutoff" id="addRequestCutoff" class="form-select" required>
                     <option value="">Select first payment cutoff</option>
-                    <?php foreach ($upcomingLoanCutoffs as $cutoff): ?>
-                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?></option>
+                    <?php foreach ($adminLoanCutoffs as $cutoff): ?>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : '' ?></option>
                     <?php endforeach; ?>
                 </select>
-                <small class="text-muted">The first installment will be due on this date; later installments follow the payment schedule.</small>
+                <small class="text-muted">For corrections, choose a cutoff from the previous month. The first installment uses this date; later installments follow the payment schedule.</small>
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" class="form-check-input" name="is_guarantor" value="1" id="addRequestGuarantor">
@@ -288,8 +289,8 @@ $requests = $conn->query("
                 <label for="editRequestCutoff" class="form-label">First Payment Cutoff</label>
                 <select name="first_payment_cutoff" id="editRequestCutoff" class="form-select">
                     <option value="">Automatic next cutoff (member request)</option>
-                    <?php foreach ($upcomingLoanCutoffs as $cutoff): ?>
-                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?></option>
+                    <?php foreach ($adminLoanCutoffs as $cutoff): ?>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : '' ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

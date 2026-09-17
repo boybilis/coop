@@ -28,8 +28,8 @@ if (!$requestId || $amount === false || $amount <= 0 || $months === false || $mo
     admin_loan_edit_error('Enter a valid amount and a payment term of up to 6 months.');
 }
 
-if ($firstPaymentCutoff !== '' && !in_array($firstPaymentCutoff, cooperative_upcoming_loan_cutoffs($conn, date('Y-m-d')), true)) {
-    admin_loan_edit_error('Select an upcoming first payment cutoff.');
+if ($firstPaymentCutoff !== '' && !in_array($firstPaymentCutoff, cooperative_admin_loan_cutoff_options($conn, date('Y-m-d')), true)) {
+    admin_loan_edit_error('Select a valid first payment cutoff from the previous month or upcoming dates.');
 }
 
 if ($firstPaymentCutoff === '') {

@@ -53,12 +53,19 @@ $start = date('Y-m-d');
 $paymentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start);
 $firstPaymentCutoff = $request['first_payment_cutoff'] ?? null;
 
-if ($firstPaymentCutoff !== null && $firstPaymentCutoff !== ''
-    && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $firstPaymentCutoff)
-        || $firstPaymentCutoff <= $start
-        || cooperative_previous_or_current_cutoff_date($firstPaymentCutoff, $paymentScheduleSetting) !== $firstPaymentCutoff)) {
-    header('Location: ../loan_requests.php?error=' . urlencode('The selected first payment cutoff is no longer upcoming or valid. Edit the request before approving it.'));
-    exit;
+if ($firstPaymentCutoff !== null && $firstPaymentCutoff !== '') {
+    $cutoffDate = DateTimeImmutable::createFromFormat('!Y-m-d', $firstPaymentCutoff);
+    $cutoffSetting = $cutoffDate
+        ? cooperative_effective_payment_schedule_setting($conn, $firstPaymentCutoff)
+        : null;
+
+    if (!$cutoffDate || $cutoffDate->format('Y-m-d') !== $firstPaymentCutoff
+        || cooperative_previous_or_current_cutoff_date($firstPaymentCutoff, $cutoffSetting) !== $firstPaymentCutoff) {
+        header('Location: ../loan_requests.php?error=' . urlencode('The selected first payment cutoff is invalid. Edit the request before approving it.'));
+        exit;
+    }
+
+    $paymentScheduleSetting = $cutoffSetting;
 }
 
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
