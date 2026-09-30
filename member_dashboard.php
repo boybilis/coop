@@ -882,6 +882,10 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 <small class="text-muted">Maximum of 6 months.</small>
             </div>
 
+            <div class="alert alert-info py-2">
+                The admin will assign the loan cut-off during approval. The first payment will be due on the next scheduled cut-off.
+            </div>
+
             <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" name="is_guarantor" value="1" id="loanRequestGuarantor" onchange="toggleGuestBorrowerInput()">
                 <label class="form-check-label" for="loanRequestGuarantor">Act as Guarantor</label>

@@ -6,6 +6,7 @@ require_admin();
 $requestId = (int)($_POST['request_id'] ?? 0);
 $amount = (float)($_POST['amount'] ?? 0);
 $months = (float)($_POST['months'] ?? 0);
+$loanCutoff = trim((string)($_POST['loan_cutoff'] ?? ''));
 $disbursementReferenceNumber = trim($_POST['disbursement_reference_number'] ?? '');
 
 if (!$requestId || $amount <= 0 || $months <= 0) {
@@ -25,6 +26,11 @@ if ($disbursementReferenceNumber === '') {
 
 if (!isset($_FILES['disbursement_proof_image']) || $_FILES['disbursement_proof_image']['error'] !== UPLOAD_ERR_OK) {
     header("Location: ../loan_requests.php?error=" . urlencode("GCash disbursement proof image is required"));
+    exit;
+}
+
+if (!in_array($loanCutoff, cooperative_admin_loan_cutoff_options($conn, date('Y-m-d')), true)) {
+    header('Location: ../loan_requests.php?error=' . urlencode('Select a valid loan cutoff before approval.'));
     exit;
 }
 
@@ -51,17 +57,16 @@ if (!$request) {
 
 $start = date('Y-m-d');
 $paymentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, $start);
-$firstPaymentCutoff = $request['first_payment_cutoff'] ?? null;
 
-if ($firstPaymentCutoff !== null && $firstPaymentCutoff !== '') {
-    $cutoffDate = DateTimeImmutable::createFromFormat('!Y-m-d', $firstPaymentCutoff);
+if ($loanCutoff !== null && $loanCutoff !== '') {
+    $cutoffDate = DateTimeImmutable::createFromFormat('!Y-m-d', $loanCutoff);
     $cutoffSetting = $cutoffDate
-        ? cooperative_effective_payment_schedule_setting($conn, $firstPaymentCutoff)
+        ? cooperative_effective_payment_schedule_setting($conn, $loanCutoff)
         : null;
 
-    if (!$cutoffDate || $cutoffDate->format('Y-m-d') !== $firstPaymentCutoff
-        || cooperative_previous_or_current_cutoff_date($firstPaymentCutoff, $cutoffSetting) !== $firstPaymentCutoff) {
-        header('Location: ../loan_requests.php?error=' . urlencode('The selected first payment cutoff is invalid. Edit the request before approving it.'));
+    if (!$cutoffDate || $cutoffDate->format('Y-m-d') !== $loanCutoff
+        || cooperative_previous_or_current_cutoff_date($loanCutoff, $cutoffSetting) !== $loanCutoff) {
+        header('Location: ../loan_requests.php?error=' . urlencode('The selected loan cutoff is invalid. Edit the request before approving it.'));
         exit;
     }
 
@@ -124,8 +129,8 @@ $serviceFeeRate = ((float)$effectiveServiceFeeRate['service_fee_rate']) / 100;
 $interest = (int) ceil($amount * $rate * $months);
 $serviceFee = (int) ceil($amount * $serviceFeeRate);
 $totalPayable = (int) ceil($amount + $interest + $serviceFee);
-$dueDates = $firstPaymentCutoff
-    ? cooperative_generate_loan_due_dates_from_cutoff($firstPaymentCutoff, $months, $paymentScheduleSetting)
+$dueDates = $loanCutoff
+    ? cooperative_generate_loan_due_dates($loanCutoff, $months, $paymentScheduleSetting)
     : cooperative_generate_loan_due_dates($start, $months, $paymentScheduleSetting);
 $totalPayments = count($dueDates);
 $basePayment = floor($totalPayable / $totalPayments);
@@ -180,13 +185,14 @@ try {
         SET status = 'Approved',
             approved_amount = ?,
             approved_months = ?,
+            first_payment_cutoff = ?,
             approved_loan_id = ?,
             disbursement_reference_number = ?,
             disbursement_proof_image = ?,
             processed_at = NOW()
         WHERE id = ?
     ");
-    $updateStmt->bind_param("ddissi", $amount, $months, $loanId, $disbursementReferenceNumber, $proofPath, $requestId);
+    $updateStmt->bind_param("ddsissi", $amount, $months, $loanCutoff, $loanId, $disbursementReferenceNumber, $proofPath, $requestId);
     $updateStmt->execute();
 
     audit_log($conn, 'approve_loan_request', 'Admin approved loan request and marked loan as disbursed.', 'loan_requests', $requestId, [
@@ -199,6 +205,7 @@ try {
         'service_fee_rate' => $effectiveServiceFeeRate['service_fee_rate'],
         'service_fee_implementation_date' => $effectiveServiceFeeRate['implementation_date'],
         'payment_schedule' => $paymentScheduleSetting,
+        'loan_cutoff' => $loanCutoff,
         'first_payment_cutoff' => $dueDates[0],
         'service_fee' => $serviceFee,
         'disbursement_reference_number' => $disbursementReferenceNumber,

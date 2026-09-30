@@ -29,7 +29,7 @@ if (!$borrowerId || $amount === false || $amount <= 0 || $months === false || $m
 }
 
 if (!in_array($firstCutoff, cooperative_admin_loan_cutoff_options($conn, date('Y-m-d')), true)) {
-    admin_add_loan_error('Select a valid first payment cutoff from the previous month, current month, or upcoming dates.');
+    admin_add_loan_error('Select a valid loan cutoff from the previous month, current month, or upcoming dates.');
 }
 
 if ($isGuarantor && ($guestBorrowerName === '' || $guestGcashName === '' || $guestGcashNumber === '')) {
@@ -76,7 +76,7 @@ try {
         'borrower_id' => $borrowerId,
         'requested_amount' => $amount,
         'requested_months' => $months,
-        'first_payment_cutoff' => $firstCutoff,
+        'loan_cutoff' => $firstCutoff,
         'is_guarantor' => $isGuarantor,
         'guest_borrower_name' => $guestBorrowerName
     ]);

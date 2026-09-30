@@ -116,7 +116,7 @@ $requests = $conn->query("
                         <th>Borrower For</th>
                         <th>Requested Amount</th>
                         <th>Requested Months</th>
-                        <th>First Payment Cutoff</th>
+                        <th>Loan Cut-Off</th>
                         <th>Date Requested</th>
                         <th>Status</th>
                         <th class="loan-approval-cell">Approval</th>
@@ -152,7 +152,7 @@ $requests = $conn->query("
                         </td>
                         <td>&#8369;<?= number_format($row['requested_amount'],2) ?></td>
                         <td><?= $row['requested_months'] ?></td>
-                        <td><?= !empty($row['first_payment_cutoff']) ? htmlspecialchars($row['first_payment_cutoff']) : '<span class="text-muted">Automatic</span>' ?></td>
+                        <td><?= !empty($row['first_payment_cutoff']) ? htmlspecialchars($row['first_payment_cutoff']) : '<span class="text-muted">Assign on approval</span>' ?></td>
                         <td><?= $row['created_at'] ?></td>
                         <td>
                             <span class="badge bg-<?= $row['status'] === 'Approved' ? 'success' : ($row['status'] === 'Rejected' ? 'danger' : 'warning text-dark') ?>">
@@ -172,7 +172,11 @@ $requests = $conn->query("
                                         data-guest-gcash-name="<?= htmlspecialchars((string)($row['guest_gcash_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                         data-guest-gcash-number="<?= htmlspecialchars((string)($row['guest_gcash_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">Edit</button>
                                     <button type="button" class="btn btn-success btn-sm"
-                                        onclick="openApproveLoanRequestModal(<?= (int)$row['id'] ?>, <?= (float)$row['requested_amount'] ?>, <?= (float)$row['requested_months'] ?>)">
+                                        data-request-id="<?= (int)$row['id'] ?>"
+                                        data-amount="<?= htmlspecialchars((string)$row['requested_amount'], ENT_QUOTES, 'UTF-8') ?>"
+                                        data-months="<?= htmlspecialchars((string)$row['requested_months'], ENT_QUOTES, 'UTF-8') ?>"
+                                        data-loan-cutoff="<?= htmlspecialchars((string)($row['first_payment_cutoff'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                        onclick="openApproveLoanRequestModal(this)">
                                         Approve
                                     </button>
                                     <form method="POST" action="ajax/reject_loan_request.php" class="m-0" data-confirm="Reject this loan request?" data-confirm-ok="Reject" data-confirm-class="btn-danger">
@@ -230,14 +234,14 @@ $requests = $conn->query("
                 <input type="number" step="0.1" min="0.1" max="6" name="months" id="addRequestMonths" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label for="addRequestCutoff" class="form-label">First Payment Cutoff</label>
+                <label for="addRequestCutoff" class="form-label">Loan Cut-Off</label>
                 <select name="first_payment_cutoff" id="addRequestCutoff" class="form-select" required>
-                    <option value="">Select first payment cutoff</option>
+                    <option value="">Select loan cutoff</option>
                     <?php foreach ($adminLoanCutoffs as $cutoff): ?>
                         <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : ($cutoff < $todayDate ? ' (current month correction)' : '') ?></option>
                     <?php endforeach; ?>
                 </select>
-                <small class="text-muted">For corrections, choose a cutoff from the previous or current month. The first installment uses this date; later installments follow the payment schedule.</small>
+                <small class="text-muted">For corrections, choose the cutoff the loan belongs to. The first installment is due on the next scheduled cutoff.</small>
             </div>
             <div class="form-check mb-3">
                 <input type="checkbox" class="form-check-input" name="is_guarantor" value="1" id="addRequestGuarantor">
@@ -287,9 +291,9 @@ $requests = $conn->query("
                 <input type="number" step="0.1" min="0.1" max="6" name="months" id="editRequestMonths" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label for="editRequestCutoff" class="form-label">First Payment Cutoff</label>
+                <label for="editRequestCutoff" class="form-label">Loan Cut-Off</label>
                 <select name="first_payment_cutoff" id="editRequestCutoff" class="form-select">
-                    <option value="">Automatic next cutoff (member request)</option>
+                    <option value="">Assign during approval</option>
                     <?php foreach ($adminLoanCutoffs as $cutoff): ?>
                         <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : ($cutoff < $todayDate ? ' (current month correction)' : '') ?></option>
                     <?php endforeach; ?>
@@ -350,6 +354,17 @@ $requests = $conn->query("
                 <label class="form-label">Approved Months</label>
                 <input type="number" step="0.1" min="0.1" max="6" name="months" id="approveMonths" class="form-control" required>
                 <small class="text-muted">Maximum payment term is 6 months.</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="approveLoanCutoff" class="form-label">Loan Cut-Off</label>
+                <select name="loan_cutoff" id="approveLoanCutoff" class="form-select" required>
+                    <option value="">Select loan cutoff</option>
+                    <?php foreach ($adminLoanCutoffs as $cutoff): ?>
+                        <option value="<?= htmlspecialchars($cutoff) ?>"><?= htmlspecialchars(date('M d, Y', strtotime($cutoff))) ?><?= $cutoff < $currentMonthStart ? ' (previous month correction)' : ($cutoff < $todayDate ? ' (current month correction)' : '') ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <small class="text-muted">The first payment will be due on the next scheduled cutoff.</small>
             </div>
 
             <div class="mb-3">
@@ -426,10 +441,12 @@ function validateApproveAmount(){
     approveButton.disabled = isTooHigh;
 }
 
-function openApproveLoanRequestModal(requestId, amount, months){
-    document.getElementById('approveRequestId').value = requestId;
-    document.getElementById('approveAmount').value = amount;
-    document.getElementById('approveMonths').value = months;
+function openApproveLoanRequestModal(button){
+    document.getElementById('approveRequestId').value = button.dataset.requestId;
+    document.getElementById('approveAmount').value = button.dataset.amount;
+    document.getElementById('approveMonths').value = button.dataset.months;
+    const cutoffSelect = document.getElementById('approveLoanCutoff');
+    cutoffSelect.value = button.dataset.loanCutoff || '';
     validateApproveAmount();
     new bootstrap.Modal(document.getElementById('approveLoanRequestModal')).show();
 }
