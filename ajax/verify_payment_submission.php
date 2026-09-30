@@ -59,6 +59,7 @@ try {
     }
 
     if ((float)$submission['loan_payment'] > 0) {
+        $loanAlreadyRecorded = false;
         $dueStmt = $conn->prepare("
             SELECT IFNULL(SUM(payments.amount),0) AS total_due
             FROM payments
@@ -73,7 +74,55 @@ try {
         $totalDue = (float)$dueStmt->get_result()->fetch_assoc()['total_due'];
 
         if ($totalDue <= 0) {
-            throw new LogicException('The selected loan payment is no longer due.');
+            $previousApprovalStmt = $conn->prepare("
+                SELECT id
+                FROM payment_submissions
+                WHERE id <> ?
+                AND borrower_id = ?
+                AND cutoff_date = ?
+                AND status = 'Approved'
+                AND loan_payment > 0
+                AND (
+                    ? = 0
+                    OR selected_loan_id = ?
+                    OR selected_loan_id IS NULL
+                )
+                LIMIT 1
+            ");
+            $previousApprovalStmt->bind_param(
+                'iisii',
+                $submissionId,
+                $submission['borrower_id'],
+                $submission['cutoff_date'],
+                $selectedLoanId,
+                $selectedLoanId
+            );
+            $previousApprovalStmt->execute();
+            $previousApproval = $previousApprovalStmt->get_result()->fetch_assoc();
+
+            if ($previousApproval) {
+                throw new LogicException('This loan payment was already verified under payment submission #' . (int)$previousApproval['id'] . '.');
+            }
+
+            $paidStmt = $conn->prepare("
+                SELECT IFNULL(SUM(payments.amount),0) AS total_paid
+                FROM payments
+                JOIN loans ON loans.id = payments.loan_id
+                WHERE loans.borrower_id = ?
+                AND payments.due_date = ?
+                AND payments.paid = 1
+                AND (? = 0 OR loans.id = ?)
+            ");
+            $paidStmt->bind_param('isii', $submission['borrower_id'], $submission['cutoff_date'], $selectedLoanId, $selectedLoanId);
+            $paidStmt->execute();
+            $alreadyPaidAmount = (float)$paidStmt->get_result()->fetch_assoc()['total_paid'];
+
+            if ($alreadyPaidAmount + 0.009 < (float)$submission['loan_payment']) {
+                throw new LogicException('No matching unpaid installment exists for the selected loan and cut-off date.');
+            }
+
+            $loanAlreadyRecorded = true;
+            $totalDue = (float)$submission['loan_payment'];
         }
 
         if ((float)$submission['loan_payment'] + 0.009 < $totalDue) {
@@ -82,20 +131,22 @@ try {
 
         $overpayment = max(0, round((float)$submission['loan_payment'] - $totalDue, 2));
 
-        $paymentStmt = $conn->prepare("
-            UPDATE payments
-            JOIN loans ON loans.id = payments.loan_id
-            SET payments.paid = 1,
-                payments.paid_at = NOW()
-            WHERE loans.borrower_id = ?
-            AND payments.due_date = ?
-            AND payments.paid = 0
-            AND (? = 0 OR loans.id = ?)
-        ");
-        $paymentStmt->bind_param("isii", $submission['borrower_id'], $submission['cutoff_date'], $selectedLoanId, $selectedLoanId);
-        $paymentStmt->execute();
+        if (!$loanAlreadyRecorded) {
+            $paymentStmt = $conn->prepare("
+                UPDATE payments
+                JOIN loans ON loans.id = payments.loan_id
+                SET payments.paid = 1,
+                    payments.paid_at = NOW()
+                WHERE loans.borrower_id = ?
+                AND payments.due_date = ?
+                AND payments.paid = 0
+                AND (? = 0 OR loans.id = ?)
+            ");
+            $paymentStmt->bind_param("isii", $submission['borrower_id'], $submission['cutoff_date'], $selectedLoanId, $selectedLoanId);
+            $paymentStmt->execute();
+        }
 
-        if ($overpayment > 0) {
+        if (!$loanAlreadyRecorded && $overpayment > 0) {
             $currentPaymentStmt = $conn->prepare("
                 SELECT payments.id
                 FROM payments
@@ -193,6 +244,7 @@ try {
         'capital_contribution' => $submission['capital_contribution'],
         'loan_payment' => $submission['loan_payment'],
         'selected_loan_id' => $selectedLoanId ?: null,
+        'loan_already_recorded_before_verification' => $loanAlreadyRecorded ?? false,
         'source' => (($GLOBALS['admin_direct_submission_id'] ?? 0) === $submissionId) ? 'admin_direct' : 'member_submission',
         'reference_number' => $submission['reference_number']
     ]);

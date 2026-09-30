@@ -4,6 +4,10 @@ include 'auth.php';
 include 'layout.php';
 require_admin();
 
+if (empty($_SESSION['admin_payment_delete_token'])) {
+    $_SESSION['admin_payment_delete_token'] = bin2hex(random_bytes(32));
+}
+
 $cutoffDates = $conn->query("
     SELECT cutoff_date
     FROM (
@@ -120,6 +124,10 @@ if ($selectedCutoff !== '') {
     <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'error', message:<?= json_encode($_GET['error']) ?>});</script>
 <?php endif; ?>
 
+<?php if(isset($_GET['deleted'])): ?>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Pending payment submission deleted.'});</script>
+<?php endif; ?>
+
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="GET" class="row g-2 align-items-end">
@@ -231,10 +239,17 @@ if ($selectedCutoff !== '') {
                             </td>
                             <td>
                                 <?php if($row['status'] === 'Pending'): ?>
-                                    <form method="POST" action="ajax/verify_payment_submission.php" data-confirm="Verify this payment and record it?" data-confirm-ok="Verify" data-confirm-class="btn-success">
-                                        <input type="hidden" name="submission_id" value="<?= $row['id'] ?>">
-                                        <button class="btn btn-success btn-sm w-100">Verified</button>
-                                    </form>
+                                    <div class="d-flex gap-2">
+                                        <form method="POST" action="ajax/verify_payment_submission.php" class="flex-fill" data-confirm="Verify this payment and record it?" data-confirm-ok="Verify" data-confirm-class="btn-success">
+                                            <input type="hidden" name="submission_id" value="<?= (int)$row['id'] ?>">
+                                            <button class="btn btn-success btn-sm w-100">Verify</button>
+                                        </form>
+                                        <form method="POST" action="ajax/admin_delete_payment_submission.php" class="flex-fill" data-confirm="Delete this mistakenly filed pending payment? This cannot be undone." data-confirm-ok="Delete" data-confirm-class="btn-danger">
+                                            <input type="hidden" name="submission_id" value="<?= (int)$row['id'] ?>">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_payment_delete_token'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <button class="btn btn-outline-danger btn-sm w-100">Delete</button>
+                                        </form>
+                                    </div>
                                 <?php else: ?>
                                     <span class="text-muted">Verified</span>
                                 <?php endif; ?>
