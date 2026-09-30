@@ -516,6 +516,14 @@ function cooperative_loanable_amount_breakdown($conn)
         WHERE type = 'INITIAL'
     ")->fetch_assoc()['total'];
 
+    $activeMemberCount = (int)$conn->query("
+        SELECT COUNT(*) AS total
+        FROM borrowers
+        WHERE status = 'Active'
+    ")->fetch_assoc()['total'];
+    $expectedCapitalPerMember = 500.0;
+    $expectedCutoffCapital = $activeMemberCount * $expectedCapitalPerMember;
+
     $cutoffCapitalStmt = $conn->prepare("
         SELECT IFNULL(SUM(amount),0) AS total
         FROM capital_contributions
@@ -536,13 +544,27 @@ function cooperative_loanable_amount_breakdown($conn)
     $cutoffPaidLoansStmt->execute();
     $paidLoansThisCutoff = (float)$cutoffPaidLoansStmt->get_result()->fetch_assoc()['total'];
 
-    $approvedLoanPrincipalStmt = $conn->prepare("
-        SELECT IFNULL(SUM(amount),0) AS total
-        FROM loans
-        WHERE start_date >= ?
-        AND start_date < ?
+    $cutoffLoanDuesStmt = $conn->prepare("
+        SELECT IFNULL(SUM(payments.amount),0) AS total
+        FROM payments
+        WHERE payments.due_date = ?
     ");
-    $approvedLoanPrincipalStmt->bind_param("ss", $currentCutoffDate, $nextCutoffDate);
+    $cutoffLoanDuesStmt->bind_param("s", $currentCutoffDate);
+    $cutoffLoanDuesStmt->execute();
+    $loanPaymentsDueThisCutoff = (float)$cutoffLoanDuesStmt->get_result()->fetch_assoc()['total'];
+
+    $approvedLoanPrincipalStmt = $conn->prepare("
+        SELECT IFNULL(SUM(loans.amount),0) AS total
+        FROM loans
+        LEFT JOIN loan_requests ON loan_requests.approved_loan_id = loans.id
+        WHERE loan_requests.first_payment_cutoff = ?
+        OR (
+            loan_requests.first_payment_cutoff IS NULL
+            AND loans.start_date >= ?
+            AND loans.start_date < ?
+        )
+    ");
+    $approvedLoanPrincipalStmt->bind_param("sss", $currentCutoffDate, $currentCutoffDate, $nextCutoffDate);
     $approvedLoanPrincipalStmt->execute();
     $approvedLoanPrincipal = (float)$approvedLoanPrincipalStmt->get_result()->fetch_assoc()['total'];
 
@@ -550,13 +572,17 @@ function cooperative_loanable_amount_breakdown($conn)
         'cutoff_date' => $currentCutoffDate,
         'next_cutoff_date' => $nextCutoffDate,
         'initial_capital' => $initialCapital,
+        'active_member_count' => $activeMemberCount,
+        'expected_capital_per_member' => $expectedCapitalPerMember,
+        'expected_cutoff_capital' => $expectedCutoffCapital,
+        'loan_payments_due_this_cutoff' => $loanPaymentsDueThisCutoff,
         'cutoff_capital_to_date' => $cutoffCapitalCollected,
         'cutoff_capital_collected' => $cutoffCapitalCollected,
         'paid_loans_this_cutoff' => $paidLoansThisCutoff,
         'paid_loan_principal_to_date' => $paidLoansThisCutoff,
         'approved_loan_principal' => $approvedLoanPrincipal,
-        'available_amount' => $cutoffCapitalCollected + $paidLoansThisCutoff,
-        'approval_available_amount' => max(0, $cutoffCapitalCollected + $paidLoansThisCutoff - $approvedLoanPrincipal)
+        'available_amount' => $expectedCutoffCapital + $loanPaymentsDueThisCutoff,
+        'approval_available_amount' => max(0, $expectedCutoffCapital + $loanPaymentsDueThisCutoff - $approvedLoanPrincipal)
     ];
 }
 

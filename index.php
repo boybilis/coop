@@ -32,6 +32,9 @@ $currentCutoffDate = $loanableBreakdown['cutoff_date'];
 $initialCapital = $loanableBreakdown['initial_capital'];
 $cutoffCapitalToDate = $loanableBreakdown['cutoff_capital_to_date'];
 $paidLoansThisCutoff = $loanableBreakdown['paid_loans_this_cutoff'];
+$expectedCutoffCapital = $loanableBreakdown['expected_cutoff_capital'];
+$loanPaymentsDueThisCutoff = $loanableBreakdown['loan_payments_due_this_cutoff'];
+$expectedCapitalPerMember = $loanableBreakdown['expected_capital_per_member'];
 $approvedLoanPrincipal = $loanableBreakdown['approved_loan_principal'];
 $availableLoanCutoff = $loanableBreakdown['available_amount'];
 $capital = $initialCapital + $cutoffCapitalToDate;
@@ -225,8 +228,8 @@ function notification_badge($count)
                 <h6>Available Loanable Amount to Date</h6>
                 <h3 class="text-warning">&#8369;<?= number_format($availableLoanCutoff,2) ?></h3>
                 <small class="text-muted d-block">Current cut-off: <?= date('M d, Y', strtotime($currentCutoffDate)) ?></small>
-                <small class="text-muted d-block">Collected capcon: &#8369;<?= number_format($cutoffCapitalToDate,2) ?></small>
-                <small class="text-muted d-block">Collected loan payments: &#8369;<?= number_format($paidLoansThisCutoff,2) ?></small>
+                <small class="text-muted d-block">Expected capcon: <?= number_format($activeMembers) ?> × &#8369;<?= number_format($expectedCapitalPerMember, 2) ?> = &#8369;<?= number_format($expectedCutoffCapital,2) ?></small>
+                <small class="text-muted d-block">Loan payments due: &#8369;<?= number_format($loanPaymentsDueThisCutoff,2) ?></small>
             </div>
             <div class="card-footer">
                 <a href="capital.php" class="btn btn-warning w-100">Capital Contributions</a>

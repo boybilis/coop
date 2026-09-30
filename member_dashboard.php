@@ -98,6 +98,10 @@ $capital = $capitalStmt->get_result()->fetch_assoc()['total'];
 
 $loanableBreakdown = cooperative_loanable_amount_breakdown($conn);
 $availableLoanCutoff = $loanableBreakdown['available_amount'];
+$expectedCutoffCapital = $loanableBreakdown['expected_cutoff_capital'];
+$loanPaymentsDueThisCutoff = $loanableBreakdown['loan_payments_due_this_cutoff'];
+$activeMemberCountForCutoff = $loanableBreakdown['active_member_count'];
+$expectedCapitalPerMember = $loanableBreakdown['expected_capital_per_member'];
 $currentCutoffDate = $loanableBreakdown['cutoff_date'];
 $currentScheduleSetting = cooperative_effective_payment_schedule_setting($conn, date('Y-m-d'));
 $nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentScheduleSetting)->format('Y-m-d');
@@ -304,6 +308,8 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             <div class="card-footer">
                 <small class="text-muted d-block">Available Loanable Amount to Date</small>
                 <strong class="d-block">&#8369;<?= number_format($availableLoanCutoff,2) ?></strong>
+                <small class="text-muted d-block"><?= number_format($activeMemberCountForCutoff) ?> members × &#8369;<?= number_format($expectedCapitalPerMember, 2) ?> = &#8369;<?= number_format($expectedCutoffCapital, 2) ?></small>
+                <small class="text-muted d-block">Loan payments due: &#8369;<?= number_format($loanPaymentsDueThisCutoff, 2) ?></small>
                 <?php if($showExpectedNextCutoffLoanable): ?>
                     <small class="text-muted d-block mt-2">Expected Collectible Next Cut-off</small>
                     <strong class="text-success d-block">&#8369;<?= number_format($expectedNextCutoffLoanable,2) ?></strong>
