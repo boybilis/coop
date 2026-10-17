@@ -593,6 +593,24 @@ function cooperative_member_payment_cutoff_options($conn, $borrowerId)
     $nextCutoffDate = cooperative_next_cutoff_after($currentCutoffDate, $currentSetting)->format('Y-m-d');
     $cutoffs = [$currentCutoffDate, $nextCutoffDate];
 
+    // Keep every scheduled cut-off from the previous calendar month available
+    // so admins can correct or record late payments, including capital-only entries.
+    $previousMonth = (new DateTimeImmutable('today'))->modify('first day of previous month');
+    $previousMonthKey = $previousMonth->format('Y-m');
+    $cursor = $previousMonth->modify('last day of this month');
+    // Weekly schedules can have five cut-offs in a month; six iterations is sufficient.
+    for ($i = 0; $i < 6 && $cursor->format('Y-m') === $previousMonthKey; $i++) {
+        $setting = cooperative_effective_payment_schedule_setting($conn, $cursor->format('Y-m-d'));
+        $cutoff = cooperative_previous_or_current_cutoff_date($cursor->format('Y-m-d'), $setting);
+
+        if (substr($cutoff, 0, 7) !== $previousMonthKey) {
+            break;
+        }
+
+        $cutoffs[] = $cutoff;
+        $cursor = (new DateTimeImmutable($cutoff))->modify('-1 day');
+    }
+
     $stmt = $conn->prepare("
         SELECT payments.due_date
         FROM payments
