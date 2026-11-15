@@ -285,15 +285,20 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 </small>
             </div>
             <div class="card-footer">
-                <?php if($hasMemberGcashProfile): ?>
-                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#loanRequestModal">
-                        Loan Request
+                <div class="d-flex gap-2">
+                    <?php if($hasMemberGcashProfile): ?>
+                        <button class="btn btn-primary w-50" data-bs-toggle="modal" data-bs-target="#loanRequestModal">
+                            Loan Request
+                        </button>
+                    <?php else: ?>
+                        <button type="button" class="btn btn-primary w-50" onclick="appShowToast('Please update your profile with GCash name and GCash number before filing a loan request.', 'warning')">
+                            Loan Request
+                        </button>
+                    <?php endif; ?>
+                    <button type="button" class="btn btn-outline-primary w-50" data-bs-toggle="modal" data-bs-target="#loanCalculatorModal">
+                        Calculator
                     </button>
-                <?php else: ?>
-                    <button type="button" class="btn btn-primary w-100" onclick="appShowToast('Please update your profile with GCash name and GCash number before filing a loan request.', 'warning')">
-                        Loan Request
-                    </button>
-                <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -866,6 +871,86 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
   </div>
 </div>
 
+<div class="modal fade" id="loanCalculatorModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Loan Calculator</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+            <form id="loanCalculatorForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="loanCalculatorAmount" class="form-label">Loan Amount</label>
+                        <input type="number" step="0.01" min="1" id="loanCalculatorAmount" name="amount" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="loanCalculatorMonths" class="form-label">Months to Pay</label>
+                        <input type="number" step="0.1" min="0.1" max="6" id="loanCalculatorMonths" name="months" class="form-control" required>
+                        <small class="text-muted">Maximum of 6 months.</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3" id="loanCalculatorSubmit">Calculate</button>
+            </form>
+
+            <div class="alert alert-danger mt-3 d-none" id="loanCalculatorError"></div>
+
+            <div class="mt-4 d-none" id="loanCalculatorResults">
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="border rounded p-3 h-100">
+                            <small class="text-muted d-block">Principal</small>
+                            <strong id="loanCalculatorPrincipal">&#8369;0.00</strong>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="border rounded p-3 h-100">
+                            <small class="text-muted d-block">Interest</small>
+                            <strong id="loanCalculatorInterest">&#8369;0.00</strong>
+                            <small class="text-muted d-block" id="loanCalculatorRate"></small>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="border rounded p-3 h-100">
+                            <small class="text-muted d-block">Service Fee</small>
+                            <strong id="loanCalculatorServiceFee">&#8369;0.00</strong>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="border rounded p-3 h-100 bg-light">
+                            <small class="text-muted d-block">Total Payable</small>
+                            <strong id="loanCalculatorTotal">&#8369;0.00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <h6>Estimated Cut-Off Payments</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle mb-2">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Payment</th>
+                                <th>Estimated Cut-Off</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loanCalculatorSchedule"></tbody>
+                    </table>
+                </div>
+                <small class="text-muted">Estimate only. The administrator assigns the actual loan cut-off during approval.</small>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="loanRequestModal">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -1040,6 +1125,67 @@ const dashboardTables = [
     { bodyId: 'capitalHistoryTableBody', paginationId: 'capitalHistoryPagination' },
     { bodyId: 'paymentSubmissionsTableBody', paginationId: 'paymentSubmissionsPagination' }
 ];
+
+document.getElementById('loanCalculatorForm').addEventListener('submit', function(event){
+    event.preventDefault();
+
+    const form = this;
+    const submitButton = document.getElementById('loanCalculatorSubmit');
+    const errorBox = document.getElementById('loanCalculatorError');
+    const results = document.getElementById('loanCalculatorResults');
+
+    errorBox.classList.add('d-none');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Calculating...';
+
+    fetch('ajax/calculate_member_loan.php', {
+        method: 'POST',
+        body: new FormData(form),
+        cache: 'no-store'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.error){
+            results.classList.add('d-none');
+            errorBox.textContent = data.error;
+            errorBox.classList.remove('d-none');
+            return;
+        }
+
+        document.getElementById('loanCalculatorPrincipal').textContent = formatPaymentAmount(data.principal);
+        document.getElementById('loanCalculatorInterest').textContent = formatPaymentAmount(data.interest);
+        document.getElementById('loanCalculatorRate').textContent = Number(data.monthly_rate).toLocaleString(undefined, {maximumFractionDigits: 4}) + '% monthly';
+        document.getElementById('loanCalculatorServiceFee').textContent = formatPaymentAmount(data.service_fee);
+        document.getElementById('loanCalculatorTotal').textContent = formatPaymentAmount(data.total_payable);
+
+        const scheduleBody = document.getElementById('loanCalculatorSchedule');
+        scheduleBody.innerHTML = '';
+        (data.payments || []).forEach(payment => {
+            const row = document.createElement('tr');
+            const numberCell = document.createElement('td');
+            const dateCell = document.createElement('td');
+            const amountCell = document.createElement('td');
+            numberCell.textContent = String(payment.payment_no);
+            dateCell.textContent = new Date(payment.due_date + 'T00:00:00').toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: '2-digit'
+            });
+            amountCell.textContent = formatPaymentAmount(payment.amount);
+            amountCell.className = 'text-end';
+            row.append(numberCell, dateCell, amountCell);
+            scheduleBody.appendChild(row);
+        });
+        results.classList.remove('d-none');
+    })
+    .catch(() => {
+        results.classList.add('d-none');
+        errorBox.textContent = 'Unable to calculate the loan. Please try again.';
+        errorBox.classList.remove('d-none');
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Calculate';
+    });
+});
 
 function updateDueAmount(){
     let paymentDate = document.getElementById('paymentDate').value;
