@@ -7,6 +7,9 @@ require_admin();
 if (empty($_SESSION['admin_payment_delete_token'])) {
     $_SESSION['admin_payment_delete_token'] = bin2hex(random_bytes(32));
 }
+if (empty($_SESSION['superadmin_payment_undo_token'])) {
+    $_SESSION['superadmin_payment_undo_token'] = bin2hex(random_bytes(32));
+}
 
 $cutoffDates = $conn->query("
     SELECT cutoff_date
@@ -53,6 +56,14 @@ if ($selectedCutoff !== '') {
                 users.username,
                 selected_loan.is_guarantor AS selected_loan_is_guarantor,
                 selected_loan.guest_borrower_name AS selected_loan_guest_name,
+                EXISTS (
+                    SELECT 1
+                    FROM audit_trails undo_audit
+                    WHERE undo_audit.action = 'verify_payment'
+                    AND undo_audit.entity_type = 'payment_submissions'
+                    AND undo_audit.entity_id = payment_submissions.id
+                    AND undo_audit.metadata LIKE '%\"undo_effects\"%'
+                ) AS can_undo,
                 'member_submission' AS source_type
             FROM payment_submissions
             JOIN borrowers ON borrowers.id = payment_submissions.borrower_id
@@ -77,6 +88,7 @@ if ($selectedCutoff !== '') {
                 users.username,
                 NULL AS selected_loan_is_guarantor,
                 NULL AS selected_loan_guest_name,
+                0 AS can_undo,
                 'admin_manual' AS source_type
             FROM capital_contributions
             JOIN borrowers ON borrowers.id = capital_contributions.borrower_id
@@ -126,6 +138,10 @@ if ($selectedCutoff !== '') {
 
 <?php if(isset($_GET['deleted'])): ?>
     <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Pending payment submission deleted.'});</script>
+<?php endif; ?>
+
+<?php if(isset($_GET['approval_undone'])): ?>
+    <script>window.appToasts = window.appToasts || []; window.appToasts.push({type:'success', message:'Payment approval was undone. The submission is pending again.'});</script>
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
@@ -250,6 +266,12 @@ if ($selectedCutoff !== '') {
                                             <button class="btn btn-outline-danger btn-sm w-100">Delete</button>
                                         </form>
                                     </div>
+                                <?php elseif($row['status'] === 'Approved' && is_superadmin_user() && (int)($row['can_undo'] ?? 0) === 1): ?>
+                                    <form method="POST" action="ajax/undo_payment_approval.php" data-confirm="Undo this approval? Its capital and loan records will be reverted, and the submission will return to Pending." data-confirm-ok="Undo Approval" data-confirm-class="btn-warning">
+                                        <input type="hidden" name="submission_id" value="<?= (int)$row['id'] ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['superadmin_payment_undo_token'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <button class="btn btn-outline-warning btn-sm w-100">Undo Approval</button>
+                                    </form>
                                 <?php else: ?>
                                     <span class="text-muted">Verified</span>
                                 <?php endif; ?>

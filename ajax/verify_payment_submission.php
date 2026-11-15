@@ -3,6 +3,69 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../auth.php';
 require_admin();
 
+function payment_verification_snapshot(mysqli $conn, int $borrowerId, int $selectedLoanId): array
+{
+    $payments = [];
+    $paymentStmt = $conn->prepare("
+        SELECT payments.id, payments.loan_id, payments.amount, payments.paid, payments.paid_at
+        FROM payments
+        JOIN loans ON loans.id = payments.loan_id
+        WHERE loans.borrower_id = ?
+        AND (? = 0 OR loans.id = ?)
+        ORDER BY payments.id
+        FOR UPDATE
+    ");
+    $paymentStmt->bind_param('iii', $borrowerId, $selectedLoanId, $selectedLoanId);
+    $paymentStmt->execute();
+    $paymentRows = $paymentStmt->get_result();
+    while ($row = $paymentRows->fetch_assoc()) {
+        $payments[(int)$row['id']] = [
+            'loan_id' => (int)$row['loan_id'],
+            'amount' => number_format((float)$row['amount'], 2, '.', ''),
+            'paid' => (int)$row['paid'],
+            'paid_at' => $row['paid_at'],
+        ];
+    }
+
+    $loans = [];
+    $loanStmt = $conn->prepare("
+        SELECT id, status
+        FROM loans
+        WHERE borrower_id = ?
+        AND (? = 0 OR id = ?)
+        ORDER BY id
+        FOR UPDATE
+    ");
+    $loanStmt->bind_param('iii', $borrowerId, $selectedLoanId, $selectedLoanId);
+    $loanStmt->execute();
+    $loanRows = $loanStmt->get_result();
+    while ($row = $loanRows->fetch_assoc()) {
+        $loans[(int)$row['id']] = ['status' => $row['status']];
+    }
+
+    return ['payments' => $payments, 'loans' => $loans];
+}
+
+function payment_verification_changes(array $before, array $after): array
+{
+    $changes = ['version' => 1, 'payments' => [], 'loans' => []];
+
+    foreach ($before['payments'] as $id => $previous) {
+        $current = $after['payments'][$id] ?? null;
+        if ($current !== null && $previous !== $current) {
+            $changes['payments'][] = ['id' => $id, 'before' => $previous, 'after' => $current];
+        }
+    }
+    foreach ($before['loans'] as $id => $previous) {
+        $current = $after['loans'][$id] ?? null;
+        if ($current !== null && $previous !== $current) {
+            $changes['loans'][] = ['id' => $id, 'before' => $previous, 'after' => $current];
+        }
+    }
+
+    return $changes;
+}
+
 $submissionId = (int)($_POST['submission_id'] ?? 0);
 
 if (!$submissionId) {
@@ -36,6 +99,27 @@ if ($submission['status'] !== 'Pending') {
 $conn->begin_transaction();
 
 try {
+    $lockSubmissionStmt = $conn->prepare("
+        SELECT status
+        FROM payment_submissions
+        WHERE id = ?
+        LIMIT 1
+        FOR UPDATE
+    ");
+    $lockSubmissionStmt->bind_param('i', $submissionId);
+    $lockSubmissionStmt->execute();
+    $lockedSubmission = $lockSubmissionStmt->get_result()->fetch_assoc();
+    if (!$lockedSubmission || $lockedSubmission['status'] !== 'Pending') {
+        throw new LogicException('Payment submission already processed.');
+    }
+
+    $verificationBefore = payment_verification_snapshot(
+        $conn,
+        (int)$submission['borrower_id'],
+        $selectedLoanId
+    );
+    $capitalContributionId = null;
+
     if ((float)$submission['capital_contribution'] > 0) {
         $periodLabel = (($GLOBALS['admin_direct_submission_id'] ?? 0) === $submissionId)
             ? 'Admin Payment - Verified'
@@ -56,6 +140,7 @@ try {
             $submission['proof_image']
         );
         $capitalStmt->execute();
+        $capitalContributionId = (int)$capitalStmt->insert_id;
     }
 
     if ((float)$submission['loan_payment'] > 0) {
@@ -238,6 +323,14 @@ try {
     $submissionStmt->bind_param("i", $submissionId);
     $submissionStmt->execute();
 
+    $verificationAfter = payment_verification_snapshot(
+        $conn,
+        (int)$submission['borrower_id'],
+        $selectedLoanId
+    );
+    $undoEffects = payment_verification_changes($verificationBefore, $verificationAfter);
+    $undoEffects['capital_contribution_id'] = $capitalContributionId;
+
     audit_log($conn, 'verify_payment', 'Admin verified member payment submission.', 'payment_submissions', $submissionId, [
         'borrower_id' => $submission['borrower_id'],
         'cutoff_date' => $submission['cutoff_date'],
@@ -245,6 +338,7 @@ try {
         'loan_payment' => $submission['loan_payment'],
         'selected_loan_id' => $selectedLoanId ?: null,
         'loan_already_recorded_before_verification' => $loanAlreadyRecorded ?? false,
+        'undo_effects' => $undoEffects,
         'source' => (($GLOBALS['admin_direct_submission_id'] ?? 0) === $submissionId) ? 'admin_direct' : 'member_submission',
         'reference_number' => $submission['reference_number']
     ]);
