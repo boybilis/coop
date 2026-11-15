@@ -316,8 +316,14 @@ if ($selectedCutoff !== '') {
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Capital Contribution</label>
-                            <input type="number" step="0.01" min="0" name="capital_contribution" id="adminPaymentCapital" class="form-control" value="0">
+                            <label class="form-label d-block">Capital Contribution</label>
+                            <div class="form-check border rounded p-3 ps-5 bg-light">
+                                <input class="form-check-input" type="checkbox" name="include_capital_contribution" value="1" id="adminPaymentIncludeCapital">
+                                <label class="form-check-label" for="adminPaymentIncludeCapital">
+                                    Include Capital Contribution (&#8369;500.00)
+                                </label>
+                            </div>
+                            <small class="text-muted">Unchecked means no capital contribution will be recorded.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Loan to Pay</label>
@@ -366,7 +372,7 @@ function adminPaymentMoney(amount){
 }
 
 function updateAdminPaymentTotal(){
-    const capital = Number(document.getElementById('adminPaymentCapital').value || 0);
+    const capital = document.getElementById('adminPaymentIncludeCapital').checked ? 500 : 0;
     const selected = document.getElementById('adminPaymentLoanTarget').selectedOptions[0];
     const loan = Number(selected?.dataset.amount || 0);
     document.getElementById('adminPaymentLoanAmount').textContent = adminPaymentMoney(loan);
@@ -450,7 +456,7 @@ document.getElementById('adminPaymentBorrower').addEventListener('change', funct
 
 document.getElementById('adminPaymentCutoff').addEventListener('change', populateAdminPaymentLoans);
 document.getElementById('adminPaymentLoanTarget').addEventListener('change', updateAdminPaymentTotal);
-document.getElementById('adminPaymentCapital').addEventListener('input', updateAdminPaymentTotal);
+document.getElementById('adminPaymentIncludeCapital').addEventListener('change', updateAdminPaymentTotal);
 </script>
 <?php render_footer(); ?>
 </body>

@@ -5,7 +5,10 @@ require_admin();
 
 $borrowerId = (int)($_POST['borrower_id'] ?? 0);
 $cutoffDate = $_POST['cutoff_date'] ?? '';
-$capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
+$capitalContribution = isset($_POST['include_capital_contribution'])
+    && (string)$_POST['include_capital_contribution'] === '1'
+        ? 500.00
+        : 0.00;
 $selectedLoanValue = $_POST['selected_loan_id'] ?? '';
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
@@ -44,7 +47,7 @@ $selectedLoanId = $loanTarget['selected_loan_id'];
 $loanPayment = $loanTarget['amount'];
 
 if ($capitalContribution <= 0 && $loanPayment <= 0) {
-    header('Location: ../received_payments.php?error=' . urlencode('Enter a capital contribution or select a loan to pay.'));
+    header('Location: ../received_payments.php?error=' . urlencode('Include the capital contribution or select a loan to pay.'));
     exit;
 }
 
