@@ -8,7 +8,10 @@ header('Content-Type: application/json');
 $borrowerId = active_borrower_id();
 $submissionId = (int)($_POST['submission_id'] ?? 0);
 $cutoffDate = $_POST['payment_date'] ?? '';
-$capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
+$capitalContribution = isset($_POST['include_capital_contribution'])
+    && (string)$_POST['include_capital_contribution'] === '1'
+        ? 500.00
+        : 0.00;
 $selectedLoanValue = $_POST['selected_loan_id'] ?? '';
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
@@ -33,7 +36,7 @@ $selectedLoanId = $loanTarget['selected_loan_id'];
 $loanPayment = $loanTarget['amount'];
 
 if ($capitalContribution <= 0 && $loanPayment <= 0) {
-    echo json_encode(["error" => "Enter a capital contribution or loan payment amount"]);
+    echo json_encode(["error" => "Include the capital contribution or select a loan payment"]);
     exit;
 }
 

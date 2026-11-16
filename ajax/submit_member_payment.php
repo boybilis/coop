@@ -6,7 +6,10 @@ require_member();
 $borrowerId = active_borrower_id();
 $cutoffDate = $_POST['payment_date'] ?? '';
 $paymentDate = date('Y-m-d');
-$capitalContribution = (float)($_POST['capital_contribution'] ?? 0);
+$capitalContribution = isset($_POST['include_capital_contribution'])
+    && (string)$_POST['include_capital_contribution'] === '1'
+        ? 500.00
+        : 0.00;
 $selectedLoanValue = $_POST['selected_loan_id'] ?? '';
 $referenceNumber = trim($_POST['reference_number'] ?? '');
 
@@ -40,7 +43,7 @@ if ((int)$_FILES['proof_image']['size'] > 5 * 1024 * 1024) {
 }
 
 if ($capitalContribution <= 0 && $loanPayment <= 0) {
-    exit("Enter a capital contribution or loan payment amount");
+    exit("Include the capital contribution or select a loan payment");
 }
 
 $fileInfo = finfo_open(FILEINFO_MIME_TYPE);

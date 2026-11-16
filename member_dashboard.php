@@ -618,8 +618,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
                 </div>
 
                 <div class="col-md-6">
-                    <label>Capital Contribution</label>
-                    <input type="number" step="0.01" min="0" name="capital_contribution" id="capitalContributionInput" class="form-control" value="0" oninput="updatePaymentTotal()">
+                    <label class="d-block">Capital Contribution</label>
+                    <div class="form-check border rounded p-3 ps-5 bg-light">
+                        <input class="form-check-input" type="checkbox" name="include_capital_contribution" value="1" id="includeCapitalContribution" onchange="updatePaymentTotal()">
+                        <label class="form-check-label" for="includeCapitalContribution">
+                            Include Capital Contribution (&#8369;500.00)
+                        </label>
+                    </div>
+                    <small class="text-muted">Unchecked means no capital contribution will be submitted.</small>
                 </div>
 
                 <div class="col-md-6">
@@ -766,8 +772,14 @@ $linkedAccounts = $linkedAccountsStmt->get_result();
             </div>
 
             <div class="mb-3">
-                <label>Capital Contribution</label>
-                <input type="number" step="0.01" min="0" id="editPaymentCapital" class="form-control" required>
+                <label class="d-block">Capital Contribution</label>
+                <div class="form-check border rounded p-3 ps-5 bg-light">
+                    <input class="form-check-input" type="checkbox" id="editPaymentIncludeCapital">
+                    <label class="form-check-label" for="editPaymentIncludeCapital">
+                        Include Capital Contribution (&#8369;500.00)
+                    </label>
+                </div>
+                <small class="text-muted">Unchecked means no capital contribution will be submitted.</small>
             </div>
 
             <div class="mb-3">
@@ -1244,7 +1256,7 @@ function updateEditSelectedLoanAmount(){
 }
 
 function updatePaymentTotal(){
-    let capitalAmount = parseFloat(document.getElementById('capitalContributionInput').value || '0');
+    let capitalAmount = document.getElementById('includeCapitalContribution').checked ? 500 : 0;
     let loanAmount = parseFloat(document.getElementById('loanPaymentInput').value || '0');
     let totalAmount = capitalAmount + loanAmount;
 
@@ -1490,7 +1502,7 @@ function withdrawalRequestsConfig(){
 function openPaymentSubmissionEdit(id, paymentDate, capitalContribution, loanPayment, referenceNumber, selectedLoanId){
     document.getElementById('editPaymentSubmissionId').value = id;
     document.getElementById('editPaymentDate').value = paymentDate;
-    document.getElementById('editPaymentCapital').value = capitalContribution;
+    document.getElementById('editPaymentIncludeCapital').checked = Number(capitalContribution) > 0;
     const selectedTarget = Number(loanPayment) > 0
         ? (selectedLoanId ? String(selectedLoanId) : 'all')
         : '';
@@ -1508,7 +1520,7 @@ function savePaymentSubmissionEdit(){
 
     formData.append('submission_id', document.getElementById('editPaymentSubmissionId').value);
     formData.append('payment_date', document.getElementById('editPaymentDate').value);
-    formData.append('capital_contribution', document.getElementById('editPaymentCapital').value);
+    formData.append('include_capital_contribution', document.getElementById('editPaymentIncludeCapital').checked ? '1' : '0');
     formData.append('loan_payment', document.getElementById('editPaymentLoan').value);
     formData.append('selected_loan_id', document.getElementById('editPaymentLoanTarget').value);
     formData.append('reference_number', document.getElementById('editPaymentReference').value);
