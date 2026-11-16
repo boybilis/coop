@@ -68,6 +68,12 @@ function render_footer()
     <script>
     window.appToasts = window.appToasts || [];
 
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+
     window.appShowToast = function(message, type = 'info') {
         const container = document.getElementById('appToastContainer');
 

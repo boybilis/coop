@@ -12,7 +12,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0');
+header('CDN-Cache-Control: no-store');
+header('Cloudflare-CDN-Cache-Control: no-store');
+header('X-LiteSpeed-Cache-Control: no-cache');
+header('Vary: Cookie', false);
+header('X-Coop-Release: 20261116-cdnjs');
 header('Pragma: no-cache');
 header('Expires: 0');
 
